@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = {
@@ -12,7 +13,9 @@ export default function ConnexionPage() {
       <h1 className="heading-section text-3xl">Connexion</h1>
       <p className="text-lead mt-3 font-light">Accédez à vos devis et factures.</p>
       <div className="ui-card-padded mt-10">
-        <LoginForm />
+        <Suspense fallback={<p className="text-body text-center">Chargement…</p>}>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );

@@ -1,11 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DocumentAuditTrail } from "@/components/audit/DocumentAuditTrail";
-import { formatEuro } from "@/lib/format";
+import { formatEuro, factureShareMessage } from "@/lib/format";
+import { ROUTES } from "@/lib/routes";
 
 interface FactureDetailProps {
   facture: {
@@ -16,7 +17,8 @@ interface FactureDetailProps {
     lockedAt: string | null;
     contentHash: string | null;
     chainHash: string | null;
-    client: { nom: string };
+    shareToken: string | null;
+    client: { nom: string; telephone: string | null };
     lignes: { description: string; quantite: number; prixUnitaireHT: number; totalHT: number }[];
     attestation: { numero: string } | null;
   };
@@ -29,6 +31,11 @@ export function FactureActions({ facture, plan }: FactureDetailProps) {
   const [loading, setLoading] = useState("");
   const [verifyResult, setVerifyResult] = useState<boolean | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   async function issue() {
     setLoading("issue");
@@ -66,6 +73,19 @@ export function FactureActions({ facture, plan }: FactureDetailProps) {
     setVerifyResult(data.valid);
   }
 
+  const whatsAppHref =
+    starterPlus &&
+    facture.shareToken &&
+    origin &&
+    (facture.status === "EMISE" || facture.status === "PAYEE")
+      ? (() => {
+          const url = `${origin}${ROUTES.publicFacture(facture.shareToken)}`;
+          const msg = factureShareMessage(facture.numero, facture.client.nom, url);
+          const phone = facture.client.telephone?.replace(/\D/g, "") ?? "";
+          return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : null;
+        })()
+      : null;
+
   return (
     <div className="space-y-4">
       <ConfirmDialog
@@ -99,9 +119,41 @@ export function FactureActions({ facture, plan }: FactureDetailProps) {
           </>
         )}
         {facture.status === "EMISE" && (
-          <button onClick={pay} disabled={!!loading} className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white">
-            Marquer payée
-          </button>
+          <>
+            <button onClick={pay} disabled={!!loading} className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white">
+              Marquer payée
+            </button>
+            {whatsAppHref && (
+              <a
+                href={whatsAppHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+              >
+                Partager sur WhatsApp
+              </a>
+            )}
+            {!whatsAppHref && starterPlus && (
+              <p className="text-body w-full text-sm">
+                Ajoutez le téléphone du client pour partager par WhatsApp.
+              </p>
+            )}
+          </>
+        )}
+        {facture.status === "PAYEE" && whatsAppHref && (
+          <a
+            href={whatsAppHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+          >
+            Partager sur WhatsApp
+          </a>
+        )}
+        {(facture.status === "EMISE" || facture.status === "PAYEE") && !starterPlus && (
+          <Link href="/tarifs" className="rounded-lg border px-4 py-2 text-sm">
+            WhatsApp — plan Starter
+          </Link>
         )}
         <a href={`/api/factures/${facture.id}/pdf`} target="_blank" className="rounded-lg border px-4 py-2 text-sm">
           Voir le PDF

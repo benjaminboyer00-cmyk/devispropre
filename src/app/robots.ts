@@ -12,6 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         "/api/",
         ROUTES.connexion,
         "/devis/",
+        "/facture/",
         ROUTES.offline,
       ],
     },

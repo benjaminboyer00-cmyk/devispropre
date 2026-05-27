@@ -1,6 +1,7 @@
 import type { FactureStatus } from "@/generated/prisma/client";
 import { logAudit, type AuditContext } from "../audit";
-import { generateAttestationNumero } from "../crypto";
+import { generateAttestationNumero, generateShareToken } from "../crypto";
+import { logCriticalAlert } from "../critical-alert";
 import {
   buildFacturePayload,
   computeChainHash,
@@ -18,6 +19,7 @@ import {
 } from "../numbers";
 import {
   archivePdf,
+  deleteArchivedPdf,
   facturePdfKey,
   ObjectStorageError,
 } from "../object-storage";
@@ -140,6 +142,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
 
   const previousHash = lastIssued?.contentHash ?? null;
   const chainHash = computeChainHash(contentHash, previousHash);
+  const shareToken = generateShareToken();
 
   const lockedForPdf = {
     ...facture,
@@ -152,53 +155,63 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
   };
 
   let pdfUrl: string;
+  const pdfKey = facturePdfKey(ctx.userId, factureId);
   try {
     const pdfBuffer = await generateFacturePdf(lockedForPdf, company);
-    pdfUrl = await archivePdf(
-      facturePdfKey(ctx.userId, factureId),
-      pdfBuffer,
-      ROUTES.apiArchiveFacture(factureId)
-    );
+    pdfUrl = await archivePdf(pdfKey, pdfBuffer, ROUTES.apiArchiveFacture(factureId));
   } catch (err) {
     if (err instanceof ObjectStorageError) throw err;
     throw new ObjectStorageError("Impossible d'archiver le PDF de la facture.");
   }
 
-  const updated = await prisma.$transaction(async (tx) => {
-    const locked = await tx.facture.updateMany({
-      where: { id: factureId, userId: ctx.userId, status: "BROUILLON", deletedAt: null },
-      data: {
-        status: "EMISE",
-        lockedAt: now,
-        issuedAt: now,
-        contentHash,
-        chainHash,
-        previousHash,
-        pdfUrl,
-        pdfArchivedAt: now,
-      },
-    });
+  let updated;
+  try {
+    updated = await prisma.$transaction(async (tx) => {
+      const locked = await tx.facture.updateMany({
+        where: { id: factureId, userId: ctx.userId, status: "BROUILLON", deletedAt: null },
+        data: {
+          status: "EMISE",
+          lockedAt: now,
+          issuedAt: now,
+          contentHash,
+          chainHash,
+          previousHash,
+          shareToken,
+          pdfUrl,
+          pdfArchivedAt: now,
+        },
+      });
 
-    if (locked.count === 0) {
-      throw new ImmutabilityError("Émission impossible — facture déjà émise ou introuvable.");
-    }
+      if (locked.count === 0) {
+        throw new ImmutabilityError("Émission impossible — facture déjà émise ou introuvable.");
+      }
 
-    const attestationNumero = generateAttestationNumero(ctx.userId, facture.numero);
-    await tx.attestation.create({
-      data: {
-        userId: ctx.userId,
-        factureId,
-        numero: attestationNumero,
-        contentHash,
-        signedAt: now,
-      },
-    });
+      const attestationNumero = generateAttestationNumero(ctx.userId, facture.numero);
+      await tx.attestation.create({
+        data: {
+          userId: ctx.userId,
+          factureId,
+          numero: attestationNumero,
+          contentHash,
+          signedAt: now,
+        },
+      });
 
-    return tx.facture.findFirstOrThrow({
-      where: { id: factureId },
-      include: { lignes: true, client: true },
+      return tx.facture.findFirstOrThrow({
+        where: { id: factureId },
+        include: { lignes: true, client: true },
+      });
     });
-  });
+  } catch (err) {
+    await deleteArchivedPdf(pdfKey);
+    logCriticalAlert("Orphelin R2 après échec issueFacture", {
+      factureId,
+      userId: ctx.userId,
+      pdfKey,
+      error: String(err),
+    });
+    throw err;
+  }
 
   await logAudit(ctx, {
     action: "LOCK",

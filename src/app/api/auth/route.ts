@@ -16,23 +16,11 @@ import {
 import { acceptTeamInvites } from "@/lib/account-context";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
-
-const registerSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
-  name: z.string().min(2),
-  phone: z.string().optional(),
-  raisonSociale: z.string().min(2),
-  siret: z.string().min(9),
-  adresse: z.string().min(2),
-  codePostal: z.string().min(4),
-  ville: z.string().min(2),
-});
-
-const loginSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
+import {
+  formatZodError,
+  loginSchema,
+  registerSchema,
+} from "@/lib/schemas/forms";
 
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
@@ -117,7 +105,7 @@ export async function POST(request: NextRequest) {
 
     return apiError("Action invalide");
   } catch (e) {
-    if (e instanceof z.ZodError) return apiError(e.message);
+    if (e instanceof z.ZodError) return apiError(formatZodError(e));
     return handleServiceError(e);
   }
 }

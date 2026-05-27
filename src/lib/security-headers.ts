@@ -13,11 +13,12 @@ export function buildContentSecurityPolicy(nonce: string): string {
   const devEval = process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : "";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${devEval}`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com${devEval}`,
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self'",
-    "connect-src 'self'",
+    "connect-src 'self' https://api.stripe.com https://m.stripe.network",
+    "frame-src https://js.stripe.com https://hooks.stripe.com",
     "worker-src 'self'",
     "frame-ancestors 'none'",
     "base-uri 'self'",

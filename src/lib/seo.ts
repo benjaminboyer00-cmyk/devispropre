@@ -1,8 +1,14 @@
 import type { Metadata } from "next";
+import { env } from "./env";
 
 const APP_URL = (
   process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://devispropre.fr"
 );
+
+const DEFAULT_SAME_AS = [
+  "https://www.linkedin.com/company/devispropre",
+  "https://twitter.com/devispropre",
+] as const;
 
 export const SITE = {
   name: "DevisPropre",
@@ -12,10 +18,16 @@ export const SITE = {
   phoneRaw: "33660614839",
   owner: "Benjamin Boyer",
   email: "contact@devispropre.fr",
+  sameAs: DEFAULT_SAME_AS,
   description:
     "Logiciel de devis et factures pour artisans du BTP. PDF conforme, envoi WhatsApp, loi anti-fraude TVA 2018. Plombier, électricien, peintre — dès 19€/mois.",
   tagline: "L'anti-usine à gaz de l'artisanat",
 } as const;
+
+/** Liens sameAs JSON-LD — surcharge via SITE_SAME_AS (URLs séparées par des virgules). */
+export function getSiteSameAs(): string[] {
+  return env.siteSameAs.length > 0 ? env.siteSameAs : [...SITE.sameAs];
+}
 
 export const KEYWORDS = [
   "devis artisan",
@@ -29,6 +41,11 @@ export const KEYWORDS = [
   "devis peintre",
   "devis pro artisan",
   "facture conforme TVA",
+  "logiciel devis auto entrepreneur",
+  "application devis batiment gratuite",
+  "devis artisan sur téléphone",
+  "alternative tolteck",
+  "logiciel facturation micro entreprise btp",
 ] as const;
 
 /** Image OG dynamique (app/opengraph-image.tsx) — WhatsApp, Facebook, Twitter. */
@@ -123,7 +140,7 @@ export function jsonLdSoftwareApplication() {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: SITE.name,
-    applicationCategory: "BusinessApplication",
+    applicationCategory: "FinanceApplication",
     operatingSystem: "Web",
     offers: [
       { "@type": "Offer", name: "Gratuit", price: "0", priceCurrency: "EUR", url: `${SITE.url}/tarifs` },
@@ -144,6 +161,7 @@ export function jsonLdOrganization() {
     url: SITE.url,
     description: SITE.description,
     email: SITE.email,
+    sameAs: getSiteSameAs(),
     founder: { "@type": "Person", name: SITE.owner },
     contactPoint: {
       "@type": "ContactPoint",

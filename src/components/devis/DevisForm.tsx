@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { createDevisSchema, formatZodError } from "@/lib/schemas/forms";
 
 interface Client {
   id: string;
@@ -64,10 +65,24 @@ export function DevisForm({ clients, tvaApplicable = true }: { clients: Client[]
       cid = client.id;
     }
 
+    const normalizedLignes = lignes.map((l) => ({
+      description: l.description.trim(),
+      quantite: Number(l.quantite),
+      prixUnitaireHT: Number(l.prixUnitaireHT),
+      tva: Number(l.tva),
+    }));
+
+    const devisPayload = createDevisSchema.safeParse({ clientId: cid, lignes: normalizedLignes });
+    if (!devisPayload.success) {
+      setError(formatZodError(devisPayload.error));
+      setLoading(false);
+      return;
+    }
+
     const res = await fetch("/api/devis", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ clientId: cid, lignes }),
+      body: JSON.stringify(devisPayload.data),
     });
 
     setLoading(false);

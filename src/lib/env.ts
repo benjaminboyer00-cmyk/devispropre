@@ -48,6 +48,12 @@ export const env = {
   resendFromEmail:
     process.env.RESEND_FROM_EMAIL?.trim() ?? "DevisPropre <noreply@devispropre.fr>",
   supportEmail: process.env.SUPPORT_EMAIL?.trim() ?? "contact@devispropre.fr",
+  slackWebhookUrl: process.env.SLACK_WEBHOOK_URL?.trim() ?? "",
+  alertWebhookUrl: process.env.ALERT_WEBHOOK_URL?.trim() ?? "",
+  siteSameAs: (process.env.SITE_SAME_AS?.trim() ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean),
   allowedOrigins: (
     process.env.ALLOWED_ORIGINS?.trim() ||
     optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")

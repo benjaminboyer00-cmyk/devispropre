@@ -2,6 +2,10 @@ import { NextRequest } from "next/server";
 import type Stripe from "stripe";
 import { ensureProTeam } from "@/lib/account-context";
 import { getStripe } from "@/lib/stripe";
+import {
+  downgradeCustomerToFree,
+  syncUserPlanFromSubscription,
+} from "@/lib/stripe-subscription";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/db";
 import { Plan } from "@/generated/prisma/client";
@@ -40,6 +44,20 @@ export async function POST(request: NextRequest) {
         await ensureProTeam(userId);
       }
     }
+  }
+
+  if (event.type === "customer.subscription.deleted") {
+    const subscription = event.data.object as Stripe.Subscription;
+    await downgradeCustomerToFree(
+      typeof subscription.customer === "string"
+        ? subscription.customer
+        : subscription.customer.id
+    );
+  }
+
+  if (event.type === "customer.subscription.updated") {
+    const subscription = event.data.object as Stripe.Subscription;
+    await syncUserPlanFromSubscription(subscription);
   }
 
   return Response.json({ received: true });

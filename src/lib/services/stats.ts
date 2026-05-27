@@ -19,7 +19,9 @@ export async function getAdvancedStats(userId: string, plan: Plan) {
     });
   }
 
-  const [monthlyCa, topClients, statusBreakdown, avgDelay] = await Promise.all([
+  const periodStart = months[0]!.start;
+
+  const [monthlyCa, topClientsRaw, statusBreakdown, avgDelay] = await Promise.all([
     Promise.all(
       months.map(async (m) => {
         const agg = await prisma.facture.aggregate({
@@ -39,19 +41,18 @@ export async function getAdvancedStats(userId: string, plan: Plan) {
         };
       })
     ),
-    prisma.facture.groupBy({
-      by: ["clientId"],
-      where: {
-        userId,
-        deletedAt: null,
-        status: { in: ["EMISE", "PAYEE"] },
-        issuedAt: { gte: months[0]!.start },
-      },
-      _sum: { totalTTC: true },
-      _count: true,
-      orderBy: { _sum: { totalTTC: "desc" } },
-      take: 5,
-    }),
+    prisma.$queryRaw<{ nom: string; ca: number; factures: bigint }[]>`
+      SELECT c.nom, SUM(f."totalTTC")::float AS ca, COUNT(*)::bigint AS factures
+      FROM "Facture" f
+      INNER JOIN "Client" c ON c.id = f."clientId" AND c."userId" = f."userId"
+      WHERE f."userId" = ${userId}
+        AND f."deletedAt" IS NULL
+        AND f.status IN ('EMISE', 'PAYEE')
+        AND f."issuedAt" >= ${periodStart}
+      GROUP BY c.id, c.nom
+      ORDER BY ca DESC
+      LIMIT 5
+    `,
     prisma.devis.groupBy({
       by: ["status"],
       where: { userId, deletedAt: null },
@@ -70,13 +71,6 @@ export async function getAdvancedStats(userId: string, plan: Plan) {
     }),
   ]);
 
-  const clientIds = topClients.map((c) => c.clientId);
-  const clients = await prisma.client.findMany({
-    where: { id: { in: clientIds }, userId },
-    select: { id: true, nom: true },
-  });
-  const clientMap = Object.fromEntries(clients.map((c) => [c.id, c.nom]));
-
   const delays = avgDelay
     .map((d) => {
       if (!d.sentAt || !d.acceptedAt) return null;
@@ -89,11 +83,11 @@ export async function getAdvancedStats(userId: string, plan: Plan) {
 
   return {
     monthlyCa,
-    topClients: topClients.map((c) => ({
-      nom: clientMap[c.clientId] ?? "Client",
-      ca: c._sum.totalTTC ?? 0,
-      factures: c._count,
-      caFormatted: formatEuro(c._sum.totalTTC ?? 0),
+    topClients: topClientsRaw.map((c) => ({
+      nom: c.nom,
+      ca: c.ca,
+      factures: Number(c.factures),
+      caFormatted: formatEuro(c.ca),
     })),
     devisByStatus: statusBreakdown.map((s) => ({
       status: s.status,

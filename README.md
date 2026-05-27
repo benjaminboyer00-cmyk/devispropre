@@ -102,6 +102,11 @@ Rétention par défaut : 14 jours.
 |--------|---------|
 | `pgdata` | Base PostgreSQL |
 | `logos` | Logos artisans (`storage/logos/`) |
+| `pdfs` | Fallback PDF si R2 indisponible (`storage/pdfs/`) |
+
+## Checklist post-VPS
+
+Voir **[docs/CHECKLIST-VPS.md](docs/CHECKLIST-VPS.md)** — configuration Stripe, Resend, R2, cron, SEO et tests manuels.
 
 ## Variables d'environnement prod
 
@@ -112,7 +117,9 @@ Rétention par défaut : 14 jours.
 | `NEXT_PUBLIC_APP_URL` | ✅ | URL publique HTTPS |
 | `ALLOWED_ORIGINS` | ✅ | Origines CSRF (souvent = APP_URL) |
 | `CRON_SECRET` | ✅ | Bearer pour `/api/cron/reminders` |
-| `RESEND_API_KEY` | Recommandé | Emails relances J+3 |
+| `RESEND_API_KEY` | Recommandé | Emails relances J+3 + connexion magic link |
+| `SLACK_WEBHOOK_URL` | Optionnel | Alertes critiques (orphelins R2) |
+| `SITE_SAME_AS` | Optionnel | URLs LinkedIn/X pour SEO JSON-LD |
 | `STRIPE_*` | Optionnel | Paiements abonnements |
 
 ## Sécurité

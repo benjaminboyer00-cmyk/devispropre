@@ -124,3 +124,20 @@ export async function sendTeamInviteEmail(opts: {
     `,
   });
 }
+
+export async function sendMagicLinkEmail(opts: {
+  to: string;
+  name: string;
+  verifyUrl: string;
+}): Promise<{ sent: boolean; reason?: string }> {
+  return sendEmail({
+    to: opts.to,
+    subject: "Votre lien de connexion DevisPropre",
+    html: `
+      <p>Bonjour ${opts.name},</p>
+      <p>Cliquez sur le bouton ci-dessous pour vous connecter sans mot de passe. Ce lien expire dans 15 minutes.</p>
+      <p><a href="${opts.verifyUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Se connecter</a></p>
+      <p style="color:#64748b;font-size:12px">Si vous n'avez pas demandé ce lien, ignorez cet email.</p>
+    `,
+  });
+}

@@ -65,6 +65,19 @@ model User {
   teamOwned Team? @relation("TeamOwner")
   teamMembership TeamMember?
   supportTickets SupportTicket[]
+  magicLinkTokens MagicLinkToken[]
+}
+
+model MagicLinkToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Team {
@@ -225,6 +238,7 @@ model Facture {
   contentHash  String?
   chainHash    String?
   previousHash String?
+  shareToken   String?       @unique
   issuedAt     DateTime?
   paidAt       DateTime?
   pdfUrl       String?

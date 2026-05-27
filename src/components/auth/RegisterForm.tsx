@@ -3,11 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { registerSchema, formatZodError } from "@/lib/schemas/forms";
 import {
-  validateEmail,
   validateFrenchPhone,
   validateFrenchPostcode,
-  validatePassword,
   validateSiret,
 } from "@/lib/validation";
 
@@ -35,16 +34,23 @@ export function RegisterForm() {
     e.preventDefault();
     setError("");
 
-    const checks = [
-      validateEmail(form.email),
-      validatePassword(form.password),
-      form.phone ? validateFrenchPhone(form.phone) : null,
-      validateSiret(form.siret),
-      validateFrenchPostcode(form.codePostal),
+    const parsed = registerSchema.safeParse({
+      ...form,
+      phone: form.phone.trim() || undefined,
+    });
+    if (!parsed.success) {
+      setError(formatZodError(parsed.error));
+      return;
+    }
+
+    const extraChecks = [
+      parsed.data.phone ? validateFrenchPhone(parsed.data.phone) : null,
+      validateSiret(parsed.data.siret),
+      validateFrenchPostcode(parsed.data.codePostal),
     ].filter(Boolean);
 
-    if (checks.length > 0) {
-      setError(checks[0]!);
+    if (extraChecks.length > 0) {
+      setError(extraChecks[0]!);
       return;
     }
 
@@ -53,7 +59,7 @@ export function RegisterForm() {
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "register", ...form }),
+      body: JSON.stringify({ action: "register", ...parsed.data }),
     });
 
     const data = await res.json();
@@ -77,7 +83,7 @@ export function RegisterForm() {
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="ui-label">Votre nom</label>
-          <input required value={form.name} onChange={(e) => update("name", e.target.value)} className={inputClass} />
+          <input required minLength={2} value={form.name} onChange={(e) => update("name", e.target.value)} className={inputClass} />
         </div>
         <div>
           <label className="ui-label">Téléphone</label>
@@ -100,7 +106,7 @@ export function RegisterForm() {
 
       <div>
         <label className="ui-label">Raison sociale</label>
-        <input required value={form.raisonSociale} onChange={(e) => update("raisonSociale", e.target.value)} className={inputClass} />
+        <input required minLength={2} value={form.raisonSociale} onChange={(e) => update("raisonSociale", e.target.value)} className={inputClass} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -116,12 +122,12 @@ export function RegisterForm() {
 
       <div>
         <label className="ui-label">Adresse</label>
-        <input required value={form.adresse} onChange={(e) => update("adresse", e.target.value)} className={inputClass} />
+        <input required minLength={2} value={form.adresse} onChange={(e) => update("adresse", e.target.value)} className={inputClass} />
       </div>
 
       <div>
         <label className="ui-label">Ville</label>
-        <input required value={form.ville} onChange={(e) => update("ville", e.target.value)} className={inputClass} />
+        <input required minLength={2} value={form.ville} onChange={(e) => update("ville", e.target.value)} className={inputClass} />
       </div>
 
       <button type="submit" disabled={loading} className="ui-btn-primary w-full py-3">

@@ -15,6 +15,7 @@ export const ROUTES = {
   dashboardDevis: (id: string) => `/dashboard/devis/${id}`,
   dashboardFacture: (id: string) => `/dashboard/factures/${id}`,
   publicDevis: (token: string) => `/devis/${token}`,
+  publicFacture: (token: string) => `/facture/${token}`,
   mentionsLegales: "/mentions-legales",
   politiqueConfidentialite: "/politique-confidentialite",
   cgu: "/cgu",

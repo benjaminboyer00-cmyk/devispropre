@@ -12,8 +12,10 @@ import { assertDevisEditable, ImmutabilityError } from "../immutability";
 import { ForbiddenError } from "../errors";
 import { assertCanCreateDevis } from "../plan-limits";
 import { computeLineTotalHT, computeTotals, nextDevisNumero } from "../numbers";
+import { logCriticalAlert } from "../critical-alert";
 import {
   archivePdf,
+  deleteArchivedPdf,
   devisPdfKey,
   ObjectStorageError,
 } from "../object-storage";
@@ -205,52 +207,60 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
   };
 
   let pdfUrl: string;
+  const pdfKey = devisPdfKey(ctx.userId, devisId);
   try {
     const pdfBuffer = await generateDevisPdf(lockedForPdf, company);
-    pdfUrl = await archivePdf(
-      devisPdfKey(ctx.userId, devisId),
-      pdfBuffer,
-      ROUTES.apiArchiveDevis(devisId)
-    );
+    pdfUrl = await archivePdf(pdfKey, pdfBuffer, ROUTES.apiArchiveDevis(devisId));
   } catch (err) {
     if (err instanceof ObjectStorageError) throw err;
     throw new ObjectStorageError("Impossible d'archiver le PDF du devis.");
   }
 
-  const updated = await prisma.devis.update({
-    where: { id: devisId },
-    data: {
-      status: "ENVOYE",
-      lockedAt: now,
-      sentAt: now,
+  try {
+    const updated = await prisma.devis.update({
+      where: { id: devisId },
+      data: {
+        status: "ENVOYE",
+        lockedAt: now,
+        sentAt: now,
+        contentHash,
+        chainHash,
+        shareToken,
+        pdfUrl,
+        pdfArchivedAt: now,
+      },
+      include: { lignes: true, client: true },
+    });
+
+    await logAudit(ctx, {
+      action: "LOCK",
+      entityType: "devis",
+      entityId: devisId,
+      devisId,
       contentHash,
-      chainHash,
-      shareToken,
-      pdfUrl,
-      pdfArchivedAt: now,
-    },
-    include: { lignes: true, client: true },
-  });
+      metadata: { chainHash, pdfUrl },
+    });
 
-  await logAudit(ctx, {
-    action: "LOCK",
-    entityType: "devis",
-    entityId: devisId,
-    devisId,
-    contentHash,
-    metadata: { chainHash, pdfUrl },
-  });
+    await logAudit(ctx, {
+      action: "SEND",
+      entityType: "devis",
+      entityId: devisId,
+      devisId,
+      contentHash,
+      metadata: { channel: "whatsapp", pdfUrl },
+    });
 
-  await logAudit(ctx, {
-    action: "SEND",
-    entityType: "devis",
-    entityId: devisId,
-    devisId,
-    contentHash,
-    metadata: { channel: "whatsapp", pdfUrl },
-  });
-
-  return updated;
+    return updated;
+  } catch (err) {
+    await deleteArchivedPdf(pdfKey);
+    logCriticalAlert("Orphelin R2 après échec sendDevis", {
+      devisId,
+      userId: ctx.userId,
+      pdfKey,
+      error: String(err),
+    });
+    throw err;
+  }
 }
 
 /** Transition publique via shareToken — ownership explicite anti-IDOR. */

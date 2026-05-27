@@ -1,6 +1,12 @@
 import fs from "fs/promises";
 import path from "path";
-import { GetObjectCommand, PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  S3Client,
+} from "@aws-sdk/client-s3";
+import { logCriticalAlert } from "./critical-alert";
 
 const PDF_DIR = path.join(process.cwd(), "storage", "pdfs");
 
@@ -107,6 +113,29 @@ export async function readArchivedPdf(key: string): Promise<Buffer | null> {
   const fromR2 = await readFromR2(key);
   if (fromR2) return fromR2;
   return readLocalPdf(key);
+}
+
+/** Supprime un PDF orphelin (R2 + fallback local). */
+export async function deleteArchivedPdf(key: string): Promise<void> {
+  if (isR2Configured()) {
+    try {
+      const client = getR2Client();
+      await client.send(
+        new DeleteObjectCommand({
+          Bucket: process.env.R2_BUCKET!,
+          Key: key,
+        })
+      );
+    } catch (err) {
+      logCriticalAlert("Échec suppression PDF R2", { key, error: String(err) });
+    }
+  }
+
+  try {
+    await fs.unlink(path.join(PDF_DIR, key));
+  } catch {
+    // Fichier local absent — normal si stockage R2 uniquement
+  }
 }
 
 export function isObjectStorageConfigured(): boolean {
