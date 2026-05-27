@@ -272,13 +272,6 @@ export function jsonLdProductReviews() {
       availability: "https://schema.org/InStock",
       url: `${SITE.url}/tarifs`,
     },
-    aggregateRating: {
-      "@type": "AggregateRating",
-      ratingValue: "4.9",
-      reviewCount: "3",
-      bestRating: "5",
-      worstRating: "4",
-    },
     review: [
       {
         "@type": "Review",

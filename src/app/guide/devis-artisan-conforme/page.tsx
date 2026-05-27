@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { GuideRelatedLinks } from "@/components/seo/GuideRelatedLinks";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ROUTES } from "@/lib/routes";
 import { jsonLdBreadcrumbList, jsonLdHowToCreateDevis, pageMetadata } from "@/lib/seo";
@@ -126,6 +127,8 @@ export default function GuideDevisConformePage() {
             Conformité TVA 2018
           </Link>
         </div>
+
+        <GuideRelatedLinks current={ROUTES.guideDevisConforme} />
       </article>
     </>
   );

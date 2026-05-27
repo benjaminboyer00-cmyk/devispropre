@@ -1,16 +1,50 @@
 import Link from "next/link";
+import { ROUTES } from "@/lib/routes";
 import { SITE } from "@/lib/seo";
 
 export function Footer() {
   return (
     <footer className="site-footer mt-auto border-t">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-        <div className="grid gap-10 md:grid-cols-4">
+        <div className="grid gap-10 md:grid-cols-5">
           <div>
-            <p className="text-brand text-lg font-bold">DevisPropre</p>
+            <p className="text-lg font-bold">
+              <span className="text-brand">Devis</span>
+              <span className="text-[var(--accent)]">Propre</span>
+            </p>
             <p className="text-body mt-3 text-sm leading-relaxed">
               Devis et factures pour artisans. Simple, rapide, conforme.
             </p>
+          </div>
+          <div>
+            <p className="heading text-sm font-semibold">Guides</p>
+            <ul className="text-body mt-3 space-y-2 text-sm">
+              <li>
+                <Link href={ROUTES.guideDevisConforme} className="link-underline">
+                  Devis artisan conforme
+                </Link>
+              </li>
+              <li>
+                <Link href={ROUTES.guideFacturationAe} className="link-underline">
+                  Facturation auto-entrepreneur
+                </Link>
+              </li>
+              <li>
+                <Link href={ROUTES.guideTvaArtisan} className="link-underline">
+                  TVA artisan travaux
+                </Link>
+              </li>
+              <li>
+                <Link href={ROUTES.guideMentionsDevis} className="link-underline">
+                  Mentions obligatoires devis
+                </Link>
+              </li>
+              <li>
+                <Link href={ROUTES.guideDevisWhatsapp} className="link-underline">
+                  Devis par WhatsApp
+                </Link>
+              </li>
+            </ul>
           </div>
           <div>
             <p className="heading text-sm font-semibold">Produit</p>

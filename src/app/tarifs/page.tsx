@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TrackLink } from "@/components/analytics/TrackLink";
 import { IconCheck } from "@/components/icons/Icons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { COMPARISON_ROWS, PLAN_CATALOG, TARIFS_FAQ } from "@/lib/plan-catalog";
@@ -118,9 +119,14 @@ export default function TarifsPage() {
         </section>
 
         <div className="mt-14 text-center">
-          <Link href="/inscription" className="ui-btn-primary ui-btn-lg">
+          <TrackLink
+            href="/inscription"
+            className="ui-btn-primary ui-btn-lg"
+            event="CTA Inscription"
+            eventProps={{ location: "tarifs" }}
+          >
             Essai gratuit 15 jours — carte requise
-          </Link>
+          </TrackLink>
           <p className="text-subtle mt-4 text-sm">
             Déjà inscrit ?{" "}
             <Link href="/connexion" className="link-underline">

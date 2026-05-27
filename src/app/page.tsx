@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { TrackLink } from "@/components/analytics/TrackLink";
 import { IconDocument, IconEdit, IconShare, IconShield } from "@/components/icons/Icons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { pageMetadata, jsonLdFaq, jsonLdHowToCreateDevis, jsonLdProductReviews, jsonLdSoftwareApplication, SITE } from "@/lib/seo";
@@ -62,12 +63,17 @@ export default function HomePage() {
           </h1>
           <p className="text-lead mx-auto mt-8 max-w-2xl font-light">
             Devis en 2 minutes · WhatsApp & factures dès 19€/mois · Conforme loi anti-fraude TVA 2018.
-            Essai gratuit 15 jours · Carte requise · Puis 19€/mois
+            Essai gratuit 15 jours · Puis 19€/mois
           </p>
           <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row sm:justify-center">
-            <Link href="/inscription" className="ui-btn-primary ui-btn-lg">
+            <TrackLink
+              href="/inscription"
+              className="ui-btn-primary ui-btn-lg"
+              event="CTA Inscription"
+              eventProps={{ location: "hero" }}
+            >
               Je veux gagner du temps et paraître plus pro
-            </Link>
+            </TrackLink>
             <p className="text-subtle text-sm font-normal">
               Ou appelez Benjamin Boyer au{" "}
               <a href={`tel:+${SITE.phoneRaw}`} className="link-underline font-medium">
@@ -150,7 +156,7 @@ export default function HomePage() {
             « Vous signez votre premier devis accepté, DevisPropre est rentabilisé pour l&apos;année. »
           </p>
           <Link href="/inscription" className="ui-btn-inverse ui-btn-lg mt-10">
-            Essai gratuit — 15 jours · Carte requise
+            Essai gratuit — 15 jours
           </Link>
         </div>
       </section>

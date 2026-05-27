@@ -17,7 +17,7 @@ export function renderLocalOgImage(title: string, subtitle: string) {
           background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 55%, #f0fdf4 100%)",
         }}
       >
-        <div style={{ fontSize: 26, color: "#2563eb", fontWeight: 600 }}>DevisPropre</div>
+        <div style={{ fontSize: 26, color: "#1a3a5c", fontWeight: 600 }}>DevisPropre</div>
         <div
           style={{
             fontSize: 56,
@@ -31,7 +31,7 @@ export function renderLocalOgImage(title: string, subtitle: string) {
           {title}
         </div>
         <div style={{ fontSize: 28, color: "#475569", marginTop: 28, maxWidth: 900 }}>{subtitle}</div>
-        <div style={{ fontSize: 22, color: "#16a34a", marginTop: 40, fontWeight: 600 }}>
+        <div style={{ fontSize: 22, color: "#d97706", marginTop: 40, fontWeight: 600 }}>
           devispropre.fr · Conforme TVA 2018
         </div>
       </div>

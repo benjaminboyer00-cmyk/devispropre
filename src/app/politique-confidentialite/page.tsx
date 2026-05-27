@@ -30,6 +30,14 @@ export default function PolitiqueConfidentialitePage() {
       <p>
         Contact : {LEGAL.editor.email} — droit d&apos;accès, rectification, opposition (RGPD).
       </p>
+      <h2>Mesure d&apos;audience</h2>
+      <p>
+        Le site marketing utilise Plausible Analytics (statistiques anonymisées, sans cookies
+        publicitaires), PostHog (analyse UX et replays de session — champs masqués) et Vercel
+        Speed Insights (performance Core Web Vitals). Ces outils ne sont actifs qu&apos;en
+        production lorsque configurés. Vous pouvez vous opposer via les paramètres de votre
+        navigateur ou nous contacter.
+      </p>
     </article>
   );
 }

@@ -15,4 +15,11 @@ describe("buildContentSecurityPolicy", () => {
     expect(csp).toContain("https://js.stripe.com");
     expect(csp).toContain("https://api.stripe.com");
   });
+
+  it("autorise les outils analytics", () => {
+    const csp = buildContentSecurityPolicy("n");
+    expect(csp).toContain("https://plausible.io");
+    expect(csp).toContain("https://eu.i.posthog.com");
+    expect(csp).toContain("https://vitals.vercel-insights.com");
+  });
 });

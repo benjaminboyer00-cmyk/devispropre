@@ -1,4 +1,4 @@
-const CACHE = "devispropre-shell-v4";
+const CACHE = "devispropre-shell-v5";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();

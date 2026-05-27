@@ -1,7 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Geist } from "next/font/google";
+import { PlausibleScript } from "@/components/analytics/PlausibleScript";
+import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import { NonceScript } from "@/components/NonceScript";
-import { WebVitals } from "@/components/analytics/WebVitals";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
@@ -26,8 +27,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#2563eb" },
-    { media: "(prefers-color-scheme: dark)", color: "#0b1120" },
+    { media: "(prefers-color-scheme: light)", color: "#1a3a5c" },
+    { media: "(prefers-color-scheme: dark)", color: "#0f0e0d" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -39,6 +40,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" className={`${geist.variable} h-full`} suppressHydrationWarning>
       <head>
+        <link rel="preconnect" href="https://js.stripe.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://m.stripe.network" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://js.stripe.com" />
+        <link rel="dns-prefetch" href="https://plausible.io" />
+        <link rel="dns-prefetch" href="https://eu.i.posthog.com" />
+        <PlausibleScript />
         <NonceScript dangerouslySetInnerHTML={{ __html: themeScript }} />
         <NonceScript
           type="application/ld+json"
@@ -48,11 +55,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="min-h-full flex flex-col bg-background font-sans antialiased text-foreground">
-        <WebVitals />
-        <RegisterServiceWorker />
-        <Header />
-        <main className="flex-1">{children}</main>
-        <Footer />
+        <SiteAnalytics>
+          <RegisterServiceWorker />
+          <Header />
+          <main className="flex-1">{children}</main>
+          <Footer />
+        </SiteAnalytics>
       </body>
     </html>
   );

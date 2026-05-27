@@ -7,9 +7,10 @@ export function Header() {
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <Link
           href="/"
-          className="text-brand text-xl font-bold transition-colors duration-200"
+          className="text-xl font-bold transition-colors duration-200"
         >
-          DevisPropre
+          <span className="text-brand">Devis</span>
+          <span className="text-[var(--accent)]">Propre</span>
         </Link>
         <nav className="flex items-center gap-3 sm:gap-4">
           <Link href="/tarifs" className="nav-link hidden sm:inline">

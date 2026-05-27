@@ -9,6 +9,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/tarifs": 0.9,
     "/conformite": 0.85,
     "/guide/devis-artisan-conforme": 0.8,
+    "/guide/facturation-auto-entrepreneur": 0.75,
+    "/guide/tva-artisan-travaux": 0.75,
+    "/guide/mentions-obligatoires-devis": 0.75,
+    "/guide/partager-devis-whatsapp": 0.75,
     "/inscription": 0.8,
   };
 

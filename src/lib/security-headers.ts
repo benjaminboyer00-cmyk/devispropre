@@ -12,17 +12,17 @@ const STATIC_HEADERS: Record<string, string> = {
 export function buildContentSecurityPolicy(nonce: string): string {
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com`,
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com https://plausible.io https://eu-assets.i.posthog.com https://va.vercel-scripts.com`,
     // style-src-elem : feuilles <link> + balises <style> (Next.js)
     `style-src-elem 'self' 'unsafe-inline' 'nonce-${nonce}'`,
     // style-src-attr : style="" sur les éléments (legacy)
     "style-src-attr 'unsafe-inline'",
     `style-src 'self' 'unsafe-inline' 'nonce-${nonce}'`,
-    "img-src 'self' data: blob:",
+    "img-src 'self' data: blob: https://eu.i.posthog.com",
     "font-src 'self'",
-    "connect-src 'self' https://api.stripe.com https://m.stripe.network",
+    "connect-src 'self' https://api.stripe.com https://m.stripe.network https://plausible.io https://eu.i.posthog.com https://eu.posthog.com https://vitals.vercel-insights.com",
     "frame-src https://js.stripe.com https://hooks.stripe.com",
-    "worker-src 'self'",
+    "worker-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",
     "form-action 'self'",

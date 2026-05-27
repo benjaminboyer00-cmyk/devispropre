@@ -82,6 +82,14 @@ export const LOCAL_SEO_LAST_MODIFIED = new Date("2026-05-28T00:00:00.000Z");
 export const MARKETING_SITEMAP_LAST_MODIFIED = new Date("2026-05-28T00:00:00.000Z");
 
 export function sitemapLastModifiedForPath(path: string): Date {
+  const buildDate =
+    process.env.CONTENT_LAST_MODIFIED ??
+    process.env.VERCEL_GIT_COMMIT_AUTHOR_DATE ??
+    process.env.VERCEL_GIT_COMMIT_DATE;
+  if (buildDate) {
+    const parsed = new Date(buildDate);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+  }
   if (path.startsWith("/devis-artisan/")) {
     return LOCAL_SEO_LAST_MODIFIED;
   }
@@ -239,16 +247,27 @@ export function getLocalBreadcrumbs(trade: TradeMeta, city?: CityMeta) {
 
 export function localPageTitle(trade: TradeMeta, city?: CityMeta): string {
   if (city) {
-    return `Devis ${trade.label} ${city.label}`;
+    return `Devis ${trade.label} ${city.label} — PDF conforme en 2 min`;
   }
-  return `Devis ${trade.label} — logiciel BTP`;
+  return `Logiciel devis ${trade.plural} — Conforme TVA 2018`;
+}
+
+function trimMetaDescription(text: string, max = 155): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 80 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
 }
 
 export function localPageDescription(trade: TradeMeta, city?: CityMeta): string {
   if (city) {
-    return `${trade.plural} à ${city.label} (${city.region}) : créez un devis conforme en 2 minutes, partage WhatsApp, facturation Starter+. ${trade.description}`;
+    return trimMetaDescription(
+      `${trade.label} à ${city.label} : devis PDF en 2 min, WhatsApp, facturation TVA 2018. Essai 15 jours gratuit.`
+    );
   }
-  return `${trade.description} DevisPropre — simple comme un SMS, conforme loi anti-fraude TVA 2018.`;
+  return trimMetaDescription(
+    `${trade.description} Essai 15 jours, puis 19€/mois. Conforme loi anti-fraude TVA 2018.`
+  );
 }
 
 export function localKeywords(trade: TradeMeta, city?: CityMeta): string[] {
