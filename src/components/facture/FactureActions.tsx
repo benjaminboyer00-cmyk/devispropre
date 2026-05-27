@@ -99,68 +99,67 @@ export function FactureActions({ facture, plan }: FactureDetailProps) {
         onCancel={() => setConfirmCancel(false)}
       />
 
-      <div className="flex flex-wrap gap-2">
+      <div className="space-y-3">
         {facture.status === "BROUILLON" && (
-          <>
-            <button
-              onClick={issue}
-              disabled={!!loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white"
-            >
-              Émettre & verrouiller (conformité TVA)
-            </button>
-            <button
-              onClick={() => setConfirmCancel(true)}
-              disabled={!!loading}
-              className="rounded-lg border border-red-600 px-4 py-2 text-sm text-red-700"
-            >
-              Annuler le brouillon
-            </button>
-          </>
+          <button
+            onClick={issue}
+            disabled={!!loading}
+            className="ui-btn-primary w-full py-4 text-base font-semibold"
+          >
+            Émettre la facture →
+          </button>
         )}
-        {facture.status === "EMISE" && (
-          <>
-            <button onClick={pay} disabled={!!loading} className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white">
-              Marquer payée
-            </button>
-            {whatsAppHref && (
-              <a
-                href={whatsAppHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-              >
-                Partager sur WhatsApp
-              </a>
-            )}
-            {!whatsAppHref && starterPlus && (
-              <p className="text-body w-full text-sm">
-                Ajoutez le téléphone du client pour partager par WhatsApp.
-              </p>
-            )}
-          </>
-        )}
-        {facture.status === "PAYEE" && whatsAppHref && (
+        {facture.status === "EMISE" && whatsAppHref && (
           <a
             href={whatsAppHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+            className="block w-full rounded-lg bg-green-600 py-4 text-center text-base font-semibold text-white hover:bg-green-700"
           >
-            Partager sur WhatsApp
+            Envoyer sur WhatsApp
           </a>
         )}
+        {facture.status === "EMISE" && !whatsAppHref && starterPlus && (
+          <p className="text-body text-sm">Ajoutez le téléphone du client dans le devis pour WhatsApp.</p>
+        )}
+        {facture.status === "EMISE" && (
+          <button onClick={pay} disabled={!!loading} className="w-full rounded-lg bg-green-600 py-3 text-base font-medium text-white">
+            Marquer payée
+          </button>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
+        {facture.status === "BROUILLON" && (
+          <button
+            onClick={() => setConfirmCancel(true)}
+            disabled={!!loading}
+            className="ui-btn-outline text-sm text-red-700"
+          >
+            Annuler
+          </button>
+        )}
         {(facture.status === "EMISE" || facture.status === "PAYEE") && !starterPlus && (
-          <Link href="/tarifs" className="rounded-lg border px-4 py-2 text-sm">
-            WhatsApp — plan Starter
+          <Link href="/tarifs" className="ui-btn-outline text-sm">
+            WhatsApp — Starter
           </Link>
         )}
-        <a href={`/api/factures/${facture.id}/pdf`} target="_blank" className="rounded-lg border px-4 py-2 text-sm">
-          Voir le PDF
+        {(facture.status === "PAYEE" || facture.status === "EMISE") && whatsAppHref && facture.status === "PAYEE" && (
+          <a
+            href={whatsAppHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white"
+          >
+            Renvoyer WhatsApp
+          </a>
+        )}
+        <a href={`/api/factures/${facture.id}/pdf`} target="_blank" className="ui-btn-outline text-sm">
+          PDF
         </a>
         {facture.contentHash && (
-          <button onClick={verify} className="rounded-lg border px-4 py-2 text-sm">
-            Vérifier l&apos;intégrité
+          <button onClick={verify} className="ui-btn-outline text-sm">
+            Vérifier
           </button>
         )}
       </div>

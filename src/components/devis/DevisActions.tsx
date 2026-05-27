@@ -113,22 +113,14 @@ export function DevisActions({ devis, plan }: DevisDetailProps) {
         )}
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <a
-          href={`/api/devis/${devis.id}/pdf`}
-          target="_blank"
-          className="ui-btn-outline text-sm"
-        >
-          {devis.status === "BROUILLON" ? "Prévisualiser le PDF" : "Voir le PDF"}
-        </a>
-
+      <div className="space-y-3">
         {devis.status === "BROUILLON" && (
           <button
             onClick={() => setConfirmSend(true)}
             disabled={!!loading}
-            className="ui-btn-primary text-sm"
+            className="ui-btn-primary w-full py-4 text-base font-semibold"
           >
-            Envoyer & verrouiller
+            Envoyer au client →
           </button>
         )}
 
@@ -137,44 +129,60 @@ export function DevisActions({ devis, plan }: DevisDetailProps) {
             href={whatsAppHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+            className="block w-full rounded-lg bg-green-600 py-4 text-center text-base font-semibold text-white hover:bg-green-700"
           >
-            Partager sur WhatsApp
+            Envoyer sur WhatsApp
           </a>
         )}
 
+        {devis.status === "ENVOYE" && !whatsAppHref && starterPlus && (
+          <p className="text-body text-sm">
+            Ajoutez le téléphone du client pour envoyer par WhatsApp.
+          </p>
+        )}
+
         {devis.status === "ENVOYE" && !starterPlus && (
-          <Link href="/tarifs" className="ui-btn-outline text-sm">
-            WhatsApp — plan Starter
+          <Link href="/tarifs" className="ui-btn-primary block w-full py-4 text-center text-base">
+            Activer WhatsApp (Starter)
           </Link>
         )}
 
-        {devis.status === "ENVOYE" && (
-          <>
-            <button onClick={() => setStatus("ACCEPTE")} disabled={!!loading} className="rounded-lg border border-green-600 px-4 py-2 text-sm text-green-700">
-              Marquer accepté
-            </button>
-            <button onClick={() => setStatus("REFUSE")} disabled={!!loading} className="rounded-lg border border-red-600 px-4 py-2 text-sm text-red-700">
-              Marquer refusé
-            </button>
-          </>
-        )}
-
         {devis.status === "ACCEPTE" && starterPlus && (
-          <button onClick={toFacture} disabled={!!loading} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white">
-            Créer la facture
+          <button
+            onClick={toFacture}
+            disabled={!!loading}
+            className="w-full rounded-lg bg-amber-600 py-4 text-base font-semibold text-white hover:bg-amber-500"
+          >
+            Créer la facture →
           </button>
         )}
 
         {devis.status === "ACCEPTE" && !starterPlus && (
-          <Link href="/tarifs" className="ui-btn-outline text-sm">
-            Facturation — plan Starter
+          <Link href="/tarifs" className="ui-btn-primary block w-full py-4 text-center text-base">
+            Facturer (plan Starter)
           </Link>
+        )}
+      </div>
+
+      <div className="flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
+        <a href={`/api/devis/${devis.id}/pdf`} target="_blank" className="ui-btn-outline text-sm">
+          {devis.status === "BROUILLON" ? "Voir le PDF" : "PDF"}
+        </a>
+
+        {devis.status === "ENVOYE" && (
+          <>
+            <button onClick={() => setStatus("ACCEPTE")} disabled={!!loading} className="ui-btn-outline text-sm text-green-700">
+              Accepté
+            </button>
+            <button onClick={() => setStatus("REFUSE")} disabled={!!loading} className="ui-btn-outline text-sm text-red-700">
+              Refusé
+            </button>
+          </>
         )}
 
         {devis.contentHash && (
-          <button onClick={verify} className="rounded-lg border border-slate-300 px-4 py-2 text-sm">
-            Vérifier l&apos;intégrité
+          <button onClick={verify} className="ui-btn-outline text-sm">
+            Vérifier
           </button>
         )}
       </div>

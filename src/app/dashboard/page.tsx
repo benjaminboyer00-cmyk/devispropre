@@ -52,45 +52,50 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:py-12">
+      {devis.length === 0 && (
+        <div className="ui-card-padded mb-8 text-center">
+          <p className="heading text-xl">Votre premier devis en 2 minutes</p>
+          <p className="text-body mt-2 text-sm">Client → prestation → prix. C&apos;est tout.</p>
+          <Link href="/dashboard/devis/nouveau" className="ui-btn-primary mt-6 inline-flex px-8 py-4 text-base">
+            Commencer maintenant
+          </Link>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="heading-section text-2xl sm:text-3xl">Bonjour, {user.name}</h1>
           <p className="text-body mt-2 font-light">
-            Plan {account.plan}
+            {account.plan === "FREE" ? `${devisThisMonth}/3 devis ce mois` : `Plan ${account.plan}`}
             {account.isTeamMember && " · Équipe Pro"}
-            {account.plan === "FREE" && ` · ${devisThisMonth}/3 devis ce mois`}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {isPro && (
-            <>
-              <Link href="/dashboard/stats" className="ui-btn-outline py-2.5">
-                Statistiques
-              </Link>
-              <Link href="/dashboard/audit" className="ui-btn-outline py-2.5">
-                Journal audit
-              </Link>
-              <Link href="/dashboard/support" className="ui-btn-outline py-2.5">
-                Support Pro
-              </Link>
-            </>
-          )}
-          <Link href="/dashboard/settings" className="ui-btn-outline py-2.5">
-            Paramètres
-          </Link>
-          <Link href="/dashboard/devis/nouveau" className="ui-btn-primary py-2.5">
-            + Nouveau devis
-          </Link>
-        </div>
+        <Link href="/dashboard/devis/nouveau" className="ui-btn-primary hidden py-3 px-6 text-base sm:inline-flex">
+          + Nouveau devis
+        </Link>
       </div>
 
-      {account.plan === "FREE" && (
+      {account.plan === "FREE" && devis.length > 0 && (
         <p className="ui-alert-error mt-6 text-sm">
-          Plan gratuit : WhatsApp, factures et relances J+3 nécessitent le plan Starter.{" "}
+          WhatsApp et factures : plan Starter.{" "}
           <Link href="/tarifs" className="link-underline font-medium">
             Voir les tarifs
           </Link>
         </p>
+      )}
+
+      {isPro && (
+        <div className="mt-6 flex flex-wrap gap-2">
+          <Link href="/dashboard/stats" className="ui-btn-outline py-2 text-sm">
+            Statistiques
+          </Link>
+          <Link href="/dashboard/audit" className="ui-btn-outline py-2 text-sm">
+            Journal audit
+          </Link>
+          <Link href="/dashboard/support" className="ui-btn-outline py-2 text-sm">
+            Support Pro
+          </Link>
+        </div>
       )}
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

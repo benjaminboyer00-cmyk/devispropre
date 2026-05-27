@@ -17,10 +17,9 @@ describe("schemas partagés", () => {
     }
   });
 
-  it("valide une inscription complète", () => {
+  it("valide une inscription sans mot de passe", () => {
     const result = registerSchema.safeParse({
       email: "artisan@example.fr",
-      password: "12345678",
       name: "Jean Dupont",
       raisonSociale: "Dupont BTP",
       siret: "12345678901234",

@@ -9,17 +9,27 @@ export const magicLinkSchema = z.object({
   email: z.string().email("Adresse email invalide."),
 });
 
-export const registerSchema = z.object({
-  email: z.string().email("Adresse email invalide."),
-  password: z.string().min(8, "Mot de passe : 8 caractères minimum."),
-  name: z.string().min(2, "Nom : 2 caractères minimum."),
-  phone: z.string().optional(),
-  raisonSociale: z.string().min(2, "Raison sociale : 2 caractères minimum."),
-  siret: z.string().min(9, "SIRET invalide."),
-  adresse: z.string().min(2, "Adresse : 2 caractères minimum."),
-  codePostal: z.string().min(4, "Code postal invalide."),
-  ville: z.string().min(2, "Ville : 2 caractères minimum."),
-});
+export const registerSchema = z
+  .object({
+    email: z.string().email("Adresse email invalide."),
+    password: z.string().optional(),
+    name: z.string().min(2, "Nom : 2 caractères minimum."),
+    phone: z.string().optional(),
+    raisonSociale: z.string().min(2, "Raison sociale : 2 caractères minimum."),
+    siret: z.string().min(9, "SIRET invalide."),
+    adresse: z.string().min(2, "Adresse : 2 caractères minimum."),
+    codePostal: z.string().min(4, "Code postal invalide."),
+    ville: z.string().min(2, "Ville : 2 caractères minimum."),
+  })
+  .superRefine((data, ctx) => {
+    if (data.password && data.password.length > 0 && data.password.length < 8) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Mot de passe : 8 caractères minimum.",
+        path: ["password"],
+      });
+    }
+  });
 
 export const devisLigneSchema = z.object({
   description: z.string().min(1, "Description requise."),

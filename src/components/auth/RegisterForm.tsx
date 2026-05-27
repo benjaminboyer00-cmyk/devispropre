@@ -23,6 +23,7 @@ export function RegisterForm() {
     codePostal: "",
     ville: "",
   });
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -37,6 +38,7 @@ export function RegisterForm() {
     const parsed = registerSchema.safeParse({
       ...form,
       phone: form.phone.trim() || undefined,
+      password: form.password.trim() || undefined,
     });
     if (!parsed.success) {
       setError(formatZodError(parsed.error));
@@ -70,53 +72,52 @@ export function RegisterForm() {
       return;
     }
 
-    router.push("/dashboard");
+    router.push("/dashboard/devis/nouveau");
     router.refresh();
   }
 
-  const inputClass = "ui-input mt-1";
+  const inputClass = "ui-input mt-1 text-base";
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} className="space-y-5">
       {error && <p className="ui-alert-error">{error}</p>}
+
+      <p className="text-body rounded-lg bg-[var(--surface-muted)] px-4 py-3 text-sm">
+        Pas de mot de passe à retenir — après inscription, connectez-vous par <strong>lien email</strong>.
+      </p>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="ui-label">Votre nom</label>
-          <input required minLength={2} value={form.name} onChange={(e) => update("name", e.target.value)} className={inputClass} />
+          <label className="ui-label">Votre prénom et nom</label>
+          <input required minLength={2} value={form.name} onChange={(e) => update("name", e.target.value)} className={inputClass} placeholder="Jean Dupont" />
         </div>
         <div>
-          <label className="ui-label">Téléphone</label>
-          <input value={form.phone} onChange={(e) => update("phone", e.target.value)} className={inputClass} placeholder="06 XX XX XX XX" />
+          <label className="ui-label">Téléphone (WhatsApp)</label>
+          <input value={form.phone} onChange={(e) => update("phone", e.target.value)} className={inputClass} placeholder="06 12 34 56 78" inputMode="tel" />
         </div>
       </div>
 
       <div>
         <label className="ui-label">Email</label>
-        <input type="email" required value={form.email} onChange={(e) => update("email", e.target.value)} className={inputClass} />
-      </div>
-
-      <div>
-        <label className="ui-label">Mot de passe (8 car. min.)</label>
-        <input type="password" required minLength={8} value={form.password} onChange={(e) => update("password", e.target.value)} className={inputClass} />
+        <input type="email" required value={form.email} onChange={(e) => update("email", e.target.value)} className={inputClass} placeholder="vous@exemple.fr" inputMode="email" />
       </div>
 
       <hr className="border-[var(--border)]" />
-      <p className="ui-label">Votre entreprise (mentions légales PDF)</p>
+      <p className="ui-label">Votre entreprise (pour les PDF)</p>
 
       <div>
         <label className="ui-label">Raison sociale</label>
-        <input required minLength={2} value={form.raisonSociale} onChange={(e) => update("raisonSociale", e.target.value)} className={inputClass} />
+        <input required minLength={2} value={form.raisonSociale} onChange={(e) => update("raisonSociale", e.target.value)} className={inputClass} placeholder="Dupont Plomberie" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="ui-label">SIRET</label>
-          <input required value={form.siret} onChange={(e) => update("siret", e.target.value)} className={inputClass} />
+          <input required value={form.siret} onChange={(e) => update("siret", e.target.value)} className={inputClass} placeholder="14 chiffres" inputMode="numeric" />
         </div>
         <div>
           <label className="ui-label">Code postal</label>
-          <input required value={form.codePostal} onChange={(e) => update("codePostal", e.target.value)} className={inputClass} />
+          <input required value={form.codePostal} onChange={(e) => update("codePostal", e.target.value)} className={inputClass} placeholder="75001" inputMode="numeric" />
         </div>
       </div>
 
@@ -130,12 +131,23 @@ export function RegisterForm() {
         <input required minLength={2} value={form.ville} onChange={(e) => update("ville", e.target.value)} className={inputClass} />
       </div>
 
-      <button type="submit" disabled={loading} className="ui-btn-primary w-full py-3">
-        {loading ? "Création…" : "Créer mon compte — 30 secondes"}
+      {showPassword ? (
+        <div>
+          <label className="ui-label">Mot de passe (optionnel)</label>
+          <input type="password" minLength={8} value={form.password} onChange={(e) => update("password", e.target.value)} className={inputClass} />
+        </div>
+      ) : (
+        <button type="button" onClick={() => setShowPassword(true)} className="text-body text-sm underline-offset-2 hover:underline">
+          Ajouter un mot de passe (facultatif)
+        </button>
+      )}
+
+      <button type="submit" disabled={loading} className="ui-btn-primary w-full py-4 text-base">
+        {loading ? "Création…" : "Créer mon compte → premier devis"}
       </button>
 
       <p className="text-subtle text-center text-xs">
-        Gratuit 30 jours · Sans carte ·{" "}
+        Gratuit · Sans carte ·{" "}
         <Link href="/connexion" className="link-underline font-medium">Déjà inscrit ?</Link>
       </p>
     </form>

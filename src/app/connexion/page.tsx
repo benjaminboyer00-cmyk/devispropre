@@ -11,7 +11,7 @@ export default function ConnexionPage() {
   return (
     <div className="mx-auto max-w-md px-4 py-20 sm:py-24">
       <h1 className="heading-section text-3xl">Connexion</h1>
-      <p className="text-lead mt-3 font-light">Accédez à vos devis et factures.</p>
+      <p className="text-lead mt-3 font-light">Votre email → un lien → c&apos;est connecté.</p>
       <div className="ui-card-padded mt-10">
         <Suspense fallback={<p className="text-body text-center">Chargement…</p>}>
           <LoginForm />

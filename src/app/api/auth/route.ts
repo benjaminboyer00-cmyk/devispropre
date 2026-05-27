@@ -15,6 +15,7 @@ import {
 } from "@/lib/auth";
 import { acceptTeamInvites } from "@/lib/account-context";
 import { logAudit } from "@/lib/audit";
+import { generateShareToken } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
 import {
   formatZodError,
@@ -39,7 +40,9 @@ export async function POST(request: NextRequest) {
       const existing = await prisma.user.findUnique({ where: { email: data.email } });
       if (existing) return apiError("Cet email est déjà utilisé", 409);
 
-      const passwordHash = await hashPassword(data.password);
+      const passwordHash = await hashPassword(
+        data.password?.trim() || generateShareToken()
+      );
       const user = await prisma.user.create({
         data: {
           email: data.email,

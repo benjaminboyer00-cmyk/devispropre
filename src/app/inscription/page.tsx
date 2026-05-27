@@ -11,9 +11,9 @@ export const metadata = pageMetadata({
 export default function InscriptionPage() {
   return (
     <div className="mx-auto max-w-lg px-4 py-20 sm:py-24">
-      <h1 className="heading-section">Inscription en 30 secondes</h1>
+      <h1 className="heading-section">Créer mon compte</h1>
       <p className="text-lead mt-3 font-light">
-        Gratuit 30 jours · Sans carte bleue · Premier devis en 2 minutes
+        30 secondes · Sans mot de passe · Premier devis juste après
       </p>
       <div className="ui-card-padded mt-10">
         <RegisterForm />

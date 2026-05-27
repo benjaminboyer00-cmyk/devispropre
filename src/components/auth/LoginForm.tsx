@@ -10,7 +10,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
 
-  const [mode, setMode] = useState<"password" | "magic">("magic");
+  const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -19,9 +19,9 @@ export function LoginForm() {
 
   const linkError =
     urlError === "lien_expire"
-      ? "Ce lien de connexion a expiré ou a déjà été utilisé."
+      ? "Ce lien a expiré. Demandez-en un nouveau ci-dessous."
       : urlError === "lien_invalide"
-        ? "Lien de connexion invalide."
+        ? "Lien invalide. Entrez votre email pour en recevoir un nouveau."
         : "";
 
   async function handlePasswordLogin(e: React.FormEvent) {
@@ -78,32 +78,44 @@ export function LoginForm() {
       return;
     }
 
-    setInfo(data.message ?? "Email envoyé si le compte existe.");
+    setInfo("✉️ Lien envoyé — ouvrez votre email et cliquez pour vous connecter.");
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {(linkError || error) && <p className="ui-alert-error">{linkError || error}</p>}
       {info && <p className="ui-alert-success">{info}</p>}
 
-      <div className="flex rounded-lg border border-[var(--border)] p-1">
-        <button
-          type="button"
-          onClick={() => setMode("password")}
-          className={`flex-1 rounded-md px-3 py-2 text-sm ${mode === "password" ? "bg-blue-600 text-white" : "text-body"}`}
-        >
-          Mot de passe
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("magic")}
-          className={`flex-1 rounded-md px-3 py-2 text-sm ${mode === "magic" ? "bg-blue-600 text-white" : "text-body"}`}
-        >
-          Lien par email
-        </button>
-      </div>
-
-      {mode === "password" ? (
+      {!showPassword ? (
+        <form onSubmit={handleMagicLink} className="space-y-4">
+          <p className="text-body text-center text-sm">
+            Entrez votre email. Vous recevez un lien — <strong>comme un SMS</strong>, sans mot de passe.
+          </p>
+          <div>
+            <label className="ui-label">Votre email</label>
+            <input
+              type="email"
+              required
+              autoComplete="email"
+              inputMode="email"
+              placeholder="vous@exemple.fr"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="ui-input mt-1 text-base"
+            />
+          </div>
+          <button type="submit" disabled={loading} className="ui-btn-primary w-full py-4 text-base">
+            {loading ? "Envoi…" : "Recevoir mon lien de connexion"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setShowPassword(true)}
+            className="text-body w-full text-center text-sm underline-offset-2 hover:underline"
+          >
+            J&apos;utilise un mot de passe
+          </button>
+        </form>
+      ) : (
         <form onSubmit={handlePasswordLogin} className="space-y-4">
           <div>
             <label className="ui-label">Email</label>
@@ -128,32 +140,20 @@ export function LoginForm() {
           <button type="submit" disabled={loading} className="ui-btn-primary w-full py-3">
             {loading ? "Connexion…" : "Se connecter"}
           </button>
-        </form>
-      ) : (
-        <form onSubmit={handleMagicLink} className="space-y-4">
-          <p className="text-body text-sm">
-            Recevez un lien sécurisé par email — simple comme un SMS, sans mot de passe.
-          </p>
-          <div>
-            <label className="ui-label">Email</label>
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="ui-input mt-1"
-            />
-          </div>
-          <button type="submit" disabled={loading} className="ui-btn-primary w-full py-3">
-            {loading ? "Envoi…" : "Recevoir mon lien de connexion"}
+          <button
+            type="button"
+            onClick={() => setShowPassword(false)}
+            className="text-body w-full text-center text-sm underline-offset-2 hover:underline"
+          >
+            ← Connexion par email (plus simple)
           </button>
         </form>
       )}
 
-      <p className="text-body text-center text-sm">
-        Pas encore de compte ?{" "}
-        <Link href="/inscription" className="link-underline font-medium">
-          Inscription gratuite
+      <p className="text-body border-t border-[var(--border)] pt-4 text-center text-sm">
+        Nouveau ?{" "}
+        <Link href="/inscription" className="link-underline font-semibold">
+          Créer un compte gratuit
         </Link>
       </p>
     </div>
