@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Conditions générales de vente",
-};
+  description: "CGV DevisPropre — conditions de vente des abonnements Starter et Pro.",
+  path: "/cgv",
+});
 
 export default function CgvPage() {
   return (

@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiError, requireAuth } from "@/lib/api-helpers";
+import { apiError, assertMutationSecurity, getRequestMeta, requireAuth } from "@/lib/api-helpers";
+import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 
 const schema = z.object({
@@ -23,6 +24,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  assertMutationSecurity(request);
+
   const { user, error } = await requireAuth();
   if (error) return error;
 
@@ -37,6 +40,12 @@ export async function POST(request: NextRequest) {
         adresse: data.adresse,
       },
     });
+
+    await logAudit(
+      { userId: user.id, ...getRequestMeta(request) },
+      { action: "CREATE", entityType: "client", entityId: client.id, metadata: { nom: client.nom } }
+    );
+
     return Response.json(client, { status: 201 });
   } catch (e) {
     if (e instanceof z.ZodError) return apiError(e.message);

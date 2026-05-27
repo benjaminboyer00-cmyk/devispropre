@@ -14,22 +14,31 @@ function optionalEnv(name: string, fallback: string): string {
 
 const isProd = process.env.NODE_ENV === "production";
 
-/** Valide les variables critiques — crash au démarrage en prod si manquantes. */
 export function validateEnv(): void {
-  if (isProd) {
-    requireEnv("JWT_SECRET");
-    requireEnv("DATABASE_URL");
-    if (process.env.JWT_SECRET === DEV_JWT_SECRET) {
-      throw new Error("JWT_SECRET ne doit pas utiliser la valeur de développement en production.");
-    }
+  if (!isProd) return;
+
+  const jwt = requireEnv("JWT_SECRET");
+  if (jwt === DEV_JWT_SECRET || jwt.length < 32) {
+    throw new Error("JWT_SECRET invalide en production (min 32 caractères, unique).");
+  }
+
+  requireEnv("DATABASE_URL");
+  requireEnv("NEXT_PUBLIC_APP_URL");
+  requireEnv("ALLOWED_ORIGINS");
+
+  if (!process.env.DATABASE_URL?.startsWith("postgresql://")) {
+    throw new Error("Production : DATABASE_URL doit être PostgreSQL.");
   }
 }
 
 export const env = {
   isProd,
   jwtSecret: optionalEnv("JWT_SECRET", DEV_JWT_SECRET),
-  databaseUrl: optionalEnv("DATABASE_URL", "file:./dev.db"),
-  appUrl: optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000"),
+  databaseUrl: optionalEnv(
+    "DATABASE_URL",
+    "postgresql://devispropre:devispropre@localhost:5433/devispropre?schema=public"
+  ),
+  appUrl: optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000").replace(/\/$/, ""),
   cronSecret: process.env.CRON_SECRET?.trim() ?? "",
   stripeSecretKey: process.env.STRIPE_SECRET_KEY?.trim() ?? "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET?.trim() ?? "",
@@ -38,11 +47,11 @@ export const env = {
   allowedOrigins: (
     process.env.ALLOWED_ORIGINS?.trim() ||
     optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")
-  ).split(",").map((o) => o.trim()),
+  )
+    .split(",")
+    .map((o) => o.trim().replace(/\/$/, "")),
 };
 
-/** Appelé au démarrage serveur via instrumentation.ts */
 export function validateEnvAtRuntime(): void {
-  if (!isProd) return;
   validateEnv();
 }

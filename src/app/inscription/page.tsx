@@ -1,11 +1,12 @@
-import type { Metadata } from "next";
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Inscription gratuite — 30 secondes",
   description:
     "Créez votre compte DevisPropre gratuitement. Devis et factures pour artisans, conformes loi anti-fraude TVA 2018.",
-};
+  path: "/inscription",
+});
 
 export default function InscriptionPage() {
   return (

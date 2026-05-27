@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiError, getRequestMeta } from "@/lib/api-helpers";
+import { apiError, assertMutationSecurity, getRequestMeta } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { verifyDocumentIntegrity, buildDevisPayload } from "@/lib/document-hash";
@@ -47,6 +47,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  assertMutationSecurity(request);
+
   const { token } = await params;
 
   const devis = await prisma.devis.findFirst({

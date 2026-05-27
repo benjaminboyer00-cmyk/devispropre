@@ -13,10 +13,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/cgv",
   ];
 
+  const priorities: Record<string, number> = {
+    "": 1,
+    "/tarifs": 0.9,
+    "/conformite": 0.85,
+    "/inscription": 0.8,
+  };
+
   return pages.map((path) => ({
     url: `${SITE.url}${path}`,
     lastModified: new Date(),
-    changeFrequency: path === "" ? "weekly" : "monthly",
-    priority: path === "" ? 1 : 0.8,
+    changeFrequency: path === "" ? ("weekly" as const) : ("monthly" as const),
+    priority: priorities[path] ?? 0.5,
   }));
 }

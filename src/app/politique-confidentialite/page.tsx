@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
 import { LEGAL } from "@/lib/legal";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Politique de confidentialité",
-};
+  description: "Politique de confidentialité DevisPropre — traitement des données personnelles (RGPD).",
+  path: "/politique-confidentialite",
+});
 
 export default function PolitiqueConfidentialitePage() {
   return (

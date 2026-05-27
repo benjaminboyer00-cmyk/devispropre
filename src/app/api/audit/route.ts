@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
-import { requireAuth } from "@/lib/api-helpers";
+import { handleServiceError, requireAuth } from "@/lib/api-helpers";
 import { getEntityAuditTrail } from "@/lib/audit";
+import { assertEntityOwnedByUser } from "@/lib/entity-access";
 
 export async function GET(request: NextRequest) {
   const { user, error } = await requireAuth();
@@ -14,6 +15,11 @@ export async function GET(request: NextRequest) {
     return Response.json({ error: "entityType et entityId requis" }, { status: 400 });
   }
 
-  const trail = await getEntityAuditTrail(user.id, entityType, entityId);
-  return Response.json(trail);
+  try {
+    await assertEntityOwnedByUser(user.id, entityType, entityId);
+    const trail = await getEntityAuditTrail(user.id, entityType, entityId);
+    return Response.json(trail);
+  } catch (e) {
+    return handleServiceError(e);
+  }
 }

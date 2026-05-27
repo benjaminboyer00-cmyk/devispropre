@@ -1,8 +1,10 @@
-import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Conditions générales d'utilisation",
-};
+  description: "CGU DevisPropre — conditions d'utilisation du service de devis et factures pour artisans.",
+  path: "/cgu",
+});
 
 export default function CguPage() {
   return (

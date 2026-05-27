@@ -1,19 +1,19 @@
-import type { Metadata } from "next";
 import Link from "next/link";
-import { SITE } from "@/lib/seo";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Conformité loi anti-fraude TVA 2018 — Inaltérabilité garantie",
   description:
     "DevisPropre garantit l'inaltérabilité, la sécurisation, la conservation et l'archivage de vos factures conformément à la loi anti-fraude TVA 2018.",
-  alternates: { canonical: `${SITE.url}/conformite` },
+  path: "/conformite",
   keywords: [
     "loi anti-fraude TVA 2018",
     "facturation inaltérable",
     "logiciel facturation artisan conforme",
     "attestation individuelle TVA",
+    ...["devis artisan", "facture artisan"],
   ],
-};
+});
 
 export default function ConformitePage() {
   return (

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
-import { defaultMetadata, jsonLdOrganization, jsonLdSoftwareApplication } from "@/lib/seo";
+import { defaultMetadata, jsonLdOrganization, jsonLdWebSite } from "@/lib/seo";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
@@ -19,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(jsonLdSoftwareApplication()),
+            __html: JSON.stringify(jsonLdWebSite()),
           }}
         />
         <script

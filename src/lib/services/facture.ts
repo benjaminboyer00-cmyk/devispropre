@@ -8,6 +8,7 @@ import {
   verifyDocumentIntegrity,
 } from "../document-hash";
 import { prisma } from "../db";
+import { ForbiddenError } from "../errors";
 import { assertFactureEditable, ImmutabilityError, isFactureLocked } from "../immutability";
 import {
   computeLineTotalHT,
@@ -21,7 +22,15 @@ export async function createFactureFromDevis(ctx: AuditContext, devisId: string)
     include: { lignes: true, client: true, facture: true },
   });
 
-  if (!devis) throw new Error("Devis introuvable");
+  if (!devis) throw new ForbiddenError("Devis introuvable ou non autorisé.");
+
+  // Double vérification IDOR : le client du devis doit appartenir au même artisan
+  const client = await prisma.client.findFirst({
+    where: { id: devis.clientId, userId: ctx.userId, deletedAt: null },
+  });
+  if (!client) {
+    throw new ForbiddenError("Client du devis non autorisé.");
+  }
   if (devis.status !== "ACCEPTE") {
     throw new Error("Seul un devis accepté peut être converti en facture.");
   }
@@ -98,24 +107,24 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
   const company = await prisma.company.findUnique({ where: { userId: ctx.userId } });
   const payload = buildFacturePayload(facture, company);
   const contentHash = computeContentHash(payload);
-
-  const lastIssued = await prisma.facture.findFirst({
-    where: {
-      userId: ctx.userId,
-      status: { in: ["EMISE", "PAYEE"] },
-      contentHash: { not: null },
-    },
-    orderBy: { issuedAt: "desc" },
-    select: { contentHash: true },
-  });
-
-  const previousHash = lastIssued?.contentHash ?? null;
-  const chainHash = computeChainHash(contentHash, previousHash);
   const now = new Date();
 
   const updated = await prisma.$transaction(async (tx) => {
-    const issued = await tx.facture.update({
-      where: { id: factureId },
+    const lastIssued = await tx.facture.findFirst({
+      where: {
+        userId: ctx.userId,
+        status: { in: ["EMISE", "PAYEE"] },
+        contentHash: { not: null },
+      },
+      orderBy: { issuedAt: "desc" },
+      select: { contentHash: true },
+    });
+
+    const previousHash = lastIssued?.contentHash ?? null;
+    const chainHash = computeChainHash(contentHash, previousHash);
+
+    const locked = await tx.facture.updateMany({
+      where: { id: factureId, userId: ctx.userId, status: "BROUILLON", deletedAt: null },
       data: {
         status: "EMISE",
         lockedAt: now,
@@ -124,8 +133,11 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
         chainHash,
         previousHash,
       },
-      include: { lignes: true, client: true },
     });
+
+    if (locked.count === 0) {
+      throw new ImmutabilityError("Émission impossible — facture déjà émise ou introuvable.");
+    }
 
     const attestationNumero = generateAttestationNumero(ctx.userId, facture.numero);
     await tx.attestation.create({
@@ -138,7 +150,10 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
       },
     });
 
-    return issued;
+    return tx.facture.findFirstOrThrow({
+      where: { id: factureId },
+      include: { lignes: true, client: true },
+    });
   });
 
   await logAudit(ctx, {
@@ -147,7 +162,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
     entityId: factureId,
     factureId,
     contentHash,
-    metadata: { chainHash, previousHash },
+    metadata: { chainHash: updated.chainHash, previousHash: updated.previousHash },
   });
 
   await logAudit(ctx, {
@@ -265,11 +280,10 @@ export async function cancelFacture(ctx: AuditContext, factureId: string) {
   });
 
   if (!facture) throw new Error("Facture introuvable");
-  if (facture.status === "PAYEE") {
-    throw new Error("Impossible d'annuler une facture déjà payée.");
-  }
-  if (facture.status === "ANNULEE") {
-    throw new Error("Cette facture est déjà annulée.");
+  if (facture.status !== "BROUILLON") {
+    throw new ImmutabilityError(
+      "Seule une facture brouillon peut être annulée. Une facture émise reste archivée."
+    );
   }
 
   const updated = await prisma.facture.update({

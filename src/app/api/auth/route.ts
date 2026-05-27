@@ -92,13 +92,19 @@ export async function POST(request: NextRequest) {
       const data = loginSchema.parse(body);
       const user = await prisma.user.findFirst({
         where: { email: data.email, deletedAt: null },
+        select: { id: true, email: true, name: true, plan: true, passwordHash: true },
       });
 
       if (!user || !(await verifyPassword(data.password, user.passwordHash))) {
         return apiError("Email ou mot de passe incorrect", 401);
       }
 
-      const token = await createSession(user);
+      const token = await createSession({
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        plan: user.plan,
+      });
       await setSessionCookie(token);
 
       return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name } });

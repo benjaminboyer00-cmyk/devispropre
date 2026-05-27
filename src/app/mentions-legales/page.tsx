@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
 import { LEGAL } from "@/lib/legal";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Mentions légales",
-};
+  description: "Mentions légales du site DevisPropre — éditeur, hébergeur, contact.",
+  path: "/mentions-legales",
+});
 
 export default function MentionsLegalesPage() {
   const e = LEGAL.editor;

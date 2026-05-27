@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiError, getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
+import { apiError, assertMutationSecurity, getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
 import { transitionDevisStatus } from "@/lib/services/devis";
 
 const schema = z.object({
@@ -10,6 +10,8 @@ const schema = z.object({
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  assertMutationSecurity(request);
+
   const { user, error } = await requireAuth();
   if (error) return error;
 

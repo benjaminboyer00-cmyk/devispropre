@@ -53,22 +53,17 @@ export function FactureActions({ facture }: FactureDetailProps) {
     <div className="space-y-4">
       <div className="flex flex-wrap gap-2">
         {facture.status === "BROUILLON" && (
-          <button
-            onClick={issue}
-            disabled={!!loading}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white"
-          >
-            Émettre & verrouiller (conformité TVA)
-          </button>
-        )}
-        {facture.status === "EMISE" && (
           <>
-            <button onClick={pay} disabled={!!loading} className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white">
-              Marquer payée
+            <button
+              onClick={issue}
+              disabled={!!loading}
+              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+            >
+              Émettre & verrouiller (conformité TVA)
             </button>
             <button
               onClick={async () => {
-                if (!confirm("Annuler cette facture ?")) return;
+                if (!confirm("Annuler ce brouillon de facture ?")) return;
                 setLoading("cancel");
                 await fetch(`/api/factures/${facture.id}`, {
                   method: "POST",
@@ -81,9 +76,14 @@ export function FactureActions({ facture }: FactureDetailProps) {
               disabled={!!loading}
               className="rounded-lg border border-red-600 px-4 py-2 text-sm text-red-700"
             >
-              Annuler
+              Annuler le brouillon
             </button>
           </>
+        )}
+        {facture.status === "EMISE" && (
+          <button onClick={pay} disabled={!!loading} className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white">
+            Marquer payée
+          </button>
         )}
         <a href={`/api/factures/${facture.id}/pdf`} target="_blank" className="rounded-lg border px-4 py-2 text-sm">
           Voir le PDF

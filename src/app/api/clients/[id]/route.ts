@@ -32,8 +32,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     });
     if (!existing) return apiError("Client introuvable", 404);
 
-    const client = await prisma.client.update({
-      where: { id },
+    const client = await prisma.client.updateMany({
+      where: { id, userId: user.id, deletedAt: null },
       data: {
         ...(data.nom !== undefined && { nom: data.nom }),
         ...(data.email !== undefined && { email: data.email || null }),
@@ -42,7 +42,10 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
       },
     });
 
-    return Response.json(client);
+    if (client.count === 0) return apiError("Client introuvable", 404);
+
+    const updated = await prisma.client.findFirst({ where: { id, userId: user.id } });
+    return Response.json(updated);
   } catch (e) {
     if (e instanceof z.ZodError) return apiError(e.message);
     return apiError("Erreur mise à jour client");
@@ -62,8 +65,8 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   });
   if (!existing) return apiError("Client introuvable", 404);
 
-  await prisma.client.update({
-    where: { id },
+  await prisma.client.updateMany({
+    where: { id, userId: user.id, deletedAt: null },
     data: { deletedAt: new Date() },
   });
 

@@ -1,17 +1,64 @@
 import type { Metadata } from "next";
 
+const APP_URL = (
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://devispropre.fr"
+);
+
 export const SITE = {
   name: "DevisPropre",
-  url: "https://devispropre.fr",
+  url: APP_URL,
   locale: "fr_FR",
   phone: "06 60 61 48 39",
   phoneRaw: "33660614839",
   owner: "Benjamin Boyer",
   email: "contact@devispropre.fr",
   description:
-    "Devis et factures pour artisans en 2 minutes. PDF pro, envoi WhatsApp, conformité loi anti-fraude TVA 2018. À partir de 19€/mois, sans engagement.",
+    "Logiciel de devis et factures pour artisans du BTP. PDF conforme, envoi WhatsApp, loi anti-fraude TVA 2018. Plombier, électricien, peintre — dès 19€/mois.",
   tagline: "L'anti-usine à gaz de l'artisanat",
 } as const;
+
+export const KEYWORDS = [
+  "devis artisan",
+  "facture artisan",
+  "logiciel devis BTP",
+  "devis WhatsApp",
+  "facturation artisan",
+  "loi anti-fraude TVA 2018",
+  "devis plombier",
+  "devis électricien",
+  "devis peintre",
+  "devis pro artisan",
+  "facture conforme TVA",
+] as const;
+
+/** Metadata réutilisable par page marketing. */
+export function pageMetadata(opts: {
+  title: string;
+  description: string;
+  path: string;
+  keywords?: string[];
+}): Metadata {
+  const url = `${SITE.url}${opts.path}`;
+  return {
+    title: opts.title,
+    description: opts.description,
+    keywords: opts.keywords ?? [...KEYWORDS],
+    alternates: { canonical: url },
+    openGraph: {
+      type: "website",
+      locale: SITE.locale,
+      url,
+      siteName: SITE.name,
+      title: `${opts.title} | ${SITE.name}`,
+      description: opts.description,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${opts.title} | ${SITE.name}`,
+      description: opts.description,
+    },
+  };
+}
 
 export const defaultMetadata: Metadata = {
   metadataBase: new URL(SITE.url),
@@ -20,19 +67,11 @@ export const defaultMetadata: Metadata = {
     template: "%s | DevisPropre",
   },
   description: SITE.description,
-  keywords: [
-    "devis artisan",
-    "facture artisan",
-    "logiciel devis BTP",
-    "devis WhatsApp",
-    "facturation artisan",
-    "loi anti-fraude TVA 2018",
-    "devis plombier",
-    "devis électricien",
-    "devis peintre",
-  ],
+  keywords: [...KEYWORDS],
   authors: [{ name: SITE.owner, url: SITE.url }],
   creator: SITE.name,
+  publisher: SITE.name,
+  category: "Business",
   openGraph: {
     type: "website",
     locale: SITE.locale,
@@ -46,15 +85,20 @@ export const defaultMetadata: Metadata = {
     title: "DevisPropre — Devis & factures pour artisans",
     description: SITE.description,
   },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true },
-  },
-  alternates: {
-    canonical: SITE.url,
-  },
+  robots: { index: true, follow: true },
 };
+
+export function jsonLdWebSite() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: SITE.name,
+    url: SITE.url,
+    description: SITE.description,
+    inLanguage: "fr-FR",
+    publisher: { "@type": "Organization", name: SITE.name, url: SITE.url },
+  };
+}
 
 export function jsonLdSoftwareApplication() {
   return {
@@ -64,30 +108,13 @@ export function jsonLdSoftwareApplication() {
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
     offers: [
-      {
-        "@type": "Offer",
-        name: "Gratuit",
-        price: "0",
-        priceCurrency: "EUR",
-        description: "3 devis par mois",
-      },
-      {
-        "@type": "Offer",
-        name: "Starter",
-        price: "19",
-        priceCurrency: "EUR",
-        description: "Devis illimités, WhatsApp, relances auto J+3",
-      },
-      {
-        "@type": "Offer",
-        name: "Pro",
-        price: "39",
-        priceCurrency: "EUR",
-        description: "5 utilisateurs, statistiques avancées",
-      },
+      { "@type": "Offer", name: "Gratuit", price: "0", priceCurrency: "EUR", url: `${SITE.url}/tarifs` },
+      { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "EUR", url: `${SITE.url}/tarifs` },
+      { "@type": "Offer", name: "Pro", price: "39", priceCurrency: "EUR", url: `${SITE.url}/tarifs` },
     ],
     description: SITE.description,
     url: SITE.url,
+    author: { "@type": "Person", name: SITE.owner },
   };
 }
 
@@ -98,11 +125,54 @@ export function jsonLdOrganization() {
     name: SITE.name,
     url: SITE.url,
     description: SITE.description,
+    email: SITE.email,
+    founder: { "@type": "Person", name: SITE.owner },
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer service",
       telephone: `+${SITE.phoneRaw}`,
+      email: SITE.email,
       availableLanguage: "French",
     },
+  };
+}
+
+export function jsonLdFaq() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: [
+      {
+        "@type": "Question",
+        name: "DevisPropre est-il conforme à la loi anti-fraude TVA 2018 ?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Oui. Verrouillage des factures, empreinte SHA-256, chaînage et attestation individuelle.",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Combien de temps pour faire un devis ?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "Environ 2 minutes depuis votre téléphone, avec envoi WhatsApp au client.",
+        },
+      },
+    ],
+  };
+}
+
+export function jsonLdTarifs() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: "DevisPropre — Abonnement artisan",
+    description: "Devis et factures pour artisans",
+    brand: { "@type": "Brand", name: SITE.name },
+    offers: [
+      { "@type": "Offer", name: "Gratuit", price: "0", priceCurrency: "EUR" },
+      { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "EUR" },
+      { "@type": "Offer", name: "Pro", price: "39", priceCurrency: "EUR" },
+    ],
   };
 }

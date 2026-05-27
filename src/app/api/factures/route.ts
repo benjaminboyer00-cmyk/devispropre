@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
+import { assertMutationSecurity, getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
 import { createFactureFromDevis } from "@/lib/services/facture";
 import { prisma } from "@/lib/db";
 
@@ -17,6 +17,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  assertMutationSecurity(request);
+
   const { user, error } = await requireAuth();
   if (error) return error;
 

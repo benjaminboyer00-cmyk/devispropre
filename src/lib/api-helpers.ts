@@ -4,6 +4,7 @@ import { assertSameOrigin, CsrfError } from "./csrf";
 import { PlanLimitError } from "./plan-limits";
 import { RateLimitError } from "./rate-limit";
 import { ImmutabilityError } from "./immutability";
+import { ForbiddenError } from "./errors";
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
@@ -20,7 +21,7 @@ export function getRequestMeta(request: NextRequest) {
   };
 }
 
-export function assertMutationSecurity(request: NextRequest): void {
+export function assertMutationSecurity(request: Request): void {
   if (MUTATION_METHODS.has(request.method)) {
     assertSameOrigin(request);
   }
@@ -48,6 +49,7 @@ export function handleServiceError(error: unknown) {
   if (error instanceof CsrfError) return apiError(error.message, 403);
   if (error instanceof RateLimitError) return apiError(error.message, 429);
   if (error instanceof PlanLimitError) return apiError(error.message, 402);
+  if (error instanceof ForbiddenError) return apiError(error.message, 403);
   if (error instanceof ImmutabilityError) return apiError(error.message, 403);
   if (error instanceof Error) {
     if (error.name === "ImmutabilityError") {

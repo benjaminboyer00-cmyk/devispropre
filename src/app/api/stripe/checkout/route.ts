@@ -1,9 +1,11 @@
 import { NextRequest } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { requireAuth, apiError } from "@/lib/api-helpers";
+import { assertMutationSecurity, requireAuth, apiError } from "@/lib/api-helpers";
 import { env } from "@/lib/env";
 
 export async function POST(request: NextRequest) {
+  assertMutationSecurity(request);
+
   const { user, error } = await requireAuth();
   if (error) return error;
 

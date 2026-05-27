@@ -1,25 +1,32 @@
 import Link from "next/link";
-import type { Metadata } from "next";
-import { SITE } from "@/lib/seo";
+import { pageMetadata, jsonLdFaq, jsonLdSoftwareApplication, SITE } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata = pageMetadata({
   title: "Devis & factures pour artisans en 2 minutes",
   description: SITE.description,
-  alternates: { canonical: SITE.url },
-};
+  path: "/",
+});
 
 export default function HomePage() {
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftwareApplication()) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq()) }}
+      />
       <section className="bg-gradient-to-b from-blue-50 to-white px-4 py-20">
         <div className="mx-auto max-w-4xl text-center">
           <p className="text-sm font-medium uppercase tracking-wide text-blue-600">
             {SITE.tagline}
           </p>
           <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
-            Faites du travail propre.
+            Logiciel de devis et factures pour artisans
             <br />
-            <span className="text-blue-600">Commencez par le devis.</span>
+            <span className="text-blue-600">Pro en 2 minutes, conforme TVA 2018</span>
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
             Devis en 2 minutes · Envoi WhatsApp · Facture conforme loi anti-fraude TVA 2018.
@@ -32,10 +39,10 @@ export default function HomePage() {
             >
               Je veux gagner du temps et paraître plus pro
             </Link>
-          <p className="text-sm text-slate-500">
-            Ou appelez Benjamin Boyer au{" "}
-            <a href={`tel:+${SITE.phoneRaw}`} className="text-blue-600 hover:underline">{SITE.phone}</a>
-          </p>
+            <p className="text-sm text-slate-500">
+              Ou appelez Benjamin Boyer au{" "}
+              <a href={`tel:+${SITE.phoneRaw}`} className="text-blue-600 hover:underline">{SITE.phone}</a>
+            </p>
           </div>
         </div>
       </section>

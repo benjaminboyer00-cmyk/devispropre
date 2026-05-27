@@ -1,85 +1,48 @@
 # DevisPropre
 
-**L'anti-usine à gaz de l'artisanat** — Devis et factures simples, conformes loi anti-fraude TVA 2018.
+Devis et factures pour artisans — conforme loi anti-fraude TVA 2018.
 
-Contact : Benjamin Boyer — 06 60 61 48 39
-
-## Secure by Design
-
-- Verrouillage à l'envoi (devis) et à l'émission (facture)
-- Empreinte SHA-256 + chaînage cryptographique
-- Journal d'audit complet
-- Soft delete — conservation légale
-- Attestation individuelle à chaque émission
+Contact : **Benjamin Boyer** — 06 60 61 48 39
 
 ## Démarrage
 
 ```bash
 cp .env.example .env
 npm install
+npm run db:up          # PostgreSQL Docker (port 5433)
 npx prisma migrate dev
 npm run dev
 ```
 
-## Variables d'environnement
+## Base de données — PostgreSQL uniquement
 
-Voir `.env.example` (dev) et `.env.production.example` (Hetzner).
+- `schema.prisma` → `provider = "postgresql"`
+- Adapter `@prisma/adapter-pg` + pool `pg`
+- **Plus de SQLite** en dev ni prod
 
-**Obligatoires en production** (l'app refuse de démarrer sans) :
-- `JWT_SECRET` — min 32 caractères, unique
-- `DATABASE_URL` — PostgreSQL recommandé
-- `NEXT_PUBLIC_APP_URL` / `ALLOWED_ORIGINS`
+Port **5433** en local (5432 souvent déjà pris par un Postgres système).
 
-## Sécurité
+## PDF légaux (pdfkit)
 
-- JWT sans fallback en prod (`instrumentation.ts`)
-- Rate limiting sur `/api/auth` (10 req / 15 min)
-- CSRF : vérification Origin/Referer sur mutations
-- Cookie `__Secure-` + `SameSite=strict` en production
+- `src/lib/pdf-document.ts` — génération PDF binaire (`application/pdf`)
+- `src/lib/pdf.ts` (HTML) **supprimé**
+- Mention **« TVA non applicable, art. 293 B du CGI »** si `Company.tvaApplicable = false`
 
-## Plan gratuit
+## Sécurité IDOR
 
-3 devis/mois — vérifié dans `assertCanCreateDevis()`.
+- `createDevis` → `assertClientOwnership(userId, clientId)` → `ForbiddenError` 403
+- `createFactureFromDevis` → double vérif devis + client appartenant à l'artisan
 
-## Relances J+3
+## Production (Hetzner)
+
+Voir `.env.production.example`. Backup quotidien :
 
 ```bash
-curl -X POST https://devispropre.fr/api/cron/reminders \
-  -H "Authorization: Bearer $CRON_SECRET"
+pg_dump $DATABASE_URL > backup-$(date +%F).sql
 ```
-
-Configurer un cron systemd ou crontab quotidien.
-
-## Stripe
-
-Routes `/api/stripe/checkout` et `/api/stripe/webhook` — configurer les clés dans `.env`.
 
 ## Tests
 
 ```bash
 npm run test
 ```
-
-## Production (Hetzner VPS)
-
-```bash
-# 1. PostgreSQL
-DATABASE_URL="postgresql://..."
-
-# 2. Build
-npm run build
-
-# 3. PM2
-pm2 start npm --name devispropre -- start
-
-# 4. Nginx reverse proxy → port 3000, HTTPS obligatoire
-
-# 5. Backup PostgreSQL quotidien
-pg_dump devispropre > backup-$(date +%F).sql
-```
-
-Docker : `docker build -t devispropre .`
-
-## Licence
-
-Propriétaire — DevisPropre © 2026 — Benjamin Boyer

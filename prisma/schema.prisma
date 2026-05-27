@@ -4,7 +4,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 enum Plan {
@@ -141,7 +141,7 @@ model DevisLigne {
   description    String
   quantite       Float
   prixUnitaireHT Float
-  tva            Float  @default(20)
+  tva            Float
   totalHT        Float
   @@index([devisId])
 }
@@ -188,7 +188,7 @@ model FactureLigne {
   description    String
   quantite       Float
   prixUnitaireHT Float
-  tva            Float   @default(20)
+  tva            Float
   totalHT        Float
   @@index([factureId])
 }

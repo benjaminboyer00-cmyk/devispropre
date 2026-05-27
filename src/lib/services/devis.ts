@@ -9,6 +9,7 @@ import {
 } from "../document-hash";
 import { prisma } from "../db";
 import { assertDevisEditable, ImmutabilityError } from "../immutability";
+import { ForbiddenError } from "../errors";
 import { assertCanCreateDevis } from "../plan-limits";
 import { computeLineTotalHT, computeTotals, nextDevisNumero } from "../numbers";
 
@@ -24,7 +25,7 @@ async function assertClientOwnership(userId: string, clientId: string) {
     where: { id: clientId, userId, deletedAt: null },
   });
   if (!client) {
-    throw new Error("Client introuvable ou non autorisé.");
+    throw new ForbiddenError("Client introuvable ou non autorisé.");
   }
   return client;
 }
@@ -214,7 +215,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
     entityId: devisId,
     devisId,
     contentHash,
-    metadata: { shareToken },
+    metadata: { channel: "whatsapp" },
   });
 
   return updated;
