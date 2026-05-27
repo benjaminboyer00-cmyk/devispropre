@@ -8,6 +8,11 @@ const STATIC_SECURITY_HEADERS = [
   { key: "X-DNS-Prefetch-Control", value: "on" },
 ];
 
+const CACHE_IMMUTABLE = {
+  key: "Cache-Control",
+  value: "public, max-age=31536000, immutable",
+};
+
 const nextConfig: NextConfig = {
   output: "standalone",
   turbopack: {
@@ -15,14 +20,19 @@ const nextConfig: NextConfig = {
   },
   poweredByHeader: false,
   async headers() {
-    const headers = [...STATIC_SECURITY_HEADERS];
+    const security = [...STATIC_SECURITY_HEADERS];
     if (process.env.NODE_ENV === "production") {
-      headers.push({
+      security.push({
         key: "Strict-Transport-Security",
         value: "max-age=63072000; includeSubDomains; preload",
       });
     }
-    return [{ source: "/(.*)", headers }];
+
+    return [
+      { source: "/(.*)", headers: security },
+      { source: "/_next/static/:path*", headers: [CACHE_IMMUTABLE] },
+      { source: "/icons/:path*", headers: [CACHE_IMMUTABLE] },
+    ];
   },
 };
 

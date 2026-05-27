@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { validateEmail } from "@/lib/validation";
 
 export function LoginForm() {
   const router = useRouter();
@@ -13,8 +14,15 @@ export function LoginForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    const emailErr = validateEmail(email);
+    if (emailErr) {
+      setError(emailErr);
+      return;
+    }
+
+    setLoading(true);
 
     const res = await fetch("/api/auth", {
       method: "POST",

@@ -31,6 +31,18 @@ export const KEYWORDS = [
   "facture conforme TVA",
 ] as const;
 
+/** Image OG dynamique (app/opengraph-image.tsx) — WhatsApp, Facebook, Twitter. */
+export const OG_IMAGE = {
+  url: "/opengraph-image",
+  width: 1200,
+  height: 630,
+  alt: "DevisPropre — Devis et factures pour artisans du BTP",
+} as const;
+
+const sharedSocial = {
+  images: [OG_IMAGE],
+};
+
 /** Metadata réutilisable par page marketing. */
 export function pageMetadata(opts: {
   title: string;
@@ -39,6 +51,7 @@ export function pageMetadata(opts: {
   keywords?: string[];
 }): Metadata {
   const url = `${SITE.url}${opts.path}`;
+  const ogTitle = `${opts.title} | ${SITE.name}`;
   return {
     title: opts.title,
     description: opts.description,
@@ -49,13 +62,15 @@ export function pageMetadata(opts: {
       locale: SITE.locale,
       url,
       siteName: SITE.name,
-      title: `${opts.title} | ${SITE.name}`,
+      title: ogTitle,
       description: opts.description,
+      ...sharedSocial,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${opts.title} | ${SITE.name}`,
+      title: ogTitle,
       description: opts.description,
+      ...sharedSocial,
     },
   };
 }
@@ -63,7 +78,7 @@ export function pageMetadata(opts: {
 export const defaultMetadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: "DevisPropre — Devis & factures pour artisans | devispropre.fr",
+    default: "Devis et factures pour artisans en 2 minutes | DevisPropre",
     template: "%s | DevisPropre",
   },
   description: SITE.description,
@@ -77,13 +92,15 @@ export const defaultMetadata: Metadata = {
     locale: SITE.locale,
     url: SITE.url,
     siteName: SITE.name,
-    title: "DevisPropre — Devis pro en 2 minutes pour artisans",
+    title: "Devis et factures pour artisans en 2 minutes | DevisPropre",
     description: SITE.description,
+    ...sharedSocial,
   },
   twitter: {
     card: "summary_large_image",
-    title: "DevisPropre — Devis & factures pour artisans",
+    title: "Devis et factures pour artisans | DevisPropre",
     description: SITE.description,
+    ...sharedSocial,
   },
   robots: { index: true, follow: true },
 };

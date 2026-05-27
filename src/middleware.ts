@@ -4,6 +4,18 @@ import { jwtVerify } from "jose";
 import { COOKIE_NAME, getJwtSecretKey } from "@/lib/jwt";
 import { applySecurityHeaders, buildContentSecurityPolicy } from "@/lib/security-headers";
 
+/** Pages marketing statiques — cache CDN/navigateur. */
+const MARKETING_PATHS = new Set([
+  "/",
+  "/tarifs",
+  "/conformite",
+  "/inscription",
+  "/mentions-legales",
+  "/politique-confidentialite",
+  "/cgu",
+  "/cgv",
+]);
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
@@ -14,6 +26,23 @@ export async function middleware(request: NextRequest) {
 
   function withHeaders(response: NextResponse): NextResponse {
     applySecurityHeaders(response, csp);
+
+    if (MARKETING_PATHS.has(pathname)) {
+      response.headers.set(
+        "Cache-Control",
+        "public, s-maxage=3600, stale-while-revalidate=86400"
+      );
+    }
+
+    if (pathname === "/sw.js") {
+      response.headers.set("Cache-Control", "public, max-age=0, must-revalidate");
+      response.headers.set("Service-Worker-Allowed", "/");
+    }
+
+    if (pathname.startsWith("/icons/")) {
+      response.headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    }
+
     return response;
   }
 

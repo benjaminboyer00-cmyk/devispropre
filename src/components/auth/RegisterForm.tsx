@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  validateEmail,
+  validateFrenchPhone,
+  validateFrenchPostcode,
+  validatePassword,
+  validateSiret,
+} from "@/lib/validation";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -26,8 +33,22 @@ export function RegisterForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError("");
+
+    const checks = [
+      validateEmail(form.email),
+      validatePassword(form.password),
+      form.phone ? validateFrenchPhone(form.phone) : null,
+      validateSiret(form.siret),
+      validateFrenchPostcode(form.codePostal),
+    ].filter(Boolean);
+
+    if (checks.length > 0) {
+      setError(checks[0]!);
+      return;
+    }
+
+    setLoading(true);
 
     const res = await fetch("/api/auth", {
       method: "POST",
