@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { assertMutationSecurity, getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
 import { createFactureFromDevis } from "@/lib/services/facture";
 import { prisma } from "@/lib/db";
+import { checkRateLimit, factureCreateKey } from "@/lib/rate-limit";
 
 export async function GET() {
   const auth = await requireAuth();
@@ -26,6 +27,11 @@ export async function POST(request: NextRequest) {
   const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
 
   try {
+    await checkRateLimit(factureCreateKey(auth.workspaceUserId), {
+      maxAttempts: 20,
+      windowMs: 60 * 60 * 1000,
+    });
+
     if (!body.devisId) {
       return Response.json({ error: "devisId requis" }, { status: 400 });
     }

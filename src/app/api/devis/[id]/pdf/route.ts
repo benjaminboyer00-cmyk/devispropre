@@ -19,15 +19,19 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
   if (!devis) return Response.json({ error: "Devis introuvable" }, { status: 404 });
 
-  if (devis.pdfUrl?.startsWith("http")) {
-    return Response.redirect(devis.pdfUrl, 307);
-  }
-
   if (devis.pdfArchivedAt) {
     const archived = await readArchivedPdf(devisPdfKey(auth.workspaceUserId, devis.id));
     if (archived) {
       return pdfResponse(archived, `devis-${devis.numero}.pdf`);
     }
+    return Response.json(
+      { error: "Archive PDF introuvable — contactez le support." },
+      { status: 503 }
+    );
+  }
+
+  if (devis.status !== "BROUILLON") {
+    return Response.json({ error: "PDF non disponible pour ce devis." }, { status: 404 });
   }
 
   const company = await prisma.company.findUnique({ where: { userId: auth.workspaceUserId } });

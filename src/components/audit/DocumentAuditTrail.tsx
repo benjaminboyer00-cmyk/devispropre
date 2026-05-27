@@ -6,7 +6,7 @@ interface AuditEntry {
   id: string;
   action: string;
   createdAt: string;
-  metadata: string;
+  metadata: Record<string, unknown>;
   contentHash: string | null;
 }
 

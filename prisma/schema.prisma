@@ -317,6 +317,8 @@ model Attestation {
   numero      String   @unique
   contentHash String
   signedAt    DateTime @default(now())
+  pdfUrl        String?
+  pdfArchivedAt DateTime?
   createdAt   DateTime @default(now())
 
   @@index([userId])

@@ -220,8 +220,8 @@ export function FactureActions({ facture, plan }: FactureDetailProps) {
 export function FacturePageWrapper({ facture, plan }: FactureDetailProps) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
-        ← Retour
+      <Link href={ROUTES.dashboardFactures} className="link-blue text-sm">
+        ← Factures
       </Link>
       <h1 className="mt-4 text-2xl font-bold">Facture {facture.numero}</h1>
       <p className="text-slate-600">Client : {facture.client.nom}</p>

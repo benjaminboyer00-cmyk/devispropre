@@ -19,15 +19,19 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
   if (!facture) return Response.json({ error: "Facture introuvable" }, { status: 404 });
 
-  if (facture.pdfUrl?.startsWith("http")) {
-    return Response.redirect(facture.pdfUrl, 307);
-  }
-
   if (facture.pdfArchivedAt) {
     const archived = await readArchivedPdf(facturePdfKey(auth.workspaceUserId, facture.id));
     if (archived) {
       return pdfResponse(archived, `facture-${facture.numero}.pdf`);
     }
+    return Response.json(
+      { error: "Archive PDF introuvable — contactez le support." },
+      { status: 503 }
+    );
+  }
+
+  if (facture.status !== "BROUILLON") {
+    return Response.json({ error: "PDF non disponible pour cette facture." }, { status: 404 });
   }
 
   const company = await prisma.company.findUnique({ where: { userId: auth.workspaceUserId } });

@@ -21,10 +21,6 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     return Response.json({ error: "Archive PDF introuvable" }, { status: 404 });
   }
 
-  if (devis.pdfUrl?.startsWith("http")) {
-    return Response.redirect(devis.pdfUrl, 307);
-  }
-
   const archived = await readArchivedPdf(devisPdfKey(auth.workspaceUserId, devis.id));
   if (!archived) {
     return Response.json({ error: "Fichier PDF archivé introuvable" }, { status: 404 });

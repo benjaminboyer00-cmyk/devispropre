@@ -73,3 +73,19 @@ export function devisCreateKey(userId: string): string {
 export function devisSendKey(userId: string): string {
   return `devis:send:${userId}`;
 }
+
+export function factureCreateKey(userId: string): string {
+  return `facture:create:${userId}`;
+}
+
+export function factureIssueKey(userId: string): string {
+  return `facture:issue:${userId}`;
+}
+
+export function facturePayKey(userId: string): string {
+  return `facture:pay:${userId}`;
+}
+
+export function factureCancelKey(userId: string): string {
+  return `facture:cancel:${userId}`;
+}

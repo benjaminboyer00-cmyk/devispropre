@@ -31,7 +31,7 @@ export function buildDevisPayload(
   return {
     type: "devis" as const,
     numero: devis.numero,
-    status: devis.status,
+    // status exclu : le hash couvre le contenu figé, pas la transition workflow
     totalHT: devis.totalHT,
     totalTVA: devis.totalTVA,
     totalTTC: devis.totalTTC,
@@ -65,7 +65,7 @@ export function buildFacturePayload(
   return {
     type: "facture" as const,
     numero: facture.numero,
-    status: facture.status,
+    // status exclu : EMISE/PAYEE ne doivent pas invalider la vérification d'intégrité
     totalHT: facture.totalHT,
     totalTVA: facture.totalTVA,
     totalTTC: facture.totalTTC,

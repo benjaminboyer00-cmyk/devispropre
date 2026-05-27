@@ -64,7 +64,7 @@ export async function proxy(request: NextRequest) {
         return withHeaders(NextResponse.redirect(new URL(ROUTES.connexion, request.url)));
       }
 
-      if (!pathname.startsWith("/dashboard/activer")) {
+      if (!pathname.startsWith("/dashboard/activer") && !pathname.startsWith("/dashboard/settings")) {
         const { userNeedsSubscriptionSetup } = await import("@/lib/billing");
         if (await userNeedsSubscriptionSetup(sessionPayload.sub)) {
           return withHeaders(

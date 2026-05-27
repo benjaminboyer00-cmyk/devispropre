@@ -40,6 +40,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     company: company ? { raisonSociale: company.raisonSociale } : null,
     integrityOk,
     lockedAt: facture.lockedAt,
-    lignes: facture.lignes,
+    lignes: facture.lignes.map((l) => ({
+      description: l.description,
+      quantite: l.quantite,
+      prixUnitaireHT: l.prixUnitaireHT,
+      totalHT: l.totalHT,
+    })),
   });
 }

@@ -8,6 +8,7 @@ import { hasPro } from "@/lib/plan-features";
 import { getDevisCountThisMonth } from "@/lib/plan-limits";
 import { getDevisStatusEmoji, getDevisStatusLabel } from "@/lib/services/devis";
 import { getFactureStatusLabel } from "@/lib/services/facture";
+import { ROUTES } from "@/lib/routes";
 
 export default async function DashboardPage() {
   const user = await getSession();
@@ -118,7 +119,14 @@ export default async function DashboardPage() {
       </div>
 
       <section className="mt-12">
-        <h2 className="heading-card">Devis récents</h2>
+        <div className="flex items-center justify-between gap-4">
+          <h2 className="heading-card">Devis récents</h2>
+          {devis.length > 0 && (
+            <Link href={ROUTES.dashboardDevisList} className="link-underline text-sm">
+              Voir tout
+            </Link>
+          )}
+        </div>
         {devis.length === 0 ? (
           <p className="text-subtle mt-4">Aucun devis — créez-en un en 2 minutes.</p>
         ) : (
@@ -144,7 +152,12 @@ export default async function DashboardPage() {
       </section>
 
       <section className="mt-12">
-        <h2 className="heading-card">Factures</h2>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <h2 className="heading-card">Factures</h2>
+          <Link href={ROUTES.dashboardFactures} className="link-underline text-sm">
+            {factures.length > 0 ? "Voir tout" : "Espace factures"}
+          </Link>
+        </div>
         {factures.length === 0 ? (
           <p className="text-subtle mt-4">Les factures apparaissent après acceptation d&apos;un devis (plan Starter).</p>
         ) : (

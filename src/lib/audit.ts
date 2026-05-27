@@ -41,13 +41,49 @@ export async function logAudit(
   });
 }
 
+export function sanitizeAuditEntry(entry: {
+  id: string;
+  action: string;
+  entityType: string;
+  entityId: string;
+  createdAt: Date;
+  metadata: string | null;
+  contentHash: string | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+}) {
+  let metadata: Record<string, unknown> = {};
+  if (entry.metadata) {
+    try {
+      metadata = JSON.parse(entry.metadata) as Record<string, unknown>;
+      delete metadata.pdfUrl;
+    } catch {
+      metadata = {};
+    }
+  }
+
+  return {
+    id: entry.id,
+    action: entry.action,
+    entityType: entry.entityType,
+    entityId: entry.entityId,
+    createdAt: entry.createdAt.toISOString(),
+    metadata,
+    contentHash: entry.contentHash,
+    ipAddress: entry.ipAddress ? `${entry.ipAddress.split(".").slice(0, 2).join(".")}.x.x` : null,
+    userAgent: entry.userAgent ? entry.userAgent.slice(0, 80) : null,
+  };
+}
+
 export async function getEntityAuditTrail(
   userId: string,
   entityType: string,
   entityId: string
 ) {
-  return prisma.auditLog.findMany({
+  const logs = await prisma.auditLog.findMany({
     where: { userId, entityType, entityId },
     orderBy: { createdAt: "asc" },
   });
+
+  return logs.map(sanitizeAuditEntry);
 }

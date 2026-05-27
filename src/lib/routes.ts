@@ -7,7 +7,10 @@ export const ROUTES = {
   connexion: "/connexion",
   offline: "/offline",
   dashboard: "/dashboard",
+  dashboardDevisList: "/dashboard/devis",
+  dashboardFactures: "/dashboard/factures",
   dashboardSettings: "/dashboard/settings",
+  dashboardActiver: "/dashboard/activer",
   dashboardStats: "/dashboard/stats",
   dashboardAudit: "/dashboard/audit",
   dashboardSupport: "/dashboard/support",
@@ -24,6 +27,7 @@ export const ROUTES = {
   apiFacturePdf: (id: string) => `/api/factures/${id}/pdf`,
   apiArchiveDevis: (id: string) => `/api/archives/devis/${id}`,
   apiArchiveFacture: (id: string) => `/api/archives/factures/${id}`,
+  apiArchiveAttestation: (factureId: string) => `/api/archives/factures/${factureId}/attestation`,
 } as const;
 
 export const MARKETING_ROUTES = [

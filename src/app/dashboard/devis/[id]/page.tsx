@@ -4,6 +4,7 @@ import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { DevisActions } from "@/components/devis/DevisActions";
+import { ROUTES } from "@/lib/routes";
 
 type PageProps = { params: Promise<{ id: string }> };
 
@@ -25,8 +26,8 @@ export default async function DevisDetailPage({ params }: PageProps) {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link href="/dashboard" className="link-blue text-sm">
-        ← Retour
+      <Link href={ROUTES.dashboardDevisList} className="link-blue text-sm">
+        ← Devis
       </Link>
       <h1 className="heading mt-4 text-2xl">Devis {devis.numero}</h1>
       <p className="text-body">Client : {devis.client.nom}</p>

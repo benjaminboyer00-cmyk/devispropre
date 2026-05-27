@@ -47,7 +47,7 @@ export async function GET() {
   const auth = await requireAuth();
   if (auth.error) return auth.error;
 
-  const [profile, company] = await Promise.all([
+  const [profile, company, billingOwner] = await Promise.all([
     prisma.user.findUnique({
       where: { id: auth.user.id },
       select: { id: true, email: true, name: true, phone: true, plan: true },
@@ -72,6 +72,10 @@ export async function GET() {
         logoUrl: true,
       },
     }),
+    prisma.user.findUnique({
+      where: { id: auth.workspaceUserId },
+      select: { stripeCustomerId: true },
+    }),
   ]);
 
   return Response.json({
@@ -85,6 +89,7 @@ export async function GET() {
         }
       : null,
     isTeamMember: auth.isTeamMember,
+    hasStripeCustomer: !!billingOwner?.stripeCustomerId,
   });
 }
 
@@ -139,9 +144,25 @@ export async function PATCH(request: NextRequest) {
         }
       }
 
-      const company = await prisma.company.update({
+      const company = await prisma.company.upsert({
         where: { userId: auth.workspaceUserId },
-        data: {
+        create: {
+          userId: auth.workspaceUserId,
+          raisonSociale: data.raisonSociale ?? "À compléter",
+          siret: data.siret ?? "00000000000000",
+          adresse: data.adresse ?? "À compléter",
+          codePostal: data.codePostal ?? "00000",
+          ville: data.ville ?? "À compléter",
+          ...(data.tvaIntracom !== undefined && { tvaIntracom: data.tvaIntracom }),
+          ...(data.telephone !== undefined && { telephone: data.telephone }),
+          ...(data.email !== undefined && { email: data.email }),
+          ...(data.capitalSocial !== undefined && { capitalSocial: data.capitalSocial }),
+          ...(data.rcs !== undefined && { rcs: data.rcs }),
+          ...(data.assurances !== undefined && { assurances: data.assurances }),
+          ...(data.tvaApplicable !== undefined && { tvaApplicable: data.tvaApplicable }),
+          ...(logoPath !== undefined && { logoUrl: logoPath }),
+        },
+        update: {
           ...(data.raisonSociale !== undefined && { raisonSociale: data.raisonSociale }),
           ...(data.siret !== undefined && { siret: data.siret }),
           ...(data.adresse !== undefined && { adresse: data.adresse }),

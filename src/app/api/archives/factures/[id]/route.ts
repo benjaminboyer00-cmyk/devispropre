@@ -21,10 +21,6 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     return Response.json({ error: "Archive PDF introuvable" }, { status: 404 });
   }
 
-  if (facture.pdfUrl?.startsWith("http")) {
-    return Response.redirect(facture.pdfUrl, 307);
-  }
-
   const archived = await readArchivedPdf(facturePdfKey(auth.workspaceUserId, facture.id));
   if (!archived) {
     return Response.json({ error: "Fichier PDF archivé introuvable" }, { status: 404 });

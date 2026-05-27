@@ -45,6 +45,10 @@ export function facturePdfKey(userId: string, factureId: string): string {
   return `factures/${userId}/${factureId}.pdf`;
 }
 
+export function attestationPdfKey(userId: string, factureId: string): string {
+  return `attestations/${userId}/${factureId}.pdf`;
+}
+
 async function writeLocalPdf(key: string, buffer: Buffer): Promise<void> {
   const filePath = path.join(PDF_DIR, key);
   await fs.mkdir(path.dirname(filePath), { recursive: true });
@@ -89,7 +93,7 @@ async function uploadToR2(key: string, buffer: Buffer): Promise<void> {
   );
 }
 
-/** Persiste le PDF figé et retourne l'URL publique ou le chemin API interne. */
+/** Persiste le PDF figé et retourne le chemin API authentifié (jamais d'URL publique directe). */
 export async function archivePdf(
   key: string,
   buffer: Buffer,
@@ -101,11 +105,10 @@ export async function archivePdf(
 
   if (isR2Configured()) {
     await uploadToR2(key, buffer);
-    const publicBase = process.env.R2_PUBLIC_URL?.replace(/\/$/, "");
-    if (publicBase) return `${publicBase}/${key}`;
+  } else {
+    await writeLocalPdf(key, buffer);
   }
 
-  await writeLocalPdf(key, buffer);
   return apiPath;
 }
 

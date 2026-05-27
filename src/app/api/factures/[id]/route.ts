@@ -1,12 +1,18 @@
 import { NextRequest } from "next/server";
 import {
   assertMutationSecurity,
-  getRequestMeta,
+  buildServiceContext,
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
 import { cancelFacture, issueFacture, markFacturePaid } from "@/lib/services/facture";
 import { prisma } from "@/lib/db";
+import {
+  checkRateLimit,
+  factureCancelKey,
+  factureIssueKey,
+  facturePayKey,
+} from "@/lib/rate-limit";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -35,19 +41,31 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   if (auth.error) return auth.error;
 
   const { id } = await params;
-  const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
+  const ctx = buildServiceContext(auth.workspaceUserId, auth.user.id, request);
   const body = await request.json().catch(() => ({}));
 
   try {
     if (body.action === "pay") {
+      await checkRateLimit(facturePayKey(auth.workspaceUserId), {
+        maxAttempts: 30,
+        windowMs: 60 * 60 * 1000,
+      });
       const facture = await markFacturePaid(ctx, id);
       return Response.json(facture);
     }
     if (body.action === "cancel") {
+      await checkRateLimit(factureCancelKey(auth.workspaceUserId), {
+        maxAttempts: 10,
+        windowMs: 60 * 60 * 1000,
+      });
       const facture = await cancelFacture(ctx, id);
       return Response.json(facture);
     }
 
+    await checkRateLimit(factureIssueKey(auth.workspaceUserId), {
+      maxAttempts: 10,
+      windowMs: 60 * 60 * 1000,
+    });
     const facture = await issueFacture(ctx, id);
     return Response.json(facture);
   } catch (e) {

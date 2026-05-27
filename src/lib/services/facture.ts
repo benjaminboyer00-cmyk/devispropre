@@ -19,11 +19,12 @@ import {
 } from "../numbers";
 import {
   archivePdf,
+  attestationPdfKey,
   deleteArchivedPdf,
   facturePdfKey,
   ObjectStorageError,
 } from "../object-storage";
-import { generateFacturePdf } from "../pdf-document";
+import { generateAttestationPdf, generateFacturePdf } from "../pdf-document";
 import { ROUTES } from "../routes";
 
 async function assertFacturationAllowed(userId: string) {
@@ -154,14 +155,29 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
     previousHash,
   };
 
+  const attestationNumero = generateAttestationNumero(ctx.userId, facture.numero);
+  const attestationDraft = { numero: attestationNumero, contentHash, signedAt: now };
+  const attestationKey = attestationPdfKey(ctx.userId, factureId);
+
   let pdfUrl: string;
+  let attestationPdfUrl: string;
   const pdfKey = facturePdfKey(ctx.userId, factureId);
+
   try {
     const pdfBuffer = await generateFacturePdf(lockedForPdf, company);
     pdfUrl = await archivePdf(pdfKey, pdfBuffer, ROUTES.apiArchiveFacture(factureId));
+
+    const attestationBuffer = await generateAttestationPdf(attestationDraft, lockedForPdf, company);
+    attestationPdfUrl = await archivePdf(
+      attestationKey,
+      attestationBuffer,
+      ROUTES.apiArchiveAttestation(factureId)
+    );
   } catch (err) {
+    await deleteArchivedPdf(pdfKey);
+    await deleteArchivedPdf(attestationKey);
     if (err instanceof ObjectStorageError) throw err;
-    throw new ObjectStorageError("Impossible d'archiver le PDF de la facture.");
+    throw new ObjectStorageError("Impossible d'archiver les PDF de la facture.");
   }
 
   let updated;
@@ -186,7 +202,6 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
         throw new ImmutabilityError("Émission impossible — facture déjà émise ou introuvable.");
       }
 
-      const attestationNumero = generateAttestationNumero(ctx.userId, facture.numero);
       await tx.attestation.create({
         data: {
           userId: ctx.userId,
@@ -194,6 +209,8 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
           numero: attestationNumero,
           contentHash,
           signedAt: now,
+          pdfUrl: attestationPdfUrl,
+          pdfArchivedAt: now,
         },
       });
 
@@ -204,6 +221,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
     });
   } catch (err) {
     await deleteArchivedPdf(pdfKey);
+    await deleteArchivedPdf(attestationKey);
     logCriticalAlert("Orphelin R2 après échec issueFacture", {
       factureId,
       userId: ctx.userId,
@@ -219,7 +237,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
     entityId: factureId,
     factureId,
     contentHash,
-    metadata: { chainHash: updated.chainHash, previousHash: updated.previousHash, pdfUrl },
+    metadata: { chainHash: updated.chainHash, previousHash: updated.previousHash },
   });
 
   await logAudit(ctx, {
@@ -244,9 +262,17 @@ export async function markFacturePaid(ctx: AuditContext, factureId: string) {
     throw new Error("Seule une facture émise peut être marquée payée.");
   }
 
-  const updated = await prisma.facture.update({
-    where: { id: factureId },
+  const result = await prisma.facture.updateMany({
+    where: { id: factureId, userId: ctx.userId, status: "EMISE", deletedAt: null },
     data: { status: "PAYEE", paidAt: new Date() },
+  });
+
+  if (result.count === 0) {
+    throw new Error("Seule une facture émise peut être marquée payée.");
+  }
+
+  const updated = await prisma.facture.findFirstOrThrow({
+    where: { id: factureId },
     include: { lignes: true, client: true, attestation: true },
   });
 

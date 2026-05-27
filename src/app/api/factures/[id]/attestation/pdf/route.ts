@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
-import { generateAttestationPdf } from "@/lib/pdf-document";
 import { pdfResponse } from "@/lib/pdf-response";
 import { requireAuth, handleServiceError } from "@/lib/api-helpers";
 import { assertStarterFeature } from "@/lib/plan-features";
+import { getArchivedAttestationPdf } from "@/lib/services/attestation";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -31,8 +31,15 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     return Response.json({ error: "Attestation introuvable" }, { status: 404 });
   }
 
-  const company = await prisma.company.findUnique({ where: { userId: auth.workspaceUserId } });
-  const pdf = await generateAttestationPdf(facture.attestation, facture, company);
-
-  return pdfResponse(pdf, `attestation-${facture.attestation.numero}.pdf`);
+  try {
+    const company = await prisma.company.findUnique({ where: { userId: auth.workspaceUserId } });
+    const pdf = await getArchivedAttestationPdf(
+      auth.workspaceUserId,
+      { ...facture, attestation: facture.attestation },
+      company
+    );
+    return pdfResponse(pdf, `attestation-${facture.attestation.numero}.pdf`);
+  } catch (e) {
+    return handleServiceError(e);
+  }
 }
