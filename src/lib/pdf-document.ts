@@ -2,8 +2,7 @@ import PDFDocument from "pdfkit";
 import type { Company, Client, Devis, DevisLigne, Facture, FactureLigne } from "@/generated/prisma/client";
 import { formatDate, formatEuro } from "./format";
 import { resolveLogoBuffer } from "./logo-storage";
-
-const FRANCHISE_MENTION = "TVA non applicable, art. 293 B du CGI";
+import { FRANCHISE_MENTION } from "./tva";
 
 type DevisDoc = Devis & { lignes: DevisLigne[]; client: Client };
 type FactureDoc = Facture & { lignes: FactureLigne[]; client: Client };
@@ -30,7 +29,7 @@ function drawHeader(
   company: Company | null,
   logoBuffer: Buffer | null
 ) {
-  doc.fontSize(20).fillColor("#2563eb").text("DevisPropre", 50, 50);
+  doc.fontSize(20).fillColor("#1a3a5c").text("DevisPropre", 50, 50);
   doc.fontSize(16).fillColor("#000").text(title, 400, 50, { align: "right" });
   doc.fontSize(10).text(`N° ${numero}`, 400, 72, { align: "right" });
   doc.text(`Date : ${formatDate(date)}`, 400, 86, { align: "right" });

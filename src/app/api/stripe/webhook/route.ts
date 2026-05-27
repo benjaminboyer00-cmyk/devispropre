@@ -9,6 +9,7 @@ import {
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/db";
 import { Plan } from "@/generated/prisma/client";
+import { planFromStripePrice } from "@/lib/stripe-subscription";
 
 export async function POST(request: NextRequest) {
   const stripe = getStripe();
@@ -29,8 +30,16 @@ export async function POST(request: NextRequest) {
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const userId = session.metadata?.userId;
-    const plan = session.metadata?.plan as Plan | undefined;
+    const userId = session.client_reference_id ?? session.metadata?.userId ?? null;
+
+    if (
+      userId &&
+      session.client_reference_id &&
+      session.metadata?.userId &&
+      session.client_reference_id !== session.metadata.userId
+    ) {
+      return Response.json({ error: "Référence client incohérente" }, { status: 400 });
+    }
 
     if (userId && typeof session.customer === "string") {
       await prisma.user.update({
@@ -39,22 +48,17 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (userId && plan && (plan === Plan.STARTER || plan === Plan.PRO)) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          plan,
-          ...(typeof session.customer === "string" && { stripeCustomerId: session.customer }),
-        },
-      });
-      if (plan === Plan.PRO) {
-        await ensureProTeam(userId);
-      }
-    }
-
     if (session.subscription && typeof session.subscription === "string") {
       const subscription = await stripe.subscriptions.retrieve(session.subscription);
       await syncUserPlanFromSubscription(subscription);
+      const priceId = subscription.items.data[0]?.price?.id;
+      const customerId = typeof session.customer === "string" ? session.customer : null;
+      if (userId && priceId && customerId) {
+        const plan = planFromStripePrice(priceId);
+        if (plan === Plan.PRO) {
+          await ensureProTeam(userId);
+        }
+      }
     }
   }
 

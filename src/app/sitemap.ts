@@ -6,6 +6,7 @@ import { SITE } from "@/lib/seo";
 export default function sitemap(): MetadataRoute.Sitemap {
   const priorities: Record<string, number> = {
     "/": 1,
+    "/creer-devis": 0.92,
     "/tarifs": 0.9,
     "/conformite": 0.85,
     "/guide/devis-artisan-conforme": 0.8,

@@ -1,6 +1,6 @@
 "use client";
 
-export default function GlobalError({
+export default function ErrorPage({
   error,
   reset,
 }: {
@@ -8,19 +8,14 @@ export default function GlobalError({
   reset: () => void;
 }) {
   return (
-    <html lang="fr">
-      <body className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
-        <div className="max-w-md text-center">
-          <h1 className="text-xl font-bold">Une erreur est survenue</h1>
-          <p className="mt-2 text-sm text-slate-600">{error.message}</p>
-          <button
-            onClick={reset}
-            className="mt-6 rounded-lg bg-blue-600 px-4 py-2 text-white"
-          >
-            Réessayer
-          </button>
-        </div>
-      </body>
-    </html>
+    <div className="mx-auto flex min-h-[50vh] max-w-md flex-col items-center justify-center px-4 py-16 text-center">
+      <h1 className="heading-section text-xl">Une erreur est survenue</h1>
+      <p className="text-body mt-3 text-sm">
+        {process.env.NODE_ENV === "development" ? error.message : "Réessayez dans un instant."}
+      </p>
+      <button type="button" onClick={reset} className="ui-btn-primary mt-8 px-6 py-3">
+        Réessayer
+      </button>
+    </div>
   );
 }

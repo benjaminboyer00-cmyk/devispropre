@@ -30,9 +30,10 @@ import { ROUTES } from "../routes";
 async function assertFacturationAllowed(userId: string) {
   const owner = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
-    select: { plan: true },
+    select: { plan: true, stripeCustomerId: true },
   });
   if (!owner) throw new Error("Utilisateur introuvable");
+  if (owner.stripeCustomerId) return;
   assertStarterFeature(owner.plan, "Facturation conforme TVA 2018");
 }
 

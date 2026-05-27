@@ -64,9 +64,17 @@ export async function proxy(request: NextRequest) {
         return withHeaders(NextResponse.redirect(new URL(ROUTES.connexion, request.url)));
       }
 
+      const { getAccountContext } = await import("@/lib/account-context");
+      const { billingUserId, userNeedsSubscriptionSetup } = await import("@/lib/billing");
+      const account = await getAccountContext(sessionPayload.sub);
+
       if (!pathname.startsWith("/dashboard/activer") && !pathname.startsWith("/dashboard/settings")) {
-        const { userNeedsSubscriptionSetup } = await import("@/lib/billing");
-        if (await userNeedsSubscriptionSetup(sessionPayload.sub)) {
+        const billTo = billingUserId(sessionPayload.sub, account.workspaceUserId, account.isTeamMember);
+        const needsSub = await userNeedsSubscriptionSetup(billTo);
+        const devisDetail =
+          /^\/dashboard\/devis\/[^/]+$/.test(pathname) && pathname !== ROUTES.dashboardDevisNew;
+
+        if (needsSub && !devisDetail) {
           return withHeaders(
             NextResponse.redirect(new URL("/dashboard/activer", request.url))
           );

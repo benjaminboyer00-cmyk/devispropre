@@ -70,6 +70,10 @@ export function devisCreateKey(userId: string): string {
   return `devis:create:${userId}`;
 }
 
+export function devisClaimDraftKey(userId: string): string {
+  return `devis:claim-draft:${userId}`;
+}
+
 export function devisSendKey(userId: string): string {
   return `devis:send:${userId}`;
 }

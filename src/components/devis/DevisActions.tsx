@@ -3,9 +3,10 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatEuro, devisShareMessage } from "@/lib/format";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { DocumentAuditTrail } from "@/components/audit/DocumentAuditTrail";
+import { DevisSharePanel } from "@/components/devis/DevisSharePanel";
+import { formatEuro } from "@/lib/format";
 
 interface DevisDetailProps {
   devis: {
@@ -20,6 +21,7 @@ interface DevisDetailProps {
     lignes: { description: string; quantite: number; prixUnitaireHT: number; totalHT: number }[];
   };
   plan: string;
+  subscriptionActive?: boolean;
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -30,12 +32,13 @@ const STATUS_LABELS: Record<string, string> = {
   FACTURE: "💰 Facturé",
 };
 
-export function DevisActions({ devis, plan }: DevisDetailProps) {
+export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDetailProps) {
   const router = useRouter();
   const [loading, setLoading] = useState("");
   const [verifyResult, setVerifyResult] = useState<boolean | null>(null);
   const [origin, setOrigin] = useState("");
   const [confirmSend, setConfirmSend] = useState(false);
+  const [actionError, setActionError] = useState("");
 
   useEffect(() => {
     setOrigin(window.location.origin);
@@ -43,33 +46,63 @@ export function DevisActions({ devis, plan }: DevisDetailProps) {
 
   async function send() {
     setLoading("send");
-    await fetch(`/api/devis/${devis.id}/send`, { method: "POST" });
+    setActionError("");
+    const res = await fetch(`/api/devis/${devis.id}/send`, { method: "POST" });
     setLoading("");
     setConfirmSend(false);
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setActionError((data as { error?: string }).error ?? "Envoi impossible.");
+      return;
+    }
     router.refresh();
   }
 
   async function setStatus(status: "ACCEPTE" | "REFUSE") {
     setLoading(status);
-    await fetch(`/api/devis/${devis.id}/status`, {
+    setActionError("");
+    const res = await fetch(`/api/devis/${devis.id}/status`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status }),
     });
     setLoading("");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setActionError((data as { error?: string }).error ?? "Action impossible.");
+      return;
+    }
     router.refresh();
   }
 
-  async function toFacture() {
-    setLoading("facture");
+  async function toFacture(issueNow: boolean) {
+    setLoading(issueNow ? "facture-issue" : "facture");
+    setActionError("");
     const res = await fetch("/api/factures", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ devisId: devis.id }),
     });
     const facture = await res.json();
+    if (!res.ok) {
+      setLoading("");
+      setActionError(facture.error ?? "Impossible de créer la facture.");
+      return;
+    }
+
+    if (issueNow) {
+      const issueRes = await fetch(`/api/factures/${facture.id}`, { method: "POST" });
+      setLoading("");
+      if (!issueRes.ok) {
+        router.push(`/dashboard/factures/${facture.id}`);
+        return;
+      }
+      router.push(`/dashboard/factures/${facture.id}?issued=1`);
+      return;
+    }
+
     setLoading("");
-    if (res.ok) router.push(`/dashboard/factures/${facture.id}`);
+    router.push(`/dashboard/factures/${facture.id}`);
   }
 
   async function verify() {
@@ -78,20 +111,26 @@ export function DevisActions({ devis, plan }: DevisDetailProps) {
     setVerifyResult(data.valid);
   }
 
-  const starterPlus = plan === "STARTER" || plan === "PRO";
-
-  const whatsAppHref =
-    starterPlus && devis.shareToken && origin
-      ? (() => {
-          const url = `${origin}/devis/${devis.shareToken}`;
-          const msg = devisShareMessage(devis.numero, devis.client.nom, url);
-          const phone = devis.client.telephone?.replace(/\D/g, "") ?? "";
-          return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : null;
-        })()
-      : null;
+  const paidAccess = subscriptionActive;
+  const shareUrl =
+    paidAccess && devis.shareToken && origin ? `${origin}/devis/${devis.shareToken}` : null;
 
   return (
     <div className="space-y-4">
+      {actionError && <p className="ui-alert-error text-sm">{actionError}</p>}
+
+      {!subscriptionActive && (
+        <div className="ui-alert-success text-sm">
+          <p className="font-semibold">Votre devis {devis.numero} est enregistré.</p>
+          <p className="mt-1">
+            Activez l&apos;essai Starter pour obtenir le PDF, le lien client et le partage WhatsApp.
+          </p>
+          <Link href="/dashboard/activer" className="ui-btn-primary mt-4 inline-flex px-5 py-2 text-sm">
+            Choisir mon abonnement →
+          </Link>
+        </div>
+      )}
+
       <ConfirmDialog
         open={confirmSend}
         title="Envoyer et verrouiller ?"
@@ -113,61 +152,78 @@ export function DevisActions({ devis, plan }: DevisDetailProps) {
         )}
       </div>
 
+      {shareUrl && devis.status === "ENVOYE" && (
+        <DevisSharePanel
+          numero={devis.numero}
+          clientName={devis.client.nom}
+          shareUrl={shareUrl}
+          clientPhone={devis.client.telephone}
+        />
+      )}
+
       <div className="space-y-3">
-        {devis.status === "BROUILLON" && (
-          <button
-            onClick={() => setConfirmSend(true)}
-            disabled={!!loading}
-            className="ui-btn-primary w-full py-4 text-base font-semibold"
-          >
-            Envoyer au client →
-          </button>
+        {devis.status === "BROUILLON" && subscriptionActive && (
+          <>
+            <a
+              href={`/api/devis/${devis.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ui-btn-outline block w-full py-3 text-center text-base"
+            >
+              Aperçu PDF
+            </a>
+            <button
+              onClick={() => setConfirmSend(true)}
+              disabled={!!loading}
+              className="ui-btn-primary w-full py-4 text-base font-semibold"
+            >
+              Envoyer au client →
+            </button>
+          </>
         )}
 
-        {devis.status === "ENVOYE" && whatsAppHref && (
-          <a
-            href={whatsAppHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="block w-full rounded-lg bg-green-600 py-4 text-center text-base font-semibold text-white hover:bg-green-700"
-          >
-            Envoyer sur WhatsApp
-          </a>
+        {devis.status === "ENVOYE" && !shareUrl && paidAccess && (
+          <p className="text-body text-sm">Lien client indisponible — contactez le support.</p>
         )}
 
-        {devis.status === "ENVOYE" && !whatsAppHref && starterPlus && (
-          <p className="text-body text-sm">
-            Ajoutez le téléphone du client pour envoyer par WhatsApp.
-          </p>
-        )}
-
-        {devis.status === "ENVOYE" && !starterPlus && (
-          <Link href="/tarifs" className="ui-btn-primary block w-full py-4 text-center text-base">
-            Activer WhatsApp (Starter)
+        {devis.status === "ENVOYE" && !paidAccess && (
+          <Link href="/dashboard/activer" className="ui-btn-primary block w-full py-4 text-center text-base">
+            Activer l&apos;essai pour partager
           </Link>
         )}
 
-        {devis.status === "ACCEPTE" && starterPlus && (
-          <button
-            onClick={toFacture}
-            disabled={!!loading}
-            className="w-full rounded-lg bg-amber-600 py-4 text-base font-semibold text-white hover:bg-amber-500"
-          >
-            Créer la facture →
-          </button>
+        {devis.status === "ACCEPTE" && paidAccess && (
+          <>
+            <button
+              onClick={() => toFacture(true)}
+              disabled={!!loading}
+              className="w-full rounded-lg bg-amber-600 py-4 text-base font-semibold text-white hover:bg-amber-500"
+            >
+              {loading === "facture-issue" ? "Création…" : "Créer et émettre la facture →"}
+            </button>
+            <button
+              onClick={() => toFacture(false)}
+              disabled={!!loading}
+              className="ui-btn-outline w-full py-3 text-sm"
+            >
+              Créer un brouillon facture
+            </button>
+          </>
         )}
 
-        {devis.status === "ACCEPTE" && !starterPlus && (
-          <Link href="/tarifs" className="ui-btn-primary block w-full py-4 text-center text-base">
-            Facturer (plan Starter)
+        {devis.status === "ACCEPTE" && !paidAccess && (
+          <Link href="/dashboard/activer" className="ui-btn-primary block w-full py-4 text-center text-base">
+            Activer l&apos;essai pour facturer
           </Link>
         )}
       </div>
 
       <div className="flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
-        <a href={`/api/devis/${devis.id}/pdf`} target="_blank" className="ui-btn-outline text-sm">
-          {devis.status === "BROUILLON" ? "Voir le PDF" : "PDF"}
-        </a>
+        {subscriptionActive && devis.status !== "BROUILLON" && (
+          <a href={`/api/devis/${devis.id}/pdf`} target="_blank" rel="noopener noreferrer" className="ui-btn-outline text-sm">
+            PDF
+          </a>
+        )}
 
         {devis.status === "ENVOYE" && (
           <>
@@ -199,7 +255,7 @@ export function DevisActions({ devis, plan }: DevisDetailProps) {
         </p>
       )}
 
-      <DocumentAuditTrail entityType="devis" entityId={devis.id} enabled={starterPlus} />
+      <DocumentAuditTrail entityType="devis" entityId={devis.id} enabled={paidAccess} />
 
       <div className="ui-list overflow-hidden">
         <table className="w-full text-sm">

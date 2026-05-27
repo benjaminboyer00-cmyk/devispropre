@@ -3,7 +3,9 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { claimGuestDraftIfPresent } from "@/lib/claim-guest-draft-client";
 import { TRIAL_PERIOD_DAYS } from "@/lib/billing-constants";
+import { ROUTES } from "@/lib/routes";
 import { registerSchema, formatZodError } from "@/lib/schemas/forms";
 import {
   validateFrenchPhone,
@@ -73,6 +75,11 @@ export function RegisterForm() {
       return;
     }
 
+    const claim = await claimGuestDraftIfPresent();
+    if (claim.error) {
+      setError(claim.error);
+    }
+
     const checkoutRes = await fetch("/api/stripe/checkout", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -86,7 +93,11 @@ export function RegisterForm() {
     }
 
     setLoading(false);
-    router.push("/dashboard/activer");
+    if (claim.id) {
+      router.push(`${ROUTES.dashboardDevis(claim.id)}?needsActivation=1`);
+    } else {
+      router.push(ROUTES.dashboardActiver);
+    }
     router.refresh();
   }
 

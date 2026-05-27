@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 import { Geist } from "next/font/google";
 import { PlausibleScript } from "@/components/analytics/PlausibleScript";
 import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
-import { NonceScript } from "@/components/NonceScript";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
+import { getRequestNonce } from "@/lib/nonce";
 import { defaultMetadata, jsonLdSiteGraph } from "@/lib/seo";
 import "./globals.css";
 
@@ -36,7 +37,9 @@ export const viewport: Viewport = {
 
 const themeScript = `(function(){try{var t=localStorage.getItem('theme');var d=t==='dark'||(!t&&matchMedia('(prefers-color-scheme:dark)').matches);if(d)document.documentElement.classList.add('dark')}catch(e){}})()`;
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const nonce = await getRequestNonce();
+
   return (
     <html lang="fr" className={`${geist.variable} h-full`} suppressHydrationWarning>
       <head>
@@ -46,9 +49,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="dns-prefetch" href="https://plausible.io" />
         <link rel="dns-prefetch" href="https://eu.i.posthog.com" />
         <PlausibleScript />
-        <NonceScript dangerouslySetInnerHTML={{ __html: themeScript }} />
-        <NonceScript
+        <Script
+          id="theme-init"
+          strategy="beforeInteractive"
+          nonce={nonce}
+          dangerouslySetInnerHTML={{ __html: themeScript }}
+        />
+        <Script
+          id="json-ld-site-graph"
           type="application/ld+json"
+          strategy="beforeInteractive"
+          nonce={nonce}
           dangerouslySetInnerHTML={{
             __html: JSON.stringify(jsonLdSiteGraph()),
           }}

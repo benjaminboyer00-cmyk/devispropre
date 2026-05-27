@@ -3,7 +3,7 @@ import { TrackLink } from "@/components/analytics/TrackLink";
 import { IconCheck } from "@/components/icons/Icons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { COMPARISON_ROWS, PLAN_CATALOG, TARIFS_FAQ } from "@/lib/plan-catalog";
-import { jsonLdTarifs, pageMetadata } from "@/lib/seo";
+import { jsonLdFaqFromItems, jsonLdTarifs, pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Tarifs — À partir de 19€/mois sans engagement",
@@ -32,6 +32,7 @@ export default function TarifsPage() {
   return (
     <>
       <JsonLd data={jsonLdTarifs()} />
+      <JsonLd data={jsonLdFaqFromItems(TARIFS_FAQ.map((item) => ({ q: item.q, a: item.a })))} />
       <div className="mx-auto max-w-5xl px-4 py-20 sm:py-24">
         <h1 className="heading-section text-center">Tarifs alignés sur ce que vous utilisez vraiment</h1>
         <p className="text-lead mx-auto mt-5 max-w-2xl text-center font-light">

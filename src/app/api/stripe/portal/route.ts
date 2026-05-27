@@ -7,7 +7,7 @@ import { getStripe } from "@/lib/stripe";
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
+  const { user, error } = await requireAuth({ skipSubscriptionCheck: true });
   if (error) return error;
 
   const stripe = getStripe();

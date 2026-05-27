@@ -68,6 +68,8 @@ export function pageMetadata(opts: {
   keywords?: string[];
   /** OG dynamique par route (ex. pages SEO local). */
   ogImagePath?: string;
+  /** Pages funnel / transitoires — noindex. */
+  noindex?: boolean;
 }): Metadata {
   const url = `${SITE.url}${opts.path}`;
   const ogTitle = `${opts.title} | ${SITE.name}`;
@@ -100,6 +102,7 @@ export function pageMetadata(opts: {
       description: opts.description,
       images: [ogImage],
     },
+    ...(opts.noindex ? { robots: { index: false, follow: false } } : {}),
   };
 }
 
@@ -158,15 +161,38 @@ export function jsonLdWebSite() {
     description: SITE.description,
     inLanguage: "fr-FR",
     publisher: { "@type": "Organization", name: SITE.name, url: SITE.url },
-    potentialAction: {
-      "@type": "SearchAction",
-      target: {
-        "@type": "EntryPoint",
-        urlTemplate: `${SITE.url}/devis-artisan/{search_term_string}`,
-      },
-      "query-input": "required name=search_term_string",
-    },
   };
+}
+
+export const HOME_FAQ = [
+  {
+    q: "DevisPropre est-il conforme à la loi anti-fraude TVA 2018 ?",
+    a: "Oui. Verrouillage des factures, empreinte SHA-256, chaînage et attestation individuelle.",
+  },
+  {
+    q: "Combien de temps pour faire un devis ?",
+    a: "Environ 2 minutes depuis votre téléphone. Le partage WhatsApp et la facturation sont inclus à partir du plan Starter (19€/mois).",
+  },
+  {
+    q: "Comment fonctionnent les relances J+3 ?",
+    a: "3 jours après l'envoi sans réponse, un email automatique est envoyé au client. L'artisan reçoit un lien WhatsApp pré-rempli pour relancer. Plans Starter et Pro.",
+  },
+] as const;
+
+export function jsonLdFaqFromItems(items: readonly { q: string; a: string }[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: items.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  };
+}
+
+export function jsonLdFaq() {
+  return jsonLdFaqFromItems(HOME_FAQ);
 }
 
 export function jsonLdSoftwareApplication() {
@@ -204,39 +230,6 @@ export function jsonLdOrganization() {
       email: SITE.email,
       availableLanguage: "French",
     },
-  };
-}
-
-export function jsonLdFaq() {
-  return {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: [
-      {
-        "@type": "Question",
-        name: "DevisPropre est-il conforme à la loi anti-fraude TVA 2018 ?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Oui. Verrouillage des factures, empreinte SHA-256, chaînage et attestation individuelle.",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Combien de temps pour faire un devis ?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "Environ 2 minutes depuis votre téléphone. Le partage WhatsApp et la facturation sont inclus à partir du plan Starter (19€/mois).",
-        },
-      },
-      {
-        "@type": "Question",
-        name: "Comment fonctionnent les relances J+3 ?",
-        acceptedAnswer: {
-          "@type": "Answer",
-          text: "3 jours après l'envoi sans réponse, un email automatique est envoyé au client. L'artisan reçoit un lien WhatsApp pré-rempli pour relancer. Plans Starter et Pro.",
-        },
-      },
-    ],
   };
 }
 
@@ -321,7 +314,8 @@ export function jsonLdHowToCreateDevis() {
     "@context": "https://schema.org",
     "@type": "HowTo",
     name: "Créer un devis artisan en 2 minutes avec DevisPropre",
-    description: "Guide rapide pour rédiger et envoyer un devis PDF conforme depuis votre téléphone.",
+    description:
+      "Guide rapide pour rédiger un devis PDF conforme, l'envoyer au client puis le convertir en facture.",
     totalTime: "PT2M",
     step: [
       {
@@ -340,8 +334,61 @@ export function jsonLdHowToCreateDevis() {
         "@type": "HowToStep",
         position: 3,
         name: "Partager au client",
-        text: "Envoyez le devis par WhatsApp ou email. Le client peut valider en ligne via un lien sécurisé.",
+        text: "Envoyez le devis par WhatsApp, SMS ou email. Le client valide en ligne via un lien sécurisé.",
       },
+      {
+        "@type": "HowToStep",
+        position: 4,
+        name: "Convertir en facture conforme",
+        text: "Devis accepté → facture en 1 clic, verrouillage légal et attestation TVA 2018.",
+      },
+    ],
+  };
+}
+
+export const CREER_DEVIS_FAQ = [
+  {
+    q: "Puis-je créer un devis sans compte ?",
+    a: "Oui. Rédigez votre devis sur cette page — le brouillon est sauvegardé sur votre appareil. Créez ensuite un compte pour obtenir le PDF, le lien client et la facture.",
+  },
+  {
+    q: "Comment passer du devis à la facture ?",
+    a: "Envoyez le devis au client. Une fois accepté, cliquez sur « Créer et émettre la facture » : les lignes sont reprises sans ressaisie, conformément à la loi anti-fraude TVA 2018.",
+  },
+  {
+    q: "Le devis est-il conforme pour les artisans du BTP ?",
+    a: "Oui : mentions légales, SIRET, TVA (0 %, 5,5 %, 10 %, 20 % ou franchise art. 293 B), validité et PDF professionnel.",
+  },
+  {
+    q: "Comment partager le devis au client ?",
+    a: "Après envoi, vous obtenez un lien unique plus un message pré-rempli pour WhatsApp, SMS ou email.",
+  },
+] as const;
+
+export function jsonLdCreerDevisFaq() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: CREER_DEVIS_FAQ.map((item) => ({
+      "@type": "Question",
+      name: item.q,
+      acceptedAnswer: { "@type": "Answer", text: item.a },
+    })),
+  };
+}
+
+export function jsonLdCreerDevisWebPage() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Créer un devis et une facture artisan gratuitement",
+    description:
+      "Rédigez un devis BTP sans compte, sauvegarde automatique, puis facture conforme TVA 2018 après acceptation client.",
+    url: `${SITE.url}/creer-devis`,
+    isPartOf: { "@type": "WebSite", name: SITE.name, url: SITE.url },
+    about: [
+      { "@type": "Thing", name: "Devis artisan BTP" },
+      { "@type": "Thing", name: "Facture conforme TVA 2018" },
     ],
   };
 }

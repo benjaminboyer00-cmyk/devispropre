@@ -44,7 +44,7 @@ const profileSchema = z.object({
 });
 
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth({ skipSubscriptionCheck: true });
   if (auth.error) return auth.error;
 
   const [profile, company, billingOwner] = await Promise.all([
@@ -96,7 +96,7 @@ export async function GET() {
 export async function PATCH(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const auth = await requireAuth();
+  const auth = await requireAuth({ skipSubscriptionCheck: true });
   if (auth.error) return auth.error;
 
   try {

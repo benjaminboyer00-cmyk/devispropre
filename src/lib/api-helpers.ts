@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import type { Plan } from "@/generated/prisma/client";
 import { getAccountContext } from "./account-context";
+import { billingUserId, userNeedsSubscriptionSetup } from "./billing";
 import { getSession, type SessionUser } from "./auth";
 import { assertSameOrigin, CsrfError } from "./csrf";
 import { PlanFeatureError } from "./plan-features";
@@ -33,7 +34,7 @@ export function assertMutationSecurity(request: Request): void {
   }
 }
 
-export async function requireAuth(): Promise<
+export async function requireAuth(options?: { skipSubscriptionCheck?: boolean }): Promise<
   | {
       user: SessionUser;
       workspaceUserId: string;
@@ -61,6 +62,22 @@ export async function requireAuth(): Promise<
   }
 
   const account = await getAccountContext(user.id);
+
+  if (!options?.skipSubscriptionCheck) {
+    const billTo = billingUserId(user.id, account.workspaceUserId, account.isTeamMember);
+    if (await userNeedsSubscriptionSetup(billTo)) {
+      return {
+        user: null,
+        workspaceUserId: null,
+        plan: null,
+        isTeamMember: false,
+        error: Response.json(
+          { error: "Activez votre essai depuis le tableau de bord pour utiliser cette fonctionnalité." },
+          { status: 402 }
+        ),
+      };
+    }
+  }
 
   return {
     user,
@@ -100,6 +117,10 @@ export function handleServiceError(error: unknown) {
   if (error instanceof Error) {
     if (error.name === "ImmutabilityError") {
       return apiError(error.message, 403);
+    }
+    if (process.env.NODE_ENV === "production") {
+      console.error("[api]", error);
+      return apiError("Requête invalide", 400);
     }
     return apiError(error.message, 400);
   }

@@ -2,7 +2,8 @@ import Link from "next/link";
 import { TrackLink } from "@/components/analytics/TrackLink";
 import { IconDocument, IconEdit, IconShare, IconShield } from "@/components/icons/Icons";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { pageMetadata, jsonLdFaq, jsonLdHowToCreateDevis, jsonLdProductReviews, jsonLdSoftwareApplication, SITE } from "@/lib/seo";
+import { ROUTES } from "@/lib/routes";
+import { pageMetadata, jsonLdFaq, jsonLdHowToCreateDevis, jsonLdProductReviews, jsonLdSoftwareApplication, HOME_FAQ, SITE } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Devis artisans en 2 min — conforme TVA 2018",
@@ -67,12 +68,12 @@ export default function HomePage() {
           </p>
           <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row sm:justify-center">
             <TrackLink
-              href="/inscription"
+              href={ROUTES.creerDevis}
               className="ui-btn-primary ui-btn-lg"
-              event="CTA Inscription"
+              event="CTA Creer Devis"
               eventProps={{ location: "hero" }}
             >
-              Je veux gagner du temps et paraître plus pro
+              Créer mon devis gratuit
             </TrackLink>
             <p className="text-subtle text-sm font-normal">
               Ou appelez Benjamin Boyer au{" "}
@@ -150,13 +151,25 @@ export default function HomePage() {
         </ul>
       </section>
 
+      <section className="section-page">
+        <h2 className="heading-section text-center">Questions fréquentes</h2>
+        <dl className="mx-auto mt-8 max-w-2xl space-y-6">
+          {HOME_FAQ.map((item) => (
+            <div key={item.q} className="ui-card-padded">
+              <dt className="heading font-semibold">{item.q}</dt>
+              <dd className="text-body mt-2 leading-relaxed">{item.a}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
       <section className="ui-cta-band">
         <div className="mx-auto max-w-4xl text-center">
           <p className="text-2xl font-bold leading-snug sm:text-3xl">
             « Vous signez votre premier devis accepté, DevisPropre est rentabilisé pour l&apos;année. »
           </p>
-          <Link href="/inscription" className="ui-btn-inverse ui-btn-lg mt-10">
-            Essai gratuit — 15 jours
+          <Link href={ROUTES.creerDevis} className="ui-btn-inverse ui-btn-lg mt-10">
+            Créer mon devis gratuit
           </Link>
         </div>
       </section>

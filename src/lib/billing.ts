@@ -15,3 +15,8 @@ export async function userNeedsSubscriptionSetup(userId: string): Promise<boolea
   if (!user) return false;
   return user.plan === Plan.FREE && !user.stripeCustomerId;
 }
+
+/** ID utilisateur facturé (propriétaire workspace si membre d'équipe). */
+export function billingUserId(userId: string, workspaceUserId: string, isTeamMember: boolean): string {
+  return isTeamMember ? workspaceUserId : userId;
+}

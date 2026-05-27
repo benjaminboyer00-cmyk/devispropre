@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { TVA_RATES } from "../tva";
+
+const ALLOWED_TVA_VALUES = TVA_RATES.map((r) => r.value);
 
 export const loginSchema = z.object({
   email: z.string().email("Adresse email invalide."),
@@ -35,7 +38,12 @@ export const devisLigneSchema = z.object({
   description: z.string().min(1, "Description requise.").max(500, "Description trop longue (500 car. max)."),
   quantite: z.number().positive("Quantité invalide."),
   prixUnitaireHT: z.number().min(0, "Prix unitaire invalide."),
-  tva: z.number().min(0).max(100).optional(),
+  tva: z
+    .number()
+    .refine((v) => ALLOWED_TVA_VALUES.includes(v as (typeof ALLOWED_TVA_VALUES)[number]), {
+      message: "Taux TVA non autorisé (0 %, 5,5 %, 10 % ou 20 %).",
+    })
+    .optional(),
 });
 
 export const createDevisSchema = z.object({
@@ -47,6 +55,20 @@ export const createDevisSchema = z.object({
   notes: z.string().max(2000, "Notes trop longues (2000 car. max).").optional(),
   validUntil: z.string().datetime().optional(),
 });
+
+/** Payload brouillon invité (localStorage) avant inscription. */
+export const guestDevisDraftSchema = z.object({
+  clientNom: z.string().min(1, "Nom du client requis."),
+  clientTelephone: z.string().optional(),
+  clientEmail: z.string().email("Email client invalide.").optional().or(z.literal("")),
+  clientAdresse: z.string().max(500).optional(),
+  lignes: z.array(devisLigneSchema).min(1).max(50),
+  tvaApplicable: z.boolean().optional(),
+  validUntil: z.string().optional(),
+  notes: z.string().max(2000).optional(),
+});
+
+export type GuestDevisDraft = z.infer<typeof guestDevisDraftSchema>;
 
 /** Payload devis pour file d'attente hors-ligne. */
 export const queuedDevisPayloadSchema = z.object({

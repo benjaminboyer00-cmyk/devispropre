@@ -7,7 +7,7 @@ import { createSubscriptionCheckoutSession, type CheckoutPlan } from "@/lib/stri
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
+  const { user, error } = await requireAuth({ skipSubscriptionCheck: true });
   if (error) return error;
 
   const body = await request.json();

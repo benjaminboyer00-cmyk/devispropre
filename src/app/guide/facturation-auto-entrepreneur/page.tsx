@@ -7,9 +7,15 @@ import { jsonLdBreadcrumbList, pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Facturation auto-entrepreneur artisan",
   description:
-    "Guide facturation auto-entrepreneur BTP : devis accepté, facture conforme, numérotation, TVA franchise ou assujetti, archivage légal. Outil DevisPropre.",
+    "Guide facturation auto-entrepreneur : devis accepté, facture conforme, numérotation, TVA franchise ou assujetti, archivage légal. Pour tous les artisans et micro-entreprises.",
   path: "/guide/facturation-auto-entrepreneur",
-  keywords: ["facturation auto entrepreneur", "facture artisan", "devis auto entrepreneur BTP"],
+  keywords: [
+    "facturation auto entrepreneur",
+    "facture artisan",
+    "devis auto entrepreneur",
+    "facture micro entreprise TVA",
+    "facture conforme franchise base",
+  ],
 });
 
 const BREADCRUMBS = [
@@ -25,12 +31,14 @@ export default function GuideFacturationAePage() {
 
       <article className="prose-legal mx-auto max-w-3xl px-4 py-16 sm:py-20">
         <h1 className="heading-hero mt-4 text-3xl sm:text-4xl">
-          Facturation auto-entrepreneur : le guide pratique BTP
+          Facturation auto-entrepreneur : le guide pratique pour artisans
         </h1>
         <p className="text-lead mt-4 font-light">
-          En micro-entreprise, la facture n&apos;est pas une formalité administrative — c&apos;est votre
-          preuve de revenu et votre bouclier en cas de contrôle. Voici comment enchaîner proprement
-          devis, facture et conformité TVA 2018.
+          Plombier, coiffeur, consultant, artisan du bâtiment ou prestataire de services : en
+          micro-entreprise, la facture n&apos;est pas une formalité administrative — c&apos;est votre
+          preuve de revenu et votre bouclier en cas de contrôle. Que vous soyez en franchise en base
+          ou assujetti à la TVA, voici comment enchaîner proprement devis, facture et conformité
+          TVA 2018.
         </p>
 
         <h2 className="heading-section mt-12 text-xl">1. Numérotation chronologique</h2>
@@ -48,11 +56,12 @@ export default function GuideFacturationAePage() {
           anti-fraude à la TVA.
         </p>
 
-        <h2 className="heading-section mt-12 text-xl">3. Franchise en base vs TVA</h2>
+        <h2 className="heading-section mt-12 text-xl">3. Franchise en base vs assujetti TVA</h2>
         <p className="text-body mt-4 leading-relaxed">
-          En franchise, mentionnez l&apos;article 293 B du CGI sur chaque facture. Assujetti, indiquez le
-          taux par ligne (10 % rénovation habitation, 20 % par défaut). Configurez votre statut une fois
-          dans DevisPropre — il s&apos;applique à tous vos documents.
+          En franchise en base (sous les seuils), mentionnez l&apos;article 293 B du CGI sur chaque
+          devis et facture — pas de TVA à facturer. Assujetti à la TVA, indiquez le taux par ligne
+          (0 %, 5,5 %, 10 % ou 20 % selon votre activité). Configurez votre statut une fois dans
+          DevisPropre — il s&apos;applique à tous vos documents, quel que soit votre métier d&apos;artisan.
         </p>
 
         <h2 className="heading-section mt-12 text-xl">4. Conservation et archivage</h2>

@@ -4,7 +4,7 @@ import { ROUTES } from "@/lib/routes";
 const GUIDES = [
   { href: ROUTES.guideDevisConforme, title: "Devis artisan conforme", desc: "Mentions obligatoires et checklist" },
   { href: ROUTES.guideMentionsDevis, title: "Mentions obligatoires", desc: "SIRET, TVA, validité, signature" },
-  { href: ROUTES.guideFacturationAe, title: "Facturation auto-entrepreneur", desc: "Devis → facture sans ressaisie" },
+  { href: ROUTES.guideFacturationAe, title: "Facturation auto-entrepreneur", desc: "Devis → facture — franchise ou assujetti TVA" },
   { href: ROUTES.guideTvaArtisan, title: "TVA artisan travaux", desc: "10 %, 20 %, franchise en base" },
   { href: ROUTES.guideDevisWhatsapp, title: "Devis par WhatsApp", desc: "PDF pro, lien client, relance J+3" },
 ] as const;

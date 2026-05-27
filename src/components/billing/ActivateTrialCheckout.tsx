@@ -3,10 +3,17 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { TRIAL_PERIOD_DAYS } from "@/lib/billing-constants";
+import { loadPendingDevisId } from "@/lib/guest-devis-draft";
+import { ROUTES } from "@/lib/routes";
 
 export function ActivateTrialCheckout() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [pendingDevisId, setPendingDevisId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setPendingDevisId(loadPendingDevisId());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +60,16 @@ export function ActivateTrialCheckout() {
         Sans résiliation avant la fin de l&apos;essai, l&apos;abonnement passe à{" "}
         <strong>19€/mois</strong> automatiquement.
       </p>
+
+      {pendingDevisId && (
+        <p className="text-body mt-6 rounded-lg bg-[var(--surface-muted)] px-4 py-3 text-sm">
+          Votre devis est déjà enregistré.{" "}
+          <Link href={ROUTES.dashboardDevis(pendingDevisId)} className="link-underline font-medium">
+            Voir le devis
+          </Link>{" "}
+          — le lien client sera disponible après activation.
+        </p>
+      )}
 
       {loading && !error && (
         <p className="text-body mt-8 text-sm">Redirection vers le paiement sécurisé Stripe…</p>

@@ -1,5 +1,6 @@
-import { getRequestNonce } from "@/lib/nonce";
+import Script from "next/script";
 import { ANALYTICS } from "@/lib/analytics";
+import { getRequestNonce } from "@/lib/nonce";
 
 /** Script Plausible — mesure trafic SEO (pages, referrers, goals). */
 export async function PlausibleScript() {
@@ -9,11 +10,12 @@ export async function PlausibleScript() {
   const nonce = await getRequestNonce();
 
   return (
-    <script
+    <Script
       defer
       data-domain={domain}
       src="https://plausible.io/js/script.file-downloads.outbound-links.tagged-events.js"
-      nonce={nonce ?? undefined}
+      strategy="afterInteractive"
+      nonce={nonce}
     />
   );
 }

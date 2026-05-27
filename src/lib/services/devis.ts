@@ -21,6 +21,8 @@ import {
 } from "../object-storage";
 import { generateDevisPdf } from "../pdf-document";
 import { ROUTES } from "../routes";
+import { defaultValidUntilDate, parseValidUntilInput } from "../devis-defaults";
+import { resolveLineTva, ensureFranchiseNotes } from "../tva";
 
 export interface LigneInput {
   description: string;
@@ -36,7 +38,8 @@ export async function createDevis(
     lignes: LigneInput[];
     notes?: string;
     validUntil?: Date;
-  }
+  },
+  options?: { skipQuotaCheck?: boolean }
 ) {
   const user = await prisma.user.findFirst({
     where: { id: ctx.userId, deletedAt: null },
@@ -44,13 +47,17 @@ export async function createDevis(
   });
   if (!user) throw new Error("Utilisateur introuvable");
 
-  await assertCanCreateDevis(ctx.userId, user.plan);
+  if (!options?.skipQuotaCheck) {
+    await assertCanCreateDevis(ctx.userId, user.plan);
+  }
 
   const company = await prisma.company.findUnique({ where: { userId: ctx.userId } });
   const tvaApplicable = company?.tvaApplicable ?? true;
 
+  const validUntil = data.validUntil ?? defaultValidUntilDate();
+
   const lignesData = data.lignes.map((l, i) => {
-    const tva = tvaApplicable ? (l.tva ?? 20) : 0;
+    const tva = resolveLineTva(l.tva, tvaApplicable);
     const totalHT = computeLineTotalHT(l.quantite, l.prixUnitaireHT);
     return {
       ordre: i + 1,
@@ -65,7 +72,9 @@ export async function createDevis(
   const totals = computeTotals(lignesData, tvaApplicable);
 
   const devis = await prisma.$transaction(async (tx) => {
-    await enforceFreeDevisQuotaInTransaction(tx, ctx.userId, user.plan);
+    if (!options?.skipQuotaCheck) {
+      await enforceFreeDevisQuotaInTransaction(tx, ctx.userId, user.plan);
+    }
 
     const client = await tx.client.findFirst({
       where: { id: data.clientId, userId: ctx.userId, deletedAt: null },
@@ -81,8 +90,8 @@ export async function createDevis(
         userId: ctx.userId,
         clientId: data.clientId,
         numero,
-        notes: data.notes,
-        validUntil: data.validUntil,
+        notes: ensureFranchiseNotes(data.notes, tvaApplicable),
+        validUntil,
         ...totals,
         lignes: { create: lignesData },
       },
@@ -99,6 +108,49 @@ export async function createDevis(
   });
 
   return devis;
+}
+
+/** Brouillon invité → client + devis sur le compte nouvellement créé. */
+export async function claimGuestDraftAsDevis(
+  ctx: AuditContext,
+  draft: {
+    clientNom: string;
+    clientTelephone?: string;
+    clientEmail?: string;
+    clientAdresse?: string;
+    lignes: LigneInput[];
+    tvaApplicable?: boolean;
+    validUntil?: string;
+    notes?: string;
+  }
+) {
+  const client = await prisma.client.create({
+    data: {
+      userId: ctx.userId,
+      nom: draft.clientNom.trim(),
+      telephone: draft.clientTelephone?.trim() || null,
+      email: draft.clientEmail?.trim() || null,
+      adresse: draft.clientAdresse?.trim() || null,
+    },
+  });
+
+  if (draft.tvaApplicable === false) {
+    await prisma.company.updateMany({
+      where: { userId: ctx.userId },
+      data: { tvaApplicable: false },
+    });
+  }
+
+  return createDevis(
+    ctx,
+    {
+      clientId: client.id,
+      lignes: draft.lignes,
+      notes: draft.notes?.trim() || undefined,
+      validUntil: draft.validUntil ? parseValidUntilInput(draft.validUntil) : undefined,
+    },
+    { skipQuotaCheck: true }
+  );
 }
 
 export async function updateDevis(
@@ -138,7 +190,7 @@ export async function updateDevis(
 
   if (data.lignes) {
     lignesData = data.lignes.map((l, i) => {
-      const tva = tvaApplicable ? (l.tva ?? 20) : 0;
+      const tva = resolveLineTva(l.tva, tvaApplicable);
       const totalHT = computeLineTotalHT(l.quantite, l.prixUnitaireHT);
       return {
         ordre: i + 1,

@@ -4,6 +4,7 @@ import {
   magicLinkSchema,
   registerSchema,
   createDevisSchema,
+  guestDevisDraftSchema,
   formatZodError,
 } from "../schemas/forms";
 import { planFromStripePrice, shouldDowngradeToFree } from "../stripe-subscription";
@@ -40,6 +41,18 @@ describe("schemas partagés", () => {
 
   it("valide magic link email", () => {
     expect(magicLinkSchema.safeParse({ email: "test@devispropre.fr" }).success).toBe(true);
+  });
+
+  it("valide un brouillon invité", () => {
+    const result = guestDevisDraftSchema.safeParse({
+      clientNom: "Martin",
+      clientAdresse: "12 rue du Chantier, Paris",
+      clientEmail: "client@example.fr",
+      lignes: [{ description: "Plomberie", quantite: 1, prixUnitaireHT: 500, tva: 10 }],
+      validUntil: "2026-06-30",
+      notes: "Acompte 30 % à la commande",
+    });
+    expect(result.success).toBe(true);
   });
 });
 

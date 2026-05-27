@@ -17,17 +17,17 @@ export default function OpenGraphImage() {
           flexDirection: "column",
           justifyContent: "center",
           padding: "64px",
-          background: "linear-gradient(135deg, #eff6ff 0%, #ffffff 50%, #f8fafc 100%)",
+          background: "linear-gradient(135deg, #e8f0f8 0%, #fafaf9 50%, #ffffff 100%)",
         }}
       >
-        <div style={{ fontSize: 28, color: "#2563eb", fontWeight: 600 }}>{SITE.tagline}</div>
-        <div style={{ fontSize: 64, fontWeight: 800, color: "#0f172a", marginTop: 16, lineHeight: 1.1 }}>
+        <div style={{ fontSize: 28, color: "#1a3a5c", fontWeight: 600 }}>{SITE.tagline}</div>
+        <div style={{ fontSize: 64, fontWeight: 800, color: "#1c1917", marginTop: 16, lineHeight: 1.1 }}>
           Devis pro en 2 minutes
         </div>
-        <div style={{ fontSize: 28, color: "#475569", marginTop: 24, maxWidth: 900 }}>
+        <div style={{ fontSize: 28, color: "#57534e", marginTop: 24, maxWidth: 900 }}>
           Devis · Factures conformes TVA 2018 · WhatsApp · Artisans BTP
         </div>
-        <div style={{ fontSize: 24, color: "#2563eb", marginTop: 48, fontWeight: 700 }}>
+        <div style={{ fontSize: 24, color: "#d97706", marginTop: 48, fontWeight: 700 }}>
           devispropre.fr
         </div>
       </div>

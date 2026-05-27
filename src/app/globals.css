@@ -304,6 +304,26 @@ body {
     --tw-ring-color: color-mix(in srgb, var(--blue) 25%, transparent);
   }
 
+  /* Calendrier natif — clic indicateur + color-scheme cohérent */
+  .ui-input-date {
+    min-height: 2.75rem;
+    color-scheme: light;
+  }
+
+  .dark .ui-input-date {
+    color-scheme: dark;
+  }
+
+  .ui-input-date::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.85;
+    padding: 0.25rem;
+  }
+
+  .ui-input-date::-webkit-datetime-edit-fields-wrapper {
+    padding: 0;
+  }
+
   .ui-label {
     @apply block text-sm font-medium;
     color: var(--label);

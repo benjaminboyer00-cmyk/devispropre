@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
+import { claimGuestDraftIfPresent } from "@/lib/claim-guest-draft-client";
+import { ROUTES } from "@/lib/routes";
 import { loginSchema, magicLinkSchema, formatZodError } from "@/lib/schemas/forms";
 
 export function LoginForm() {
@@ -23,6 +25,8 @@ export function LoginForm() {
       : urlError === "lien_invalide"
         ? "Lien invalide. Entrez votre email pour en recevoir un nouveau."
         : "";
+
+  const fromDevis = searchParams.get("from") === "devis";
 
   async function handlePasswordLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -49,7 +53,16 @@ export function LoginForm() {
       return;
     }
 
-    router.push("/dashboard");
+    const claim = await claimGuestDraftIfPresent();
+    if (claim.error) {
+      setError(claim.error);
+      if (claim.id) {
+        router.push(`${ROUTES.dashboardDevis(claim.id)}?claimed=1`);
+        router.refresh();
+      }
+      return;
+    }
+    router.push(claim.id ? `${ROUTES.dashboardDevis(claim.id)}?claimed=1` : ROUTES.dashboard);
     router.refresh();
   }
 
@@ -87,6 +100,12 @@ export function LoginForm() {
     <div className="space-y-5">
       {(linkError || error) && <p className="ui-alert-error">{linkError || error}</p>}
       {info && <p className="ui-alert-success">{info}</p>}
+
+      {fromDevis && !linkError && !error && (
+        <p className="text-body rounded-lg bg-[var(--surface-muted)] px-4 py-3 text-sm">
+          Connectez-vous pour retrouver le devis créé sans compte — il sera enregistré automatiquement.
+        </p>
+      )}
 
       {!showPassword ? (
         <form onSubmit={handleMagicLink} className="space-y-4">
@@ -154,7 +173,7 @@ export function LoginForm() {
 
       <p className="text-body border-t border-[var(--border)] pt-4 text-center text-sm">
         Nouveau ?{" "}
-        <Link href="/inscription" className="link-underline font-semibold">
+        <Link href={fromDevis ? `${ROUTES.inscription}?from=devis` : ROUTES.inscription} className="link-underline font-semibold">
           Créer un compte gratuit
         </Link>
       </p>
