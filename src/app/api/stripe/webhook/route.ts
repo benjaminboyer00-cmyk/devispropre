@@ -30,7 +30,10 @@ export async function POST(request: NextRequest) {
     if (userId && plan && (plan === Plan.STARTER || plan === Plan.PRO)) {
       await prisma.user.update({
         where: { id: userId },
-        data: { plan },
+        data: {
+          plan,
+          ...(typeof session.customer === "string" && { stripeCustomerId: session.customer }),
+        },
       });
     }
   }

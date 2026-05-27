@@ -2,23 +2,163 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Palette premium — sobre, lisible chantier + bureau */
 :root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
+  --background: #f6f8fb;
+  --foreground: #0c1222;
+  --card: #ffffff;
+  --card-foreground: #0c1222;
+  --muted: #eef2f6;
+  --muted-foreground: #5c6b7f;
+  --border: #dde3ea;
+  --primary: #1d4ed8;
+  --primary-hover: #1e40af;
+  --primary-foreground: #ffffff;
+  --accent: #eef4ff;
+  --accent-foreground: #1e3a8a;
+  --success: #059669;
+  --success-muted: #ecfdf5;
+  --danger: #dc2626;
+  --warning: #b45309;
+  --ring: rgba(29, 78, 216, 0.25);
 }
 
 .dark {
-  --background: #0f172a;
-  --foreground: #f1f5f9;
+  --background: #080d16;
+  --foreground: #e8edf5;
+  --card: #111827;
+  --card-foreground: #f1f5f9;
+  --muted: #1a2332;
+  --muted-foreground: #94a3b8;
+  --border: #243044;
+  --primary: #3b82f6;
+  --primary-hover: #60a5fa;
+  --primary-foreground: #ffffff;
+  --accent: #0f1729;
+  --accent-foreground: #93c5fd;
+  --success: #34d399;
+  --success-muted: #064e3b33;
+  --danger: #f87171;
+  --warning: #fbbf24;
+  --ring: rgba(59, 130, 246, 0.35);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-muted: var(--success-muted);
+  --color-danger: var(--danger);
+  --color-warning: var(--warning);
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+}
+
+@layer components {
+  .page-shell {
+    @apply mx-auto max-w-5xl px-4 py-10 sm:py-12;
+  }
+
+  .page-title {
+    @apply text-3xl font-bold tracking-tight text-foreground sm:text-4xl;
+  }
+
+  .section-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .text-muted {
+    @apply text-muted-foreground;
+  }
+
+  .card {
+    @apply rounded-2xl border border-border bg-card text-card-foreground shadow-sm;
+  }
+
+  .card-padded {
+    @apply rounded-2xl border border-border bg-card p-6 text-card-foreground shadow-sm sm:p-8;
+  }
+
+  .input-field {
+    @apply mt-1.5 w-full rounded-xl border border-border bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-[var(--ring)];
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-110 active:scale-[0.98];
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl border border-border bg-card px-5 py-2.5 text-sm font-medium text-foreground transition hover:bg-muted active:scale-[0.98];
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-xl border border-danger/40 px-4 py-2 text-sm font-medium text-danger transition hover:bg-danger/10;
+  }
+
+  .link-primary {
+    @apply font-medium text-primary hover:underline;
+  }
+
+  .hero-gradient {
+    @apply bg-gradient-to-b from-accent via-background to-background;
+  }
+
+  .stat-card {
+    @apply rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-sm;
+  }
+
+  .list-panel {
+    @apply divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card text-card-foreground shadow-sm;
+  }
+
+  .list-row {
+    @apply flex items-center justify-between px-4 py-3.5 transition hover:bg-muted/60;
+  }
+
+  .legal-prose {
+    @apply max-w-none text-foreground;
+  }
+
+  .legal-prose h1 {
+    @apply mb-8 text-3xl font-bold tracking-tight text-foreground sm:text-4xl;
+  }
+
+  .legal-prose h2 {
+    @apply mb-4 mt-10 text-xl font-semibold text-foreground;
+  }
+
+  .legal-prose p,
+  .legal-prose li {
+    @apply leading-relaxed text-muted-foreground;
+  }
+
+  .legal-prose ul {
+    @apply list-disc space-y-2 pl-6;
+  }
+
+  .legal-prose a {
+    @apply font-medium text-primary hover:underline;
+  }
+
+  .legal-prose strong {
+    @apply font-semibold text-foreground;
+  }
+
+  .skeleton {
+    @apply animate-pulse rounded-xl bg-muted;
+  }
 }

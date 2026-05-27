@@ -9,7 +9,7 @@ export const metadata = pageMetadata({
 
 export default function PolitiqueConfidentialitePage() {
   return (
-    <article className="mx-auto max-w-3xl px-4 py-16 prose prose-slate">
+    <article className="legal-prose mx-auto max-w-3xl px-4 py-16">
       <h1>Politique de confidentialité</h1>
       <p>
         DevisPropre ({LEGAL.editor.name}) collecte les données nécessaires à la facturation :

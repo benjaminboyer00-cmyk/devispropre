@@ -25,10 +25,7 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   if (!open) return null;
 
-  const confirmClass =
-    variant === "danger"
-      ? "bg-red-600 hover:bg-red-700 focus:ring-red-500"
-      : "bg-blue-600 hover:bg-blue-700 focus:ring-blue-500";
+  const confirmClass = variant === "danger" ? "btn-danger font-semibold" : "btn-primary";
 
   return (
     <div
@@ -37,17 +34,17 @@ export function ConfirmDialog({
       aria-modal="true"
       aria-labelledby="confirm-title"
     >
-      <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
-        <h2 id="confirm-title" className="text-lg font-semibold text-slate-900">
+      <div className="card w-full max-w-md p-6 shadow-xl">
+        <h2 id="confirm-title" className="text-lg font-semibold text-foreground">
           {title}
         </h2>
-        <p className="mt-2 text-sm text-slate-600">{message}</p>
+        <p className="mt-2 text-sm text-muted-foreground">{message}</p>
         <div className="mt-6 flex justify-end gap-3">
           <button
             type="button"
             onClick={onCancel}
             disabled={loading}
-            className="rounded-lg border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-50"
+            className="btn-secondary disabled:opacity-50"
           >
             {cancelLabel}
           </button>
@@ -55,7 +52,7 @@ export function ConfirmDialog({
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`rounded-lg px-4 py-2 text-sm font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 ${confirmClass}`}
+            className={`${confirmClass} disabled:opacity-50`}
           >
             {loading ? "…" : confirmLabel}
           </button>

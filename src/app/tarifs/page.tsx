@@ -43,43 +43,45 @@ export default function TarifsPage() {
   return (
     <>
       <JsonLd data={jsonLdTarifs()} />
-      <div className="mx-auto max-w-5xl px-4 py-16">
-      <h1 className="text-center text-3xl font-bold">Le pricing qui tue la prise de tête</h1>
-      <p className="mt-4 text-center text-slate-600">
-        Paiement sécurisé Stripe · Annulable en 1 clic · Premier devis accepté = rentabilisé
-      </p>
+      <div className="page-shell max-w-5xl">
+        <h1 className="page-title text-center">Le pricing qui tue la prise de tête</h1>
+        <p className="mt-4 text-center text-muted-foreground">
+          Paiement sécurisé Stripe · Annulable en 1 clic · Premier devis accepté = rentabilisé
+        </p>
 
-      <div className="mt-12 grid gap-6 md:grid-cols-3">
-        {PLANS.map((plan) => (
-          <div
-            key={plan.name}
-            className={`rounded-xl border p-6 ${
-              plan.highlight ? "border-blue-600 ring-2 ring-blue-600" : "border-slate-200 bg-white"
-            }`}
-          >
-            <h2 className="text-xl font-bold">{plan.name}</h2>
-            <p className="mt-2">
-              <span className="text-3xl font-bold">{plan.price}</span>
-              <span className="text-slate-500">{plan.period}</span>
-            </p>
-            <p className="mt-2 text-sm text-slate-600">{plan.desc}</p>
-            <ul className="mt-6 space-y-2 text-sm">
-              {plan.features.map((f) => (
-                <li key={f}>✓ {f}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
+        <div className="mt-12 grid gap-6 md:grid-cols-3">
+          {PLANS.map((plan) => (
+            <div
+              key={plan.name}
+              className={`card-padded ${plan.highlight ? "ring-2 ring-primary border-primary/50" : ""}`}
+            >
+              {plan.highlight && (
+                <span className="mb-3 inline-block rounded-full bg-accent px-3 py-0.5 text-xs font-semibold text-accent-foreground">
+                  Populaire
+                </span>
+              )}
+              <h2 className="text-xl font-bold text-foreground">{plan.name}</h2>
+              <p className="mt-2">
+                <span className="text-3xl font-bold text-foreground">{plan.price}</span>
+                <span className="text-muted-foreground">{plan.period}</span>
+              </p>
+              <p className="mt-2 text-sm text-muted-foreground">{plan.desc}</p>
+              <ul className="mt-6 space-y-2.5 text-sm text-foreground/90">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex gap-2">
+                    <span className="text-success">✓</span> {f}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
 
-      <div className="mt-12 text-center">
-        <Link
-          href="/inscription"
-          className="inline-block rounded-xl bg-blue-600 px-8 py-4 font-semibold text-white hover:bg-blue-700"
-        >
-          Essai gratuit 30 jours — sans carte
-        </Link>
-      </div>
+        <div className="mt-12 text-center">
+          <Link href="/inscription" className="btn-primary px-8 py-4 text-base">
+            Essai gratuit 30 jours — sans carte
+          </Link>
+        </div>
       </div>
     </>
   );

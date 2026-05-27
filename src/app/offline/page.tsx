@@ -8,16 +8,13 @@ export const metadata: Metadata = {
 
 export default function OfflinePage() {
   return (
-    <div className="mx-auto max-w-md px-4 py-24 text-center">
+    <div className="page-shell max-w-md py-24 text-center">
       <p className="text-4xl">📡</p>
-      <h1 className="mt-4 text-2xl font-bold">Vous êtes hors ligne</h1>
-      <p className="mt-2 text-slate-600 dark:text-slate-400">
+      <h1 className="mt-4 text-2xl font-bold text-foreground">Vous êtes hors ligne</h1>
+      <p className="mt-2 text-muted-foreground">
         Reconnectez-vous au réseau pour synchroniser vos devis et factures.
       </p>
-      <Link
-        href="/dashboard"
-        className="mt-8 inline-block rounded-lg bg-blue-600 px-6 py-3 text-white hover:bg-blue-700"
-      >
+      <Link href="/dashboard" className="btn-primary mt-8 inline-block px-6 py-3">
         Réessayer
       </Link>
     </div>

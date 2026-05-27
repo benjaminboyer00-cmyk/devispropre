@@ -22,12 +22,12 @@ export default async function DevisDetailPage({ params }: PageProps) {
   if (!devis) notFound();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
+    <div className="page-shell max-w-3xl">
+      <Link href="/dashboard" className="link-primary text-sm">
         ← Retour
       </Link>
-      <h1 className="mt-4 text-2xl font-bold">Devis {devis.numero}</h1>
-      <p className="text-slate-600">Client : {devis.client.nom}</p>
+      <h1 className="page-title mt-4 text-2xl">Devis {devis.numero}</h1>
+      <p className="text-muted-foreground">Client : {devis.client.nom}</p>
       <div className="mt-8">
         <DevisActions devis={JSON.parse(JSON.stringify(devis))} />
       </div>

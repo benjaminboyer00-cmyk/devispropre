@@ -98,11 +98,11 @@ export function DevisActions({ devis }: DevisDetailProps) {
       />
 
       <div className="flex flex-wrap gap-2">
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-sm">
+        <span className="rounded-full bg-muted px-3 py-1 text-sm text-foreground">
           {STATUS_LABELS[devis.status] ?? devis.status}
         </span>
         {devis.lockedAt && (
-          <span className="rounded-full bg-green-100 px-3 py-1 text-sm text-green-800">
+          <span className="rounded-full bg-success-muted px-3 py-1 text-sm text-success">
             🔒 Verrouillé — inaltérable
           </span>
         )}
@@ -112,7 +112,7 @@ export function DevisActions({ devis }: DevisDetailProps) {
         <a
           href={`/api/devis/${devis.id}/pdf`}
           target="_blank"
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+          className="btn-secondary text-sm"
         >
           {devis.status === "BROUILLON" ? "Prévisualiser le PDF" : "Voir le PDF"}
         </a>
@@ -121,7 +121,7 @@ export function DevisActions({ devis }: DevisDetailProps) {
           <button
             onClick={() => setConfirmSend(true)}
             disabled={!!loading}
-            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+            className="btn-primary text-sm"
           >
             Envoyer & verrouiller
           </button>
@@ -132,7 +132,7 @@ export function DevisActions({ devis }: DevisDetailProps) {
             href={whatsAppHref}
             target="_blank"
             rel="noopener noreferrer"
-            className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+            className="rounded-xl bg-success px-4 py-2 text-sm font-medium text-white hover:brightness-110"
           >
             Partager sur WhatsApp
           </a>
@@ -140,44 +140,44 @@ export function DevisActions({ devis }: DevisDetailProps) {
 
         {devis.status === "ENVOYE" && (
           <>
-            <button onClick={() => setStatus("ACCEPTE")} disabled={!!loading} className="rounded-lg border border-green-600 px-4 py-2 text-sm text-green-700">
+            <button onClick={() => setStatus("ACCEPTE")} disabled={!!loading} className="btn-secondary border-success/40 text-success">
               Marquer accepté
             </button>
-            <button onClick={() => setStatus("REFUSE")} disabled={!!loading} className="rounded-lg border border-red-600 px-4 py-2 text-sm text-red-700">
+            <button onClick={() => setStatus("REFUSE")} disabled={!!loading} className="btn-danger">
               Marquer refusé
             </button>
           </>
         )}
 
         {devis.status === "ACCEPTE" && (
-          <button onClick={toFacture} disabled={!!loading} className="rounded-lg bg-amber-600 px-4 py-2 text-sm font-medium text-white">
+          <button onClick={toFacture} disabled={!!loading} className="rounded-xl bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:brightness-110">
             Créer la facture
           </button>
         )}
 
         {devis.contentHash && (
-          <button onClick={verify} className="rounded-lg border border-slate-300 px-4 py-2 text-sm">
+          <button onClick={verify} className="btn-secondary text-sm">
             Vérifier l&apos;intégrité
           </button>
         )}
       </div>
 
       {verifyResult !== null && (
-        <p className={`text-sm ${verifyResult ? "text-green-700" : "text-red-700"}`}>
+        <p className={`text-sm ${verifyResult ? "text-success" : "text-danger"}`}>
           {verifyResult ? "✓ Document intact — aucune altération détectée" : "✗ Altération détectée — contactez le support"}
         </p>
       )}
 
       {devis.contentHash && (
-        <p className="break-all font-mono text-xs text-slate-400">
+        <p className="break-all font-mono text-xs text-muted-foreground">
           Hash : {devis.contentHash.slice(0, 32)}…
         </p>
       )}
 
-      <div className="rounded-lg border border-slate-200">
+      <div className="card overflow-hidden">
         <table className="w-full text-sm">
           <thead>
-            <tr className="border-b bg-slate-50 text-left text-xs uppercase text-slate-500">
+            <tr className="border-b border-border bg-muted/50 text-left text-xs uppercase text-muted-foreground">
               <th className="p-3">Description</th>
               <th className="p-3">Qté</th>
               <th className="p-3">P.U.</th>
@@ -186,7 +186,7 @@ export function DevisActions({ devis }: DevisDetailProps) {
           </thead>
           <tbody>
             {devis.lignes.map((l, i) => (
-              <tr key={i} className="border-b">
+              <tr key={i} className="border-b border-border">
                 <td className="p-3">{l.description}</td>
                 <td className="p-3">{l.quantite}</td>
                 <td className="p-3">{formatEuro(l.prixUnitaireHT)}</td>

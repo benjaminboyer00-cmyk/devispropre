@@ -89,13 +89,13 @@ export function SettingsForm() {
   if (loading) return <p>Chargement…</p>;
   if (!data) return <p>Erreur chargement</p>;
 
-  const inputClass = "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm";
+  const inputClass = "input-field";
 
   return (
     <div className="space-y-10">
-      {message && <p className="rounded-lg bg-green-50 px-4 py-2 text-sm text-green-800">{message}</p>}
+      {message && <p className="rounded-xl bg-success-muted px-4 py-2 text-sm text-success">{message}</p>}
 
-      <form onSubmit={saveProfile} className="rounded-xl border bg-white p-6 space-y-4">
+      <form onSubmit={saveProfile} className="card-padded space-y-4">
         <h2 className="font-semibold">Profil</h2>
         <div>
           <label className="text-sm">Nom</label>
@@ -109,11 +109,11 @@ export function SettingsForm() {
           <label className="text-sm">Téléphone</label>
           <input name="phone" defaultValue={data.profile.phone ?? ""} className={inputClass} />
         </div>
-        <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">Enregistrer</button>
+        <button type="submit" className="btn-primary w-full sm:w-auto">Enregistrer</button>
       </form>
 
       {data.company && (
-        <form onSubmit={saveCompany} className="rounded-xl border bg-white p-6 space-y-4">
+        <form onSubmit={saveCompany} className="card-padded space-y-4">
           <h2 className="font-semibold">Entreprise</h2>
           <div>
             <label className="text-sm">Raison sociale</label>
@@ -149,7 +149,7 @@ export function SettingsForm() {
               <img src={data.company.logoUrl} alt="Logo" className="mt-2 h-16 object-contain" />
             )}
           </div>
-          <button type="submit" className="rounded-lg bg-blue-600 px-4 py-2 text-sm text-white">Enregistrer</button>
+          <button type="submit" className="btn-primary w-full sm:w-auto">Enregistrer</button>
         </form>
       )}
     </div>

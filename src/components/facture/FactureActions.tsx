@@ -82,64 +82,64 @@ export function FactureActions({ facture }: FactureDetailProps) {
             <button
               onClick={issue}
               disabled={!!loading}
-              className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white"
+              className="btn-primary text-sm"
             >
               Émettre & verrouiller (conformité TVA)
             </button>
             <button
               onClick={() => setConfirmCancel(true)}
               disabled={!!loading}
-              className="rounded-lg border border-red-600 px-4 py-2 text-sm text-red-700"
+              className="btn-danger text-sm"
             >
               Annuler le brouillon
             </button>
           </>
         )}
         {facture.status === "EMISE" && (
-          <button onClick={pay} disabled={!!loading} className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white">
+          <button onClick={pay} disabled={!!loading} className="rounded-xl bg-success px-4 py-2 text-sm text-white hover:brightness-110">
             Marquer payée
           </button>
         )}
-        <a href={`/api/factures/${facture.id}/pdf`} target="_blank" className="rounded-lg border px-4 py-2 text-sm">
+        <a href={`/api/factures/${facture.id}/pdf`} target="_blank" className="btn-secondary text-sm">
           Voir le PDF
         </a>
         {facture.contentHash && (
-          <button onClick={verify} className="rounded-lg border px-4 py-2 text-sm">
+          <button onClick={verify} className="btn-secondary text-sm">
             Vérifier l&apos;intégrité
           </button>
         )}
       </div>
 
       {facture.lockedAt && (
-        <p className="rounded-lg bg-green-50 px-4 py-2 text-sm text-green-800">
+        <p className="rounded-xl bg-success-muted px-4 py-2 text-sm text-success">
           🔒 Facture verrouillée — inaltérable (loi anti-fraude TVA 2018)
         </p>
       )}
 
       {facture.attestation && (
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           Attestation de conformité : {facture.attestation.numero}
         </p>
       )}
 
       {verifyResult !== null && (
-        <p className={`text-sm ${verifyResult ? "text-green-700" : "text-red-700"}`}>
+        <p className={`text-sm ${verifyResult ? "text-success" : "text-danger"}`}>
           {verifyResult ? "✓ Chaîne d'intégrité valide" : "✗ Altération détectée"}
         </p>
       )}
 
       {facture.contentHash && (
-        <p className="break-all font-mono text-xs text-slate-400">
+        <p className="break-all font-mono text-xs text-muted-foreground">
           Hash : {facture.contentHash.slice(0, 32)}…
           {facture.chainHash && ` · Chaîne : ${facture.chainHash.slice(0, 16)}…`}
         </p>
       )}
 
-      <div className="rounded-lg border">
+      <div className="card overflow-hidden">
         <table className="w-full text-sm">
           <tbody>
             {facture.lignes.map((l, i) => (
-              <tr key={i} className="border-b">
+              <tr key={i} className="border-b border-border">
                 <td className="p-3">{l.description}</td>
                 <td className="p-3 text-right">{formatEuro(l.totalHT)}</td>
               </tr>
@@ -154,12 +154,12 @@ export function FactureActions({ facture }: FactureDetailProps) {
 
 export function FacturePageWrapper({ facture }: FactureDetailProps) {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8">
-      <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
+    <div className="page-shell max-w-3xl">
+      <Link href="/dashboard" className="link-primary text-sm">
         ← Retour
       </Link>
-      <h1 className="mt-4 text-2xl font-bold">Facture {facture.numero}</h1>
-      <p className="text-slate-600">Client : {facture.client.nom}</p>
+      <h1 className="page-title mt-4 text-2xl">Facture {facture.numero}</h1>
+      <p className="text-muted-foreground">Client : {facture.client.nom}</p>
       <div className="mt-8">
         <FactureActions facture={facture} />
       </div>

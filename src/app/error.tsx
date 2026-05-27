@@ -9,14 +9,11 @@ export default function GlobalError({
 }) {
   return (
     <html lang="fr">
-      <body className="flex min-h-screen items-center justify-center bg-slate-50 p-4">
+      <body className="flex min-h-screen items-center justify-center bg-background p-4 text-foreground">
         <div className="max-w-md text-center">
           <h1 className="text-xl font-bold">Une erreur est survenue</h1>
-          <p className="mt-2 text-sm text-slate-600">{error.message}</p>
-          <button
-            onClick={reset}
-            className="mt-6 rounded-lg bg-blue-600 px-4 py-2 text-white"
-          >
+          <p className="mt-2 text-sm text-muted-foreground">{error.message}</p>
+          <button onClick={reset} className="btn-primary mt-6">
             Réessayer
           </button>
         </div>

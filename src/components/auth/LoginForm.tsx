@@ -45,38 +45,34 @@ export function LoginForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-xl bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p>
       )}
       <div>
-        <label className="block text-sm font-medium text-slate-700">Email</label>
+        <label className="block text-sm font-medium text-foreground">Email</label>
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+          className="input-field"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-slate-700">Mot de passe</label>
+        <label className="block text-sm font-medium text-foreground">Mot de passe</label>
         <input
           type="password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
+          className="input-field"
         />
       </div>
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-lg bg-blue-600 py-2.5 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-      >
+      <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
         {loading ? "Connexion…" : "Se connecter"}
       </button>
-      <p className="text-center text-sm text-slate-600">
+      <p className="text-center text-sm text-muted-foreground">
         Pas encore de compte ?{" "}
-        <Link href="/inscription" className="text-blue-600 hover:underline">
+        <Link href="/inscription" className="link-primary">
           Inscription gratuite
         </Link>
       </p>

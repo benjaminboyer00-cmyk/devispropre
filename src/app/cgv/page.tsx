@@ -8,7 +8,7 @@ export const metadata = pageMetadata({
 
 export default function CgvPage() {
   return (
-    <article className="mx-auto max-w-3xl px-4 py-16 prose prose-slate">
+    <article className="legal-prose mx-auto max-w-3xl px-4 py-16">
       <h1>Conditions générales de vente</h1>
       <h2>Abonnements</h2>
       <ul>

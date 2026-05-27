@@ -7,9 +7,9 @@ export default async function SettingsPage() {
   if (!user) redirect("/connexion");
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold">Paramètres</h1>
-      <p className="mt-1 text-slate-600">Profil, entreprise et logo</p>
+    <div className="page-shell max-w-2xl">
+      <h1 className="page-title text-2xl">Paramètres</h1>
+      <p className="mt-1 text-muted-foreground">Profil, entreprise et logo</p>
       <div className="mt-8">
         <SettingsForm />
       </div>

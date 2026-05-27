@@ -10,12 +10,12 @@ export const metadata = pageMetadata({
 
 export default function InscriptionPage() {
   return (
-    <div className="mx-auto max-w-lg px-4 py-12">
-      <h1 className="text-2xl font-bold">Inscription en 30 secondes</h1>
-      <p className="mt-2 text-slate-600">
+    <div className="page-shell max-w-lg">
+      <h1 className="page-title text-2xl sm:text-3xl">Inscription en 30 secondes</h1>
+      <p className="mt-2 text-muted-foreground">
         Gratuit 30 jours · Sans carte bleue · Premier devis en 2 minutes
       </p>
-      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="card-padded mt-8">
         <RegisterForm />
       </div>
     </div>

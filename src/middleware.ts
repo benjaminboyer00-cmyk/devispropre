@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
   function withHeaders(response: NextResponse): NextResponse {
     applySecurityHeaders(response, csp);
 
-    if (MARKETING_PATHS.has(pathname)) {
+    if (MARKETING_PATHS.has(pathname) && process.env.NODE_ENV === "production") {
       response.headers.set(
         "Cache-Control",
         "public, s-maxage=3600, stale-while-revalidate=86400"

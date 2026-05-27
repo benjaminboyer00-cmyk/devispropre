@@ -19,10 +19,10 @@ export default async function NouveauDevisPage() {
   });
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8">
-      <h1 className="text-2xl font-bold">Nouveau devis</h1>
-      <p className="mt-1 text-slate-600">2 minutes chrono — depuis le chantier</p>
-      <div className="mt-8 rounded-xl border border-slate-200 bg-white p-6">
+    <div className="page-shell max-w-2xl">
+      <h1 className="page-title text-2xl">Nouveau devis</h1>
+      <p className="mt-1 text-muted-foreground">2 minutes chrono — depuis le chantier</p>
+      <div className="card-padded mt-8">
         <DevisForm clients={clients} tvaApplicable={company?.tvaApplicable ?? true} />
       </div>
     </div>

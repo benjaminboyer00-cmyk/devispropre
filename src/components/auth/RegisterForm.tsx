@@ -68,12 +68,12 @@ export function RegisterForm() {
     router.refresh();
   }
 
-  const inputClass = "mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm";
+  const inputClass = "input-field";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       {error && (
-        <p className="rounded-lg bg-red-50 px-4 py-2 text-sm text-red-700">{error}</p>
+        <p className="rounded-xl bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
@@ -97,8 +97,8 @@ export function RegisterForm() {
         <input type="password" required minLength={8} value={form.password} onChange={(e) => update("password", e.target.value)} className={inputClass} />
       </div>
 
-      <hr className="border-slate-200" />
-      <p className="text-sm font-medium text-slate-700">Votre entreprise (mentions légales PDF)</p>
+      <hr className="border-border" />
+      <p className="text-sm font-medium text-foreground">Votre entreprise (mentions légales PDF)</p>
 
       <div>
         <label className="block text-sm font-medium">Raison sociale</label>
@@ -126,17 +126,13 @@ export function RegisterForm() {
         <input required value={form.ville} onChange={(e) => update("ville", e.target.value)} className={inputClass} />
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-lg bg-blue-600 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-      >
+      <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
         {loading ? "Création…" : "Créer mon compte — 30 secondes"}
       </button>
 
-      <p className="text-center text-xs text-slate-500">
+      <p className="text-center text-xs text-muted-foreground">
         Gratuit 30 jours · Sans carte ·{" "}
-        <Link href="/connexion" className="text-blue-600 hover:underline">Déjà inscrit ?</Link>
+        <Link href="/connexion" className="link-primary">Déjà inscrit ?</Link>
       </p>
     </form>
   );
