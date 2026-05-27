@@ -25,34 +25,32 @@ export function ConfirmDialog({
 }: ConfirmDialogProps) {
   if (!open) return null;
 
-  const confirmClass = variant === "danger" ? "btn-danger font-semibold" : "btn-primary";
+  const confirmClass =
+    variant === "danger"
+      ? "bg-red-600 hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-400"
+      : "ui-btn-primary";
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 dark:bg-black/70"
       role="dialog"
       aria-modal="true"
       aria-labelledby="confirm-title"
     >
-      <div className="card w-full max-w-md p-6 shadow-xl">
-        <h2 id="confirm-title" className="text-lg font-semibold text-foreground">
+      <div className="ui-card-padded w-full max-w-md shadow-xl">
+        <h2 id="confirm-title" className="heading text-lg">
           {title}
         </h2>
-        <p className="mt-2 text-sm text-muted-foreground">{message}</p>
+        <p className="text-body mt-2 text-sm">{message}</p>
         <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onCancel}
-            disabled={loading}
-            className="btn-secondary disabled:opacity-50"
-          >
+          <button type="button" onClick={onCancel} disabled={loading} className="ui-btn-outline">
             {cancelLabel}
           </button>
           <button
             type="button"
             onClick={onConfirm}
             disabled={loading}
-            className={`${confirmClass} disabled:opacity-50`}
+            className={`rounded-lg px-4 py-2 text-sm font-medium text-white ${confirmClass}`}
           >
             {loading ? "…" : confirmLabel}
           </button>

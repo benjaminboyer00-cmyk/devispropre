@@ -4,11 +4,11 @@ import { createFactureFromDevis } from "@/lib/services/facture";
 import { prisma } from "@/lib/db";
 
 export async function GET() {
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const factures = await prisma.facture.findMany({
-    where: { userId: user.id, deletedAt: null },
+    where: { userId: auth.workspaceUserId, deletedAt: null },
     include: { client: true, attestation: true },
     orderBy: { createdAt: "desc" },
   });
@@ -19,11 +19,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const body = await request.json();
-  const ctx = { userId: user.id, ...getRequestMeta(request) };
+  const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
 
   try {
     if (!body.devisId) {

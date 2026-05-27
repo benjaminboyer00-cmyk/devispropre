@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import type Stripe from "stripe";
+import { ensureProTeam } from "@/lib/account-context";
 import { getStripe } from "@/lib/stripe";
 import { env } from "@/lib/env";
 import { prisma } from "@/lib/db";
@@ -35,6 +36,9 @@ export async function POST(request: NextRequest) {
           ...(typeof session.customer === "string" && { stripeCustomerId: session.customer }),
         },
       });
+      if (plan === Plan.PRO) {
+        await ensureProTeam(userId);
+      }
     }
   }
 

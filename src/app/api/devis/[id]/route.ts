@@ -26,12 +26,12 @@ const updateSchema = z.object({
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
   const devis = await prisma.devis.findFirst({
-    where: { id, userId: user.id, deletedAt: null },
+    where: { id, userId: auth.workspaceUserId, deletedAt: null },
     include: { client: true, lignes: { orderBy: { ordre: "asc" } }, facture: true },
   });
 
@@ -42,14 +42,14 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
 
   try {
     const body = updateSchema.parse(await request.json());
-    const ctx = { userId: user.id, ...getRequestMeta(request) };
+    const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
 
     const devis = await updateDevis(ctx, id, {
       lignes: body.lignes,
@@ -72,11 +72,11 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
-  const ctx = { userId: user.id, ...getRequestMeta(request) };
+  const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
 
   try {
     await softDeleteDevis(ctx, id);

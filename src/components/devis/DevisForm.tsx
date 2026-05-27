@@ -84,15 +84,15 @@ export function DevisForm({ clients, tvaApplicable = true }: { clients: Client[]
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
-      {error && <p className="rounded-xl bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p>}
+      {error && <p className="ui-alert-error">{error}</p>}
 
       <div>
-        <label className="block text-sm font-medium">Client</label>
+        <label className="ui-label">Client</label>
         {clients.length === 0 && !newClient && (
-          <p className="mt-1 text-sm text-warning">Aucun client — saisissez un nom ci-dessous.</p>
+          <p className="mt-1 text-sm text-amber-700 dark:text-amber-300">Aucun client — saisissez un nom ci-dessous.</p>
         )}
         {clients.length > 0 && (
-          <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="input-field">
+          <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="ui-input mt-1">
             {clients.map((c) => (
               <option key={c.id} value={c.id}>{c.nom}</option>
             ))}
@@ -102,20 +102,20 @@ export function DevisForm({ clients, tvaApplicable = true }: { clients: Client[]
           placeholder="Ou nouveau client (nom)"
           value={newClient}
           onChange={(e) => setNewClient(e.target.value)}
-          className="input-field mt-2"
+          className="ui-input mt-2"
         />
       </div>
 
       <div className="space-y-3">
-        <p className="text-sm font-medium">Prestations</p>
+        <p className="ui-label">Prestations</p>
         {lignes.map((l, i) => (
-          <div key={i} className="grid gap-2 rounded-xl border border-border bg-muted/30 p-3 sm:grid-cols-5">
+          <div key={i} className="grid gap-2 rounded-lg border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-800/50 sm:grid-cols-5">
             <input
               placeholder="Description"
               required
               value={l.description}
               onChange={(e) => updateLigne(i, "description", e.target.value)}
-              className="input-field sm:col-span-2 !mt-0"
+              className="ui-input sm:col-span-2 !mt-0"
             />
             <input
               type="number"
@@ -124,7 +124,7 @@ export function DevisForm({ clients, tvaApplicable = true }: { clients: Client[]
               placeholder="Qté"
               value={l.quantite}
               onChange={(e) => updateLigne(i, "quantite", parseFloat(e.target.value))}
-              className="input-field !mt-0"
+              className="ui-input !mt-0"
             />
             <input
               type="number"
@@ -133,39 +133,39 @@ export function DevisForm({ clients, tvaApplicable = true }: { clients: Client[]
               placeholder="P.U. HT €"
               value={l.prixUnitaireHT || ""}
               onChange={(e) => updateLigne(i, "prixUnitaireHT", parseFloat(e.target.value) || 0)}
-              className="input-field !mt-0"
+              className="ui-input !mt-0"
             />
             {tvaApplicable ? (
               <select
                 value={l.tva}
                 onChange={(e) => updateLigne(i, "tva", parseFloat(e.target.value))}
-                className="input-field !mt-0"
+                className="ui-input !mt-0"
               >
                 {TVA_OPTIONS.filter((t) => t > 0).map((t) => (
                   <option key={t} value={t}>TVA {t}%</option>
                 ))}
               </select>
             ) : (
-              <span className="self-center text-xs text-muted-foreground">Franchise TVA</span>
+              <span className="text-subtle self-center text-xs">Franchise TVA</span>
             )}
           </div>
         ))}
-        <button type="button" onClick={() => setLignes([...lignes, { description: "", quantite: 1, prixUnitaireHT: 0, tva: tvaApplicable ? 20 : 0 }])} className="link-primary text-sm">
+        <button type="button" onClick={() => setLignes([...lignes, { description: "", quantite: 1, prixUnitaireHT: 0, tva: tvaApplicable ? 20 : 0 }])} className="link-blue text-sm">
           + Ajouter une ligne
         </button>
       </div>
 
-      <div className="card-padded bg-muted/40 text-right">
-        <p className="text-sm text-muted-foreground">Total HT : {totalHT.toFixed(2)} €</p>
+      <div className="rounded-lg bg-slate-50 p-4 text-right dark:bg-slate-800/80">
+        <p className="text-body text-sm">Total HT : {totalHT.toFixed(2)} €</p>
         {tvaApplicable ? (
-          <p className="text-sm text-muted-foreground">TVA : {totalTVA.toFixed(2)} €</p>
+          <p className="text-body text-sm">TVA : {totalTVA.toFixed(2)} €</p>
         ) : (
-          <p className="text-xs text-muted-foreground">TVA non applicable, art. 293 B du CGI</p>
+          <p className="text-subtle text-xs">TVA non applicable, art. 293 B du CGI</p>
         )}
-        <p className="text-lg font-bold text-foreground">Total TTC : {totalTTC.toFixed(2)} €</p>
+        <p className="heading text-lg">Total TTC : {totalTTC.toFixed(2)} €</p>
       </div>
 
-      <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+      <button type="submit" disabled={loading} className="ui-btn-primary w-full py-3">
         {loading ? "Création…" : "Créer le devis"}
       </button>
     </form>

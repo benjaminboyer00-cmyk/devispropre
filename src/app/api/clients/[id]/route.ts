@@ -20,20 +20,20 @@ type RouteParams = { params: Promise<{ id: string }> };
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
 
   try {
     const data = schema.parse(await request.json());
     const existing = await prisma.client.findFirst({
-      where: { id, userId: user.id, deletedAt: null },
+      where: { id, userId: auth.workspaceUserId, deletedAt: null },
     });
     if (!existing) return apiError("Client introuvable", 404);
 
     const client = await prisma.client.updateMany({
-      where: { id, userId: user.id, deletedAt: null },
+      where: { id, userId: auth.workspaceUserId, deletedAt: null },
       data: {
         ...(data.nom !== undefined && { nom: data.nom }),
         ...(data.email !== undefined && { email: data.email || null }),
@@ -44,7 +44,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 
     if (client.count === 0) return apiError("Client introuvable", 404);
 
-    const updated = await prisma.client.findFirst({ where: { id, userId: user.id } });
+    const updated = await prisma.client.findFirst({ where: { id, userId: auth.workspaceUserId } });
     return Response.json(updated);
   } catch (e) {
     if (e instanceof z.ZodError) return apiError(e.message);
@@ -55,18 +55,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
 
   const existing = await prisma.client.findFirst({
-    where: { id, userId: user.id, deletedAt: null },
+    where: { id, userId: auth.workspaceUserId, deletedAt: null },
   });
   if (!existing) return apiError("Client introuvable", 404);
 
   await prisma.client.updateMany({
-    where: { id, userId: user.id, deletedAt: null },
+    where: { id, userId: auth.workspaceUserId, deletedAt: null },
     data: { deletedAt: new Date() },
   });
 

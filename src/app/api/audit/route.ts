@@ -4,8 +4,8 @@ import { getEntityAuditTrail } from "@/lib/audit";
 import { assertEntityOwnedByUser } from "@/lib/entity-access";
 
 export async function GET(request: NextRequest) {
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { searchParams } = new URL(request.url);
   const entityType = searchParams.get("entityType");
@@ -16,8 +16,8 @@ export async function GET(request: NextRequest) {
   }
 
   try {
-    await assertEntityOwnedByUser(user.id, entityType, entityId);
-    const trail = await getEntityAuditTrail(user.id, entityType, entityId);
+    await assertEntityOwnedByUser(auth.workspaceUserId, entityType, entityId);
+    const trail = await getEntityAuditTrail(auth.workspaceUserId, entityType, entityId);
     return Response.json(trail);
   } catch (e) {
     return handleServiceError(e);

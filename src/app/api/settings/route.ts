@@ -7,8 +7,10 @@ import {
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
+import { getAccountContext } from "@/lib/account-context";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
+import { ForbiddenError } from "@/lib/errors";
 import { logoApiPath, parseLogoDataUri, saveLogoFile } from "@/lib/logo-storage";
 
 const companySchema = z.object({
@@ -42,16 +44,16 @@ const profileSchema = z.object({
 });
 
 export async function GET() {
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const [profile, company] = await Promise.all([
     prisma.user.findUnique({
-      where: { id: user.id },
+      where: { id: auth.user.id },
       select: { id: true, email: true, name: true, phone: true, plan: true },
     }),
     prisma.company.findUnique({
-      where: { userId: user.id },
+      where: { userId: auth.workspaceUserId },
       select: {
         id: true,
         raisonSociale: true,
@@ -73,37 +75,38 @@ export async function GET() {
   ]);
 
   return Response.json({
-    profile,
+    profile: profile ? { ...profile, plan: auth.plan } : null,
     company: company
       ? {
           ...company,
           logoUrl: company.logoUrl?.startsWith("data:image")
-            ? logoApiPath(user.id)
+            ? logoApiPath(auth.workspaceUserId)
             : company.logoUrl,
         }
       : null,
+    isTeamMember: auth.isTeamMember,
   });
 }
 
 export async function PATCH(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   try {
     const body = await request.json();
-    const ctx = { userId: user.id, ...getRequestMeta(request) };
+    const meta = getRequestMeta(request);
 
     if (body.section === "profile") {
       const data = profileSchema.parse(body);
-      if (data.email && data.email !== user.email) {
+      if (data.email && data.email !== auth.user.email) {
         const taken = await prisma.user.findUnique({ where: { email: data.email } });
         if (taken) return apiError("Cet email est déjà utilisé", 409);
       }
 
       const updated = await prisma.user.update({
-        where: { id: user.id },
+        where: { id: auth.user.id },
         data: {
           ...(data.name && { name: data.name }),
           ...(data.phone !== undefined && { phone: data.phone }),
@@ -112,11 +115,18 @@ export async function PATCH(request: NextRequest) {
         select: { id: true, email: true, name: true, phone: true, plan: true },
       });
 
-      await logAudit(ctx, { action: "UPDATE", entityType: "user", entityId: user.id });
-      return Response.json({ profile: updated });
+      await logAudit(
+        { userId: auth.workspaceUserId, actorUserId: auth.user.id, ...meta },
+        { action: "UPDATE", entityType: "user", entityId: auth.user.id }
+      );
+      return Response.json({ profile: { ...updated, plan: auth.plan } });
     }
 
     if (body.section === "company") {
+      if (auth.isTeamMember) {
+        throw new ForbiddenError("Seul le propriétaire peut modifier l'entreprise.");
+      }
+
       const data = companySchema.parse(body);
 
       let logoPath: string | null | undefined;
@@ -125,12 +135,12 @@ export async function PATCH(request: NextRequest) {
           logoPath = null;
         } else {
           const { buffer, ext } = parseLogoDataUri(data.logoUrl);
-          logoPath = await saveLogoFile(user.id, buffer, ext);
+          logoPath = await saveLogoFile(auth.workspaceUserId, buffer, ext);
         }
       }
 
       const company = await prisma.company.update({
-        where: { userId: user.id },
+        where: { userId: auth.workspaceUserId },
         data: {
           ...(data.raisonSociale !== undefined && { raisonSociale: data.raisonSociale }),
           ...(data.siret !== undefined && { siret: data.siret }),
@@ -148,12 +158,15 @@ export async function PATCH(request: NextRequest) {
         },
       });
 
-      await logAudit(ctx, { action: "UPDATE", entityType: "company", entityId: company.id });
+      await logAudit(
+        { userId: auth.workspaceUserId, actorUserId: auth.user.id, ...meta },
+        { action: "UPDATE", entityType: "company", entityId: company.id }
+      );
       return Response.json({
         company: {
           ...company,
           logoUrl: company.logoUrl?.startsWith("data:image")
-            ? logoApiPath(user.id)
+            ? logoApiPath(auth.workspaceUserId)
             : company.logoUrl,
         },
       });

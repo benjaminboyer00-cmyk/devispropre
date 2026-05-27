@@ -3,20 +3,30 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-50 border-b border-border bg-card/85 backdrop-blur-md">
+    <header
+      className="sticky top-0 z-50 border-b backdrop-blur-md"
+      style={{
+        borderColor: "var(--border)",
+        background: "var(--header-bg)",
+      }}
+    >
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
-        <Link href="/" className="text-xl font-bold tracking-tight text-primary">
+        <Link
+          href="/"
+          className="text-xl font-bold transition-colors duration-200"
+          style={{ color: "var(--blue)" }}
+        >
           DevisPropre
         </Link>
-        <nav className="flex items-center gap-2 sm:gap-4 text-sm">
-          <Link href="/tarifs" className="hidden text-muted-foreground transition hover:text-foreground sm:inline">
+        <nav className="flex items-center gap-3 sm:gap-4">
+          <Link href="/tarifs" className="nav-link hidden sm:inline">
             Tarifs
           </Link>
-          <Link href="/conformite" className="hidden text-muted-foreground transition hover:text-foreground sm:inline">
+          <Link href="/conformite" className="nav-link hidden sm:inline">
             Conformité TVA
           </Link>
           <ThemeToggle />
-          <Link href="/inscription" className="btn-primary px-3 py-2 sm:px-4">
+          <Link href="/inscription" className="ui-btn-primary px-3 py-2 sm:px-4">
             Essai gratuit
           </Link>
         </nav>

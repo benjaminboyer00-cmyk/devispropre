@@ -3,6 +3,7 @@ import { prisma } from "./db";
 
 export interface AuditContext {
   userId: string;
+  actorUserId?: string;
   ipAddress?: string | null;
   userAgent?: string | null;
 }
@@ -27,7 +28,12 @@ export async function logAudit(
       entityId: params.entityId,
       devisId: params.devisId,
       factureId: params.factureId,
-      metadata: JSON.stringify(params.metadata ?? {}),
+      metadata: JSON.stringify({
+        ...(params.metadata ?? {}),
+        ...(ctx.actorUserId && ctx.actorUserId !== ctx.userId
+          ? { actorUserId: ctx.actorUserId }
+          : {}),
+      }),
       contentHash: params.contentHash ?? null,
       ipAddress: ctx.ipAddress ?? null,
       userAgent: ctx.userAgent ?? null,

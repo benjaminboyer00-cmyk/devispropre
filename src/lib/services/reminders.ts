@@ -1,11 +1,12 @@
+import { Plan } from "@/generated/prisma/client";
 import { prisma } from "../db";
 import { logAudit, type AuditContext } from "../audit";
 import { env } from "../env";
-import { sendDevisReminderEmail } from "../email";
+import { sendDevisReminderEmail, sendDevisReminderToClient } from "../email";
 
 const REMINDER_DAYS = 3;
 
-/** Relances J+3 pour devis envoyés sans réponse. */
+/** Relances J+3 automatiques — réservées aux plans Starter et Pro. */
 export async function processReminders(systemCtx: AuditContext) {
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - REMINDER_DAYS);
@@ -16,18 +17,29 @@ export async function processReminders(systemCtx: AuditContext) {
       deletedAt: null,
       sentAt: { lte: cutoff },
       reminderSentAt: null,
+      user: { plan: { in: [Plan.STARTER, Plan.PRO] }, deletedAt: null },
     },
     include: {
       client: true,
-      user: { select: { id: true, email: true, name: true } },
+      user: {
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          plan: true,
+          company: { select: { raisonSociale: true } },
+        },
+      },
     },
   });
 
   const results: {
     devisId: string;
     numero: string;
-    emailSent: boolean;
-    emailReason?: string;
+    clientEmailSent: boolean;
+    artisanEmailSent: boolean;
+    clientEmailReason?: string;
+    artisanEmailReason?: string;
   }[] = [];
 
   for (const devis of devisList) {
@@ -35,11 +47,32 @@ export async function processReminders(systemCtx: AuditContext) {
       ? `${env.appUrl}/devis/${devis.shareToken}`
       : `${env.appUrl}/dashboard/devis/${devis.id}`;
 
-    const emailResult = await sendDevisReminderEmail({
+    const companyName = devis.user.company?.raisonSociale ?? devis.user.name;
+
+    let clientEmailSent = false;
+    let clientEmailReason: string | undefined;
+
+    if (devis.client.email) {
+      const clientResult = await sendDevisReminderToClient({
+        clientEmail: devis.client.email,
+        clientNom: devis.client.nom,
+        artisanName: devis.user.name,
+        companyName,
+        devisNumero: devis.numero,
+        shareUrl,
+      });
+      clientEmailSent = clientResult.sent;
+      clientEmailReason = clientResult.reason;
+    } else {
+      clientEmailReason = "Client sans email";
+    }
+
+    const artisanResult = await sendDevisReminderEmail({
       artisanEmail: devis.user.email,
       artisanName: devis.user.name,
       devisNumero: devis.numero,
       clientNom: devis.client.nom,
+      clientPhone: devis.client.telephone,
       shareUrl,
     });
 
@@ -56,11 +89,13 @@ export async function processReminders(systemCtx: AuditContext) {
         entityId: devis.id,
         devisId: devis.id,
         metadata: {
-          type: "reminder_j3",
+          type: "reminder_j3_auto",
           client: devis.client.nom,
           shareUrl,
-          emailSent: emailResult.sent,
-          emailReason: emailResult.reason,
+          clientEmailSent,
+          clientEmailReason,
+          artisanEmailSent: artisanResult.sent,
+          artisanEmailReason: artisanResult.reason,
         },
       }
     );
@@ -68,8 +103,10 @@ export async function processReminders(systemCtx: AuditContext) {
     results.push({
       devisId: devis.id,
       numero: devis.numero,
-      emailSent: emailResult.sent,
-      emailReason: emailResult.reason,
+      clientEmailSent,
+      artisanEmailSent: artisanResult.sent,
+      clientEmailReason,
+      artisanEmailReason: artisanResult.reason,
     });
   }
 

@@ -10,7 +10,7 @@ export const metadata = pageMetadata({
 export default function MentionsLegalesPage() {
   const e = LEGAL.editor;
   return (
-    <article className="legal-prose mx-auto max-w-3xl px-4 py-16">
+    <article className="prose-legal mx-auto max-w-3xl px-4 py-16">
       <h1>Mentions légales</h1>
       <h2>Éditeur du site</h2>
       <p>

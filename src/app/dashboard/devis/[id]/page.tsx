@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
+import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { DevisActions } from "@/components/devis/DevisActions";
@@ -10,9 +11,10 @@ export default async function DevisDetailPage({ params }: PageProps) {
   const user = await getSession();
   if (!user) redirect("/connexion");
 
+  const account = await getAccountContext(user.id);
   const { id } = await params;
   const devis = await prisma.devis.findFirst({
-    where: { id, userId: user.id, deletedAt: null },
+    where: { id, userId: account.workspaceUserId, deletedAt: null },
     include: {
       client: true,
       lignes: { orderBy: { ordre: "asc" } },
@@ -22,14 +24,14 @@ export default async function DevisDetailPage({ params }: PageProps) {
   if (!devis) notFound();
 
   return (
-    <div className="page-shell max-w-3xl">
-      <Link href="/dashboard" className="link-primary text-sm">
+    <div className="mx-auto max-w-3xl px-4 py-8">
+      <Link href="/dashboard" className="link-blue text-sm">
         ← Retour
       </Link>
-      <h1 className="page-title mt-4 text-2xl">Devis {devis.numero}</h1>
-      <p className="text-muted-foreground">Client : {devis.client.nom}</p>
+      <h1 className="heading mt-4 text-2xl">Devis {devis.numero}</h1>
+      <p className="text-body">Client : {devis.client.nom}</p>
       <div className="mt-8">
-        <DevisActions devis={JSON.parse(JSON.stringify(devis))} />
+        <DevisActions devis={JSON.parse(JSON.stringify(devis))} plan={account.plan} />
       </div>
     </div>
   );

@@ -25,11 +25,11 @@ const createSchema = z.object({
 });
 
 export async function GET() {
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const devis = await prisma.devis.findMany({
-    where: { userId: user.id, deletedAt: null },
+    where: { userId: auth.workspaceUserId, deletedAt: null },
     include: { client: true, lignes: true },
     orderBy: { createdAt: "desc" },
   });
@@ -40,12 +40,12 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   try {
     const body = createSchema.parse(await request.json());
-    const ctx = { userId: user.id, ...getRequestMeta(request) };
+    const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
 
     const devis = await createDevis(ctx, {
       clientId: body.clientId,

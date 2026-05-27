@@ -12,6 +12,13 @@ import { assertDevisEditable, ImmutabilityError } from "../immutability";
 import { ForbiddenError } from "../errors";
 import { assertCanCreateDevis } from "../plan-limits";
 import { computeLineTotalHT, computeTotals, nextDevisNumero } from "../numbers";
+import {
+  archivePdf,
+  devisPdfKey,
+  ObjectStorageError,
+} from "../object-storage";
+import { generateDevisPdf } from "../pdf-document";
+import { ROUTES } from "../routes";
 
 export interface LigneInput {
   description: string;
@@ -187,6 +194,29 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
   const shareToken = generateShareToken();
   const now = new Date();
 
+  const lockedForPdf = {
+    ...devis,
+    status: "ENVOYE" as const,
+    lockedAt: now,
+    sentAt: now,
+    contentHash,
+    chainHash,
+    shareToken,
+  };
+
+  let pdfUrl: string;
+  try {
+    const pdfBuffer = await generateDevisPdf(lockedForPdf, company);
+    pdfUrl = await archivePdf(
+      devisPdfKey(ctx.userId, devisId),
+      pdfBuffer,
+      ROUTES.apiArchiveDevis(devisId)
+    );
+  } catch (err) {
+    if (err instanceof ObjectStorageError) throw err;
+    throw new ObjectStorageError("Impossible d'archiver le PDF du devis.");
+  }
+
   const updated = await prisma.devis.update({
     where: { id: devisId },
     data: {
@@ -196,6 +226,8 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
       contentHash,
       chainHash,
       shareToken,
+      pdfUrl,
+      pdfArchivedAt: now,
     },
     include: { lignes: true, client: true },
   });
@@ -206,7 +238,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
     entityId: devisId,
     devisId,
     contentHash,
-    metadata: { chainHash },
+    metadata: { chainHash, pdfUrl },
   });
 
   await logAudit(ctx, {
@@ -215,7 +247,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
     entityId: devisId,
     devisId,
     contentHash,
-    metadata: { channel: "whatsapp" },
+    metadata: { channel: "whatsapp", pdfUrl },
   });
 
   return updated;

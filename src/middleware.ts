@@ -2,19 +2,10 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { COOKIE_NAME, getJwtSecretKey } from "@/lib/jwt";
+import { MARKETING_ROUTES, ROUTES } from "@/lib/routes";
 import { applySecurityHeaders, buildContentSecurityPolicy } from "@/lib/security-headers";
 
-/** Pages marketing statiques — cache CDN/navigateur. */
-const MARKETING_PATHS = new Set([
-  "/",
-  "/tarifs",
-  "/conformite",
-  "/inscription",
-  "/mentions-legales",
-  "/politique-confidentialite",
-  "/cgu",
-  "/cgv",
-]);
+const MARKETING_PATHS = new Set<string>(MARKETING_ROUTES);
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -39,8 +30,8 @@ export async function middleware(request: NextRequest) {
       response.headers.set("Service-Worker-Allowed", "/");
     }
 
-    if (pathname.startsWith("/icons/")) {
-      response.headers.set("Cache-Control", "public, max-age=31536000, immutable");
+    if (pathname.startsWith("/icons/") || pathname === "/manifest.webmanifest") {
+      response.headers.set("Cache-Control", "public, max-age=86400, stale-while-revalidate=604800");
     }
 
     return response;
@@ -49,14 +40,14 @@ export async function middleware(request: NextRequest) {
   if (pathname.startsWith("/dashboard")) {
     const token = request.cookies.get(COOKIE_NAME)?.value;
     if (!token) {
-      return withHeaders(NextResponse.redirect(new URL("/connexion", request.url)));
+      return withHeaders(NextResponse.redirect(new URL(ROUTES.connexion, request.url)));
     }
 
     try {
       await jwtVerify(token, getJwtSecretKey());
       return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
     } catch {
-      return withHeaders(NextResponse.redirect(new URL("/connexion", request.url)));
+      return withHeaders(NextResponse.redirect(new URL(ROUTES.connexion, request.url)));
     }
   }
 

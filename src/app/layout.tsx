@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Geist } from "next/font/google";
 import { headers } from "next/headers";
 import { WebVitals } from "@/components/analytics/WebVitals";
 import { Footer } from "@/components/layout/Footer";
@@ -6,6 +7,12 @@ import { Header } from "@/components/layout/Header";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 import { defaultMetadata, jsonLdOrganization, jsonLdWebSite } from "@/lib/seo";
 import "./globals.css";
+
+const geist = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   ...defaultMetadata,
@@ -19,8 +26,8 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f6f8fb" },
-    { media: "(prefers-color-scheme: dark)", color: "#080d16" },
+    { media: "(prefers-color-scheme: light)", color: "#2563eb" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b1120" },
   ],
   width: "device-width",
   initialScale: 1,
@@ -32,7 +39,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const nonce = (await headers()).get("x-nonce") ?? undefined;
 
   return (
-    <html lang="fr" className="h-full" suppressHydrationWarning>
+    <html lang="fr" className={`${geist.variable} h-full`} suppressHydrationWarning>
       <head>
         <script nonce={nonce} dangerouslySetInnerHTML={{ __html: themeScript }} />
         <script

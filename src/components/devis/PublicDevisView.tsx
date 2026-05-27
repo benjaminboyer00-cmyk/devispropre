@@ -55,76 +55,47 @@ export function PublicDevisView({ token }: { token: string }) {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center text-muted-foreground">
-        Chargement…
-      </div>
-    );
-  }
-
+  if (loading) return <p className="text-body p-8 text-center">Chargement…</p>;
   if (error || !devis) {
-    return (
-      <div className="mx-auto max-w-2xl px-4 py-16 text-center text-danger">
-        {error || "Devis introuvable"}
-      </div>
-    );
+    return <p className="ui-alert-error mx-auto max-w-md p-8 text-center">{error || "Devis introuvable"}</p>;
   }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
-      <div className="card-padded">
-        <p className="text-sm font-semibold text-primary">DevisPropre</p>
-        <h1 className="mt-2 text-2xl font-bold tracking-tight text-foreground">
-          Devis {devis.numero}
-        </h1>
-        {devis.company && (
-          <p className="mt-1 text-muted-foreground">{devis.company.raisonSociale}</p>
-        )}
-        <p className="mt-1 text-sm text-muted-foreground">Pour {devis.client.nom}</p>
+      <div className="ui-card-padded">
+        <p className="link-blue text-sm font-medium">DevisPropre</p>
+        <h1 className="heading mt-2 text-2xl">Devis {devis.numero}</h1>
+        {devis.company && <p className="text-body">{devis.company.raisonSociale}</p>}
 
         {devis.integrityOk && (
-          <p className="mt-4 rounded-xl bg-success-muted px-4 py-2.5 text-sm text-success">
-            ✓ Document authentique — aucune altération
-          </p>
+          <p className="ui-alert-success mt-4">✓ Document authentique — aucune altération</p>
         )}
 
-        <div className="mt-6 overflow-hidden rounded-xl border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border bg-muted/50 text-left text-xs uppercase text-muted-foreground">
-                <th className="p-3">Prestation</th>
-                <th className="p-3 text-right">Montant HT</th>
+        <table className="mt-6 w-full text-sm">
+          <tbody>
+            {devis.lignes.map((l, i) => (
+              <tr key={i} className="border-b border-slate-200 dark:border-slate-700">
+                <td className="py-2">{l.description}</td>
+                <td className="py-2 text-right">{formatEuro(l.totalHT)}</td>
               </tr>
-            </thead>
-            <tbody>
-              {devis.lignes.map((l, i) => (
-                <tr key={i} className="border-b border-border last:border-0">
-                  <td className="p-3 text-foreground">{l.description}</td>
-                  <td className="p-3 text-right text-foreground">{formatEuro(l.totalHT)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <p className="mt-4 text-right text-xl font-bold text-foreground">
-          {formatEuro(devis.totalTTC)} TTC
-        </p>
+            ))}
+          </tbody>
+        </table>
+        <p className="heading mt-4 text-right text-xl">{formatEuro(devis.totalTTC)} TTC</p>
 
         {devis.status === "ENVOYE" && (
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+          <div className="mt-6 flex gap-3">
             <button
               onClick={() => respond("ACCEPTE")}
               disabled={actionLoading}
-              className="btn-primary flex-1 py-3 disabled:opacity-50"
+              className="ui-btn-primary flex-1 py-3 dark:bg-green-600 dark:hover:bg-green-500"
             >
               J&apos;accepte
             </button>
             <button
               onClick={() => respond("REFUSE")}
               disabled={actionLoading}
-              className="btn-danger flex-1 py-3 disabled:opacity-50"
+              className="ui-btn-outline flex-1 border-red-600 py-3 text-red-700 dark:border-red-400 dark:text-red-300"
             >
               Je refuse
             </button>
@@ -132,7 +103,7 @@ export function PublicDevisView({ token }: { token: string }) {
         )}
 
         {devis.status === "ACCEPTE" && (
-          <p className="mt-6 text-center font-medium text-success">
+          <p className="mt-6 text-center font-medium text-green-700 dark:text-green-400">
             ✅ Devis accepté — merci !
           </p>
         )}

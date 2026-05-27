@@ -12,11 +12,11 @@ const schema = z.object({
 });
 
 export async function GET() {
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const clients = await prisma.client.findMany({
-    where: { userId: user.id, deletedAt: null },
+    where: { userId: auth.workspaceUserId, deletedAt: null },
     orderBy: { nom: "asc" },
   });
 
@@ -26,14 +26,14 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   try {
     const data = schema.parse(await request.json());
     const client = await prisma.client.create({
       data: {
-        userId: user.id,
+        userId: auth.workspaceUserId,
         nom: data.nom,
         email: data.email || null,
         telephone: data.telephone,
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
     });
 
     await logAudit(
-      { userId: user.id, ...getRequestMeta(request) },
+      { userId: auth.workspaceUserId, ...getRequestMeta(request) },
       { action: "CREATE", entityType: "client", entityId: client.id, metadata: { nom: client.nom } }
     );
 

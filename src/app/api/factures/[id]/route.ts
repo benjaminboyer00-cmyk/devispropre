@@ -11,12 +11,12 @@ import { prisma } from "@/lib/db";
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
   const facture = await prisma.facture.findFirst({
-    where: { id, userId: user.id, deletedAt: null },
+    where: { id, userId: auth.workspaceUserId, deletedAt: null },
     include: {
       client: true,
       lignes: { orderBy: { ordre: "asc" } },
@@ -31,11 +31,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
   assertMutationSecurity(request);
 
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
-  const ctx = { userId: user.id, ...getRequestMeta(request) };
+  const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
   const body = await request.json().catch(() => ({}));
 
   try {

@@ -1,0 +1,37 @@
+/** Routes centralisées — évite les chemins en dur dans l'app. */
+export const ROUTES = {
+  home: "/",
+  tarifs: "/tarifs",
+  conformite: "/conformite",
+  inscription: "/inscription",
+  connexion: "/connexion",
+  offline: "/offline",
+  dashboard: "/dashboard",
+  dashboardSettings: "/dashboard/settings",
+  dashboardStats: "/dashboard/stats",
+  dashboardAudit: "/dashboard/audit",
+  dashboardSupport: "/dashboard/support",
+  dashboardDevisNew: "/dashboard/devis/nouveau",
+  dashboardDevis: (id: string) => `/dashboard/devis/${id}`,
+  dashboardFacture: (id: string) => `/dashboard/factures/${id}`,
+  publicDevis: (token: string) => `/devis/${token}`,
+  mentionsLegales: "/mentions-legales",
+  politiqueConfidentialite: "/politique-confidentialite",
+  cgu: "/cgu",
+  cgv: "/cgv",
+  apiDevisPdf: (id: string) => `/api/devis/${id}/pdf`,
+  apiFacturePdf: (id: string) => `/api/factures/${id}/pdf`,
+  apiArchiveDevis: (id: string) => `/api/archives/devis/${id}`,
+  apiArchiveFacture: (id: string) => `/api/archives/factures/${id}`,
+} as const;
+
+export const MARKETING_ROUTES = [
+  ROUTES.home,
+  ROUTES.tarifs,
+  ROUTES.conformite,
+  ROUTES.inscription,
+  ROUTES.mentionsLegales,
+  ROUTES.politiqueConfidentialite,
+  ROUTES.cgu,
+  ROUTES.cgv,
+] as const;

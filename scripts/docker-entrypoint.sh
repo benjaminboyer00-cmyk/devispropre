@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-mkdir -p /app/storage/logos
+mkdir -p /app/storage/logos /app/storage/pdfs
 
 if [ -n "$DATABASE_URL" ]; then
   echo "→ Migration PostgreSQL…"

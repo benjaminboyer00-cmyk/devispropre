@@ -62,6 +62,63 @@ model User {
   factures  Facture[]
   auditLogs AuditLog[]
   attestations Attestation[]
+  teamOwned Team? @relation("TeamOwner")
+  teamMembership TeamMember?
+  supportTickets SupportTicket[]
+}
+
+model Team {
+  id         String   @id @default(cuid())
+  ownerId    String   @unique
+  owner      User     @relation("TeamOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  maxMembers Int      @default(5)
+  createdAt  DateTime @default(now())
+  members    TeamMember[]
+}
+
+enum TeamRole {
+  ADMIN
+  MEMBER
+}
+
+enum TeamMemberStatus {
+  PENDING
+  ACTIVE
+}
+
+model TeamMember {
+  id         String           @id @default(cuid())
+  teamId     String
+  team       Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId     String?          @unique
+  user       User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  email      String
+  role       TeamRole         @default(MEMBER)
+  status     TeamMemberStatus @default(PENDING)
+  invitedAt  DateTime         @default(now())
+  acceptedAt DateTime?
+
+  @@unique([teamId, email])
+  @@index([teamId])
+}
+
+enum SupportTicketStatus {
+  OPEN
+  CLOSED
+}
+
+model SupportTicket {
+  id        String              @id @default(cuid())
+  userId    String
+  user      User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject   String
+  message   String
+  priority  Boolean             @default(false)
+  status    SupportTicketStatus @default(OPEN)
+  createdAt DateTime            @default(now())
+  updatedAt DateTime            @updatedAt
+
+  @@index([userId])
 }
 
 model Company {
@@ -121,6 +178,8 @@ model Devis {
   acceptedAt     DateTime?
   refusedAt      DateTime?
   reminderSentAt DateTime?
+  pdfUrl         String?
+  pdfArchivedAt  DateTime?
   notes          String?
   validUntil     DateTime?
   createdAt      DateTime    @default(now())
@@ -168,6 +227,8 @@ model Facture {
   previousHash String?
   issuedAt     DateTime?
   paidAt       DateTime?
+  pdfUrl       String?
+  pdfArchivedAt DateTime?
   notes        String?
   dateEcheance DateTime?
   createdAt    DateTime      @default(now())

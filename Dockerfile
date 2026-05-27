@@ -29,7 +29,7 @@ COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
 COPY scripts/docker-entrypoint.sh ./docker-entrypoint.sh
 
-RUN mkdir -p /app/storage/logos && chown -R nextjs:nodejs /app/storage && chmod +x docker-entrypoint.sh
+RUN mkdir -p /app/storage/logos /app/storage/pdfs && chown -R nextjs:nodejs /app/storage && chmod +x docker-entrypoint.sh
 
 USER nextjs
 EXPOSE 3000

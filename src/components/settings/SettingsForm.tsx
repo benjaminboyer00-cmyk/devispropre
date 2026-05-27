@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 
 interface SettingsData {
   profile: { name: string; email: string; phone: string | null; plan: string };
@@ -13,12 +14,14 @@ interface SettingsData {
     tvaApplicable: boolean;
     logoUrl: string | null;
   } | null;
+  isTeamMember?: boolean;
 }
 
 export function SettingsForm() {
   const [data, setData] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
+  const [checkoutLoading, setCheckoutLoading] = useState("");
 
   useEffect(() => {
     fetch("/api/settings")
@@ -26,6 +29,23 @@ export function SettingsForm() {
       .then(setData)
       .finally(() => setLoading(false));
   }, []);
+
+  async function checkout(plan: "STARTER" | "PRO") {
+    setCheckoutLoading(plan);
+    setMessage("");
+    const res = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan }),
+    });
+    const json = await res.json();
+    setCheckoutLoading("");
+    if (json.url) {
+      window.location.href = json.url;
+    } else {
+      setMessage(json.error ?? "Paiement indisponible");
+    }
+  }
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -89,52 +109,94 @@ export function SettingsForm() {
   if (loading) return <p>Chargement…</p>;
   if (!data) return <p>Erreur chargement</p>;
 
-  const inputClass = "input-field";
+  const inputClass = "ui-input mt-1";
+  const plan = data.profile.plan;
 
   return (
     <div className="space-y-10">
-      {message && <p className="rounded-xl bg-success-muted px-4 py-2 text-sm text-success">{message}</p>}
+      {message && <p className="ui-alert-success">{message}</p>}
 
-      <form onSubmit={saveProfile} className="card-padded space-y-4">
-        <h2 className="font-semibold">Profil</h2>
+      {!data.isTeamMember && (
+        <div className="ui-card-padded space-y-4">
+          <h2 className="heading font-semibold">Votre abonnement</h2>
+          <p className="text-body text-sm">
+            Plan actuel : <strong>{plan}</strong>
+          </p>
+          {plan === "FREE" && (
+            <p className="text-body text-sm">
+              Passez au Starter pour WhatsApp, factures TVA 2018, relances J+3 et attestation PDF.
+            </p>
+          )}
+          {plan !== "PRO" && (
+            <div className="flex flex-wrap gap-2">
+              {plan !== "STARTER" && (
+                <button
+                  type="button"
+                  disabled={!!checkoutLoading}
+                  onClick={() => checkout("STARTER")}
+                  className="ui-btn-primary text-sm"
+                >
+                  {checkoutLoading === "STARTER" ? "Redirection…" : "Starter — 19€/mois"}
+                </button>
+              )}
+              <button
+                type="button"
+                disabled={!!checkoutLoading}
+                onClick={() => checkout("PRO")}
+                className="ui-btn-outline text-sm"
+              >
+                {checkoutLoading === "PRO" ? "Redirection…" : "Pro — 39€/mois"}
+              </button>
+            </div>
+          )}
+          <Link href="/tarifs" className="link-underline text-sm">
+            Voir le détail des fonctionnalités par plan
+          </Link>
+        </div>
+      )}
+
+      <form onSubmit={saveProfile} className="ui-card-padded space-y-4">
+        <h2 className="heading font-semibold">Profil</h2>
         <div>
-          <label className="text-sm">Nom</label>
+          <label className="ui-label">Nom</label>
           <input name="name" defaultValue={data.profile.name} className={inputClass} required />
         </div>
         <div>
-          <label className="text-sm">Email</label>
+          <label className="ui-label">Email</label>
           <input name="email" type="email" defaultValue={data.profile.email} className={inputClass} required />
         </div>
         <div>
-          <label className="text-sm">Téléphone</label>
+          <label className="ui-label">Téléphone</label>
           <input name="phone" defaultValue={data.profile.phone ?? ""} className={inputClass} />
         </div>
-        <button type="submit" className="btn-primary w-full sm:w-auto">Enregistrer</button>
+        <button type="submit" className="ui-btn-primary">
+          Enregistrer
+        </button>
       </form>
 
-      {data.company && (
-        <form onSubmit={saveCompany} className="card-padded space-y-4">
-          <h2 className="font-semibold">Entreprise</h2>
+      {data.company && !data.isTeamMember && (
+        <form onSubmit={saveCompany} className="ui-card-padded space-y-4">
+          <h2 className="heading font-semibold">Entreprise</h2>
           <div>
-            <label className="text-sm">Raison sociale</label>
+            <label className="ui-label">Raison sociale</label>
             <input name="raisonSociale" defaultValue={data.company.raisonSociale} className={inputClass} required />
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className="text-sm">SIRET</label>
+              <label className="ui-label">SIRET</label>
               <input name="siret" defaultValue={data.company.siret} className={inputClass} required />
             </div>
             <div>
-              <label className="text-sm">Code postal</label>
+              <label className="ui-label">Code postal</label>
               <input name="codePostal" defaultValue={data.company.codePostal} className={inputClass} required />
             </div>
           </div>
           <div>
-            <label className="text-sm">Adresse</label>
+            <label className="ui-label">Adresse</label>
             <input name="adresse" defaultValue={data.company.adresse} className={inputClass} required />
           </div>
           <div>
-            <label className="text-sm">Ville</label>
+            <label className="ui-label">Ville</label>
             <input name="ville" defaultValue={data.company.ville} className={inputClass} required />
           </div>
           <label className="flex items-center gap-2 text-sm">
@@ -142,14 +204,21 @@ export function SettingsForm() {
             Je facture la TVA (décocher si franchise en base — art. 293 B CGI)
           </label>
           <div>
-            <label className="text-sm">Logo (PNG/JPG, max 500 Ko)</label>
-            <input type="file" accept="image/*" onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])} className="mt-1 text-sm" />
+            <label className="ui-label">Logo (PNG/JPG, max 500 Ko)</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => e.target.files?.[0] && uploadLogo(e.target.files[0])}
+              className="mt-1 text-sm"
+            />
             {data.company.logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={data.company.logoUrl} alt="Logo" className="mt-2 h-16 object-contain" />
             )}
           </div>
-          <button type="submit" className="btn-primary w-full sm:w-auto">Enregistrer</button>
+          <button type="submit" className="ui-btn-primary">
+            Enregistrer
+          </button>
         </form>
       )}
     </div>

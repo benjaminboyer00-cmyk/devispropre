@@ -44,35 +44,33 @@ export function LoginForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <p className="rounded-xl bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p>
-      )}
+      {error && <p className="ui-alert-error">{error}</p>}
       <div>
-        <label className="block text-sm font-medium text-foreground">Email</label>
+        <label className="ui-label">Email</label>
         <input
           type="email"
           required
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="input-field"
+          className="ui-input mt-1"
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-foreground">Mot de passe</label>
+        <label className="ui-label">Mot de passe</label>
         <input
           type="password"
           required
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="input-field"
+          className="ui-input mt-1"
         />
       </div>
-      <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+      <button type="submit" disabled={loading} className="ui-btn-primary w-full py-3">
         {loading ? "Connexion…" : "Se connecter"}
       </button>
-      <p className="text-center text-sm text-muted-foreground">
+      <p className="text-body text-center text-sm">
         Pas encore de compte ?{" "}
-        <Link href="/inscription" className="link-primary">
+        <Link href="/inscription" className="link-underline font-medium">
           Inscription gratuite
         </Link>
       </p>

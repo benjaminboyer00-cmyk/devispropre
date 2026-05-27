@@ -68,71 +68,69 @@ export function RegisterForm() {
     router.refresh();
   }
 
-  const inputClass = "input-field";
+  const inputClass = "ui-input mt-1";
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {error && (
-        <p className="rounded-xl bg-danger/10 px-4 py-2 text-sm text-danger">{error}</p>
-      )}
+      {error && <p className="ui-alert-error">{error}</p>}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium">Votre nom</label>
+          <label className="ui-label">Votre nom</label>
           <input required value={form.name} onChange={(e) => update("name", e.target.value)} className={inputClass} />
         </div>
         <div>
-          <label className="block text-sm font-medium">Téléphone</label>
+          <label className="ui-label">Téléphone</label>
           <input value={form.phone} onChange={(e) => update("phone", e.target.value)} className={inputClass} placeholder="06 XX XX XX XX" />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium">Email</label>
+        <label className="ui-label">Email</label>
         <input type="email" required value={form.email} onChange={(e) => update("email", e.target.value)} className={inputClass} />
       </div>
 
       <div>
-        <label className="block text-sm font-medium">Mot de passe (8 car. min.)</label>
+        <label className="ui-label">Mot de passe (8 car. min.)</label>
         <input type="password" required minLength={8} value={form.password} onChange={(e) => update("password", e.target.value)} className={inputClass} />
       </div>
 
-      <hr className="border-border" />
-      <p className="text-sm font-medium text-foreground">Votre entreprise (mentions légales PDF)</p>
+      <hr className="border-[var(--border)]" />
+      <p className="ui-label">Votre entreprise (mentions légales PDF)</p>
 
       <div>
-        <label className="block text-sm font-medium">Raison sociale</label>
+        <label className="ui-label">Raison sociale</label>
         <input required value={form.raisonSociale} onChange={(e) => update("raisonSociale", e.target.value)} className={inputClass} />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium">SIRET</label>
+          <label className="ui-label">SIRET</label>
           <input required value={form.siret} onChange={(e) => update("siret", e.target.value)} className={inputClass} />
         </div>
         <div>
-          <label className="block text-sm font-medium">Code postal</label>
+          <label className="ui-label">Code postal</label>
           <input required value={form.codePostal} onChange={(e) => update("codePostal", e.target.value)} className={inputClass} />
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium">Adresse</label>
+        <label className="ui-label">Adresse</label>
         <input required value={form.adresse} onChange={(e) => update("adresse", e.target.value)} className={inputClass} />
       </div>
 
       <div>
-        <label className="block text-sm font-medium">Ville</label>
+        <label className="ui-label">Ville</label>
         <input required value={form.ville} onChange={(e) => update("ville", e.target.value)} className={inputClass} />
       </div>
 
-      <button type="submit" disabled={loading} className="btn-primary w-full disabled:opacity-50">
+      <button type="submit" disabled={loading} className="ui-btn-primary w-full py-3">
         {loading ? "Création…" : "Créer mon compte — 30 secondes"}
       </button>
 
-      <p className="text-center text-xs text-muted-foreground">
+      <p className="text-subtle text-center text-xs">
         Gratuit 30 jours · Sans carte ·{" "}
-        <Link href="/connexion" className="link-primary">Déjà inscrit ?</Link>
+        <Link href="/connexion" className="link-underline font-medium">Déjà inscrit ?</Link>
       </p>
     </form>
   );

@@ -5,11 +5,11 @@ import { verifyDevisIntegrity } from "@/lib/services/devis";
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
-  const ctx = { userId: user.id, ...getRequestMeta(request) };
+  const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
 
   try {
     const result = await verifyDevisIntegrity(ctx, id);

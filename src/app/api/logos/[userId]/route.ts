@@ -12,11 +12,11 @@ const MIME_BY_EXT: Record<string, string> = {
 };
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { userId } = await params;
-  if (userId !== user.id) {
+  if (userId !== auth.workspaceUserId) {
     return new Response("Forbidden", { status: 403 });
   }
 

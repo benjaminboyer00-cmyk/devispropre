@@ -8,10 +8,10 @@ export const metadata: Metadata = {
 
 export default function ConnexionPage() {
   return (
-    <div className="page-shell max-w-md">
-      <h1 className="page-title text-2xl">Connexion</h1>
-      <p className="mt-2 text-muted-foreground">Accédez à vos devis et factures.</p>
-      <div className="card-padded mt-8">
+    <div className="mx-auto max-w-md px-4 py-20 sm:py-24">
+      <h1 className="heading-section text-3xl">Connexion</h1>
+      <p className="text-lead mt-3 font-light">Accédez à vos devis et factures.</p>
+      <div className="ui-card-padded mt-10">
         <LoginForm />
       </div>
     </div>

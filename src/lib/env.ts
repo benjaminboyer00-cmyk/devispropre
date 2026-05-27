@@ -47,6 +47,7 @@ export const env = {
   resendApiKey: process.env.RESEND_API_KEY?.trim() ?? "",
   resendFromEmail:
     process.env.RESEND_FROM_EMAIL?.trim() ?? "DevisPropre <noreply@devispropre.fr>",
+  supportEmail: process.env.SUPPORT_EMAIL?.trim() ?? "contact@devispropre.fr",
   allowedOrigins: (
     process.env.ALLOWED_ORIGINS?.trim() ||
     optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")

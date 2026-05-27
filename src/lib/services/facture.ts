@@ -10,13 +10,31 @@ import {
 import { prisma } from "../db";
 import { ForbiddenError } from "../errors";
 import { assertFactureEditable, ImmutabilityError, isFactureLocked } from "../immutability";
+import { assertStarterFeature } from "../plan-features";
 import {
   computeLineTotalHT,
   computeTotals,
   nextFactureNumero,
 } from "../numbers";
+import {
+  archivePdf,
+  facturePdfKey,
+  ObjectStorageError,
+} from "../object-storage";
+import { generateFacturePdf } from "../pdf-document";
+import { ROUTES } from "../routes";
+
+async function assertFacturationAllowed(userId: string) {
+  const owner = await prisma.user.findFirst({
+    where: { id: userId, deletedAt: null },
+    select: { plan: true },
+  });
+  if (!owner) throw new Error("Utilisateur introuvable");
+  assertStarterFeature(owner.plan, "Facturation conforme TVA 2018");
+}
 
 export async function createFactureFromDevis(ctx: AuditContext, devisId: string) {
+  await assertFacturationAllowed(ctx.userId);
   const devis = await prisma.devis.findFirst({
     where: { id: devisId, userId: ctx.userId, deletedAt: null },
     include: { lignes: true, client: true, facture: true },
@@ -94,6 +112,7 @@ export async function createFactureFromDevis(ctx: AuditContext, devisId: string)
 
 /** Émission = verrouillage définitif + chaînage hash (conformité TVA 2018). */
 export async function issueFacture(ctx: AuditContext, factureId: string) {
+  await assertFacturationAllowed(ctx.userId);
   const facture = await prisma.facture.findFirst({
     where: { id: factureId, userId: ctx.userId, deletedAt: null },
     include: { lignes: true, client: true },
@@ -109,20 +128,43 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
   const contentHash = computeContentHash(payload);
   const now = new Date();
 
+  const lastIssued = await prisma.facture.findFirst({
+    where: {
+      userId: ctx.userId,
+      status: { in: ["EMISE", "PAYEE"] },
+      contentHash: { not: null },
+    },
+    orderBy: { issuedAt: "desc" },
+    select: { contentHash: true },
+  });
+
+  const previousHash = lastIssued?.contentHash ?? null;
+  const chainHash = computeChainHash(contentHash, previousHash);
+
+  const lockedForPdf = {
+    ...facture,
+    status: "EMISE" as const,
+    lockedAt: now,
+    issuedAt: now,
+    contentHash,
+    chainHash,
+    previousHash,
+  };
+
+  let pdfUrl: string;
+  try {
+    const pdfBuffer = await generateFacturePdf(lockedForPdf, company);
+    pdfUrl = await archivePdf(
+      facturePdfKey(ctx.userId, factureId),
+      pdfBuffer,
+      ROUTES.apiArchiveFacture(factureId)
+    );
+  } catch (err) {
+    if (err instanceof ObjectStorageError) throw err;
+    throw new ObjectStorageError("Impossible d'archiver le PDF de la facture.");
+  }
+
   const updated = await prisma.$transaction(async (tx) => {
-    const lastIssued = await tx.facture.findFirst({
-      where: {
-        userId: ctx.userId,
-        status: { in: ["EMISE", "PAYEE"] },
-        contentHash: { not: null },
-      },
-      orderBy: { issuedAt: "desc" },
-      select: { contentHash: true },
-    });
-
-    const previousHash = lastIssued?.contentHash ?? null;
-    const chainHash = computeChainHash(contentHash, previousHash);
-
     const locked = await tx.facture.updateMany({
       where: { id: factureId, userId: ctx.userId, status: "BROUILLON", deletedAt: null },
       data: {
@@ -132,6 +174,8 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
         contentHash,
         chainHash,
         previousHash,
+        pdfUrl,
+        pdfArchivedAt: now,
       },
     });
 
@@ -162,7 +206,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
     entityId: factureId,
     factureId,
     contentHash,
-    metadata: { chainHash: updated.chainHash, previousHash: updated.previousHash },
+    metadata: { chainHash: updated.chainHash, previousHash: updated.previousHash, pdfUrl },
   });
 
   await logAudit(ctx, {

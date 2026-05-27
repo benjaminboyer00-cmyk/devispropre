@@ -6,11 +6,11 @@ type RouteParams = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
   assertMutationSecurity(request);
-  const { user, error } = await requireAuth();
-  if (error) return error;
+  const auth = await requireAuth();
+  if (auth.error) return auth.error;
 
   const { id } = await params;
-  const ctx = { userId: user.id, ...getRequestMeta(request) };
+  const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
 
   try {
     const devis = await sendDevis(ctx, id);

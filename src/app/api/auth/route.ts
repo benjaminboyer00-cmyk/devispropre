@@ -5,7 +5,6 @@ import {
   assertMutationSecurity,
   getRequestMeta,
   handleServiceError,
-  requireAuth,
 } from "@/lib/api-helpers";
 import { authIpRateLimitKey, authRateLimitKey, checkRateLimit } from "@/lib/rate-limit";
 import {
@@ -14,6 +13,7 @@ import {
   setSessionCookie,
   verifyPassword,
 } from "@/lib/auth";
+import { acceptTeamInvites } from "@/lib/account-context";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 
@@ -70,6 +70,8 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      await acceptTeamInvites(user.email, user.id);
+
       const ctx = { userId: user.id, ...getRequestMeta(request) };
       await logAudit(ctx, {
         action: "CREATE",
@@ -107,6 +109,7 @@ export async function POST(request: NextRequest) {
         name: user.name,
         plan: user.plan,
       });
+      await acceptTeamInvites(user.email, user.id);
       await setSessionCookie(token);
 
       return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name } });

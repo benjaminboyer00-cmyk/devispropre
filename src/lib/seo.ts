@@ -103,6 +103,7 @@ export const defaultMetadata: Metadata = {
     ...sharedSocial,
   },
   robots: { index: true, follow: true },
+  alternates: { canonical: SITE.url },
 };
 
 export function jsonLdWebSite() {
@@ -172,7 +173,15 @@ export function jsonLdFaq() {
         name: "Combien de temps pour faire un devis ?",
         acceptedAnswer: {
           "@type": "Answer",
-          text: "Environ 2 minutes depuis votre téléphone, avec envoi WhatsApp au client.",
+          text: "Environ 2 minutes depuis votre téléphone. Le partage WhatsApp et la facturation sont inclus à partir du plan Starter (19€/mois).",
+        },
+      },
+      {
+        "@type": "Question",
+        name: "Comment fonctionnent les relances J+3 ?",
+        acceptedAnswer: {
+          "@type": "Answer",
+          text: "3 jours après l'envoi sans réponse, un email automatique est envoyé au client. L'artisan reçoit un lien WhatsApp pré-rempli pour relancer. Plans Starter et Pro.",
         },
       },
     ],
