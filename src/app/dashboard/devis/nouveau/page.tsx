@@ -1,7 +1,10 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
 import { DevisForm } from "@/components/devis/DevisForm";
+
+export const metadata = dashboardMetadata("Nouveau devis");
 
 export default async function NouveauDevisPage() {
   const user = await getSession();

@@ -1,4 +1,7 @@
 import { ActivateTrialCheckout } from "@/components/billing/ActivateTrialCheckout";
+import { dashboardMetadata } from "@/lib/dashboard-metadata";
+
+export const metadata = dashboardMetadata("Activer l'essai");
 
 export default function ActiverAbonnementPage() {
   return (

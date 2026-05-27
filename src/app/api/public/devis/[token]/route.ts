@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { verifyDocumentIntegrity, buildDevisPayload } from "@/lib/document-hash";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { transitionDevisStatusFromPublic } from "@/lib/services/devis";
+import { publicJsonResponse } from "@/lib/public-api-response";
 
 const statusSchema = z.object({
   status: z.enum(["ACCEPTE", "REFUSE"]),
@@ -26,7 +27,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   });
 
   if (!devis || devis.status === "BROUILLON") {
-    return Response.json({ error: "Devis introuvable" }, { status: 404 });
+    return publicJsonResponse({ error: "Devis introuvable" }, { status: 404 });
   }
 
   const company = devis.user.company;
@@ -35,7 +36,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     ? verifyDocumentIntegrity(devis.contentHash, payload)
     : false;
 
-  return Response.json({
+  return publicJsonResponse({
     numero: devis.numero,
     status: devis.status,
     totalTTC: devis.totalTTC,
@@ -43,7 +44,12 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     company: company ? { raisonSociale: company.raisonSociale } : null,
     integrityOk,
     lockedAt: devis.lockedAt,
-    lignes: devis.lignes,
+    lignes: devis.lignes.map((l) => ({
+      description: l.description,
+      quantite: l.quantite,
+      prixUnitaireHT: l.prixUnitaireHT,
+      totalHT: l.totalHT,
+    })),
   });
 }
 
@@ -58,7 +64,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     await checkRateLimit(`public-devis:${ip}`, { maxAttempts: 20, windowMs: 60 * 60 * 1000 });
   } catch {
-    return Response.json({ error: "Trop de tentatives." }, { status: 429 });
+    return publicJsonResponse({ error: "Trop de tentatives." }, { status: 429 });
   }
 
   const { token } = await params;
@@ -68,7 +74,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   });
 
   if (!devis) {
-    return Response.json({ error: "Devis introuvable ou déjà traité" }, { status: 404 });
+    return publicJsonResponse({ error: "Devis introuvable ou déjà traité" }, { status: 404 });
   }
 
   try {
@@ -79,7 +85,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     };
 
     const updated = await transitionDevisStatusFromPublic(ctx, devis.id, token, status);
-    return Response.json({ ok: true, status: updated.status });
+    return publicJsonResponse({ ok: true, status: updated.status });
   } catch (e) {
     if (e instanceof z.ZodError) return apiError(e.message);
     return handleServiceError(e);

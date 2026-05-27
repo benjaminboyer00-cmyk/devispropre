@@ -10,6 +10,7 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         "/dashboard/",
         "/api/",
+        "/api/public/",
         ROUTES.connexion,
         "/devis/",
         "/facture/",

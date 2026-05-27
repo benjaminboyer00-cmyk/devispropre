@@ -1,8 +1,11 @@
 import { redirect, notFound } from "next/navigation";
 import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
+import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
 import { FacturePageWrapper } from "@/components/facture/FactureActions";
+
+export const metadata = dashboardMetadata("Facture");
 
 type PageProps = { params: Promise<{ id: string }> };
 

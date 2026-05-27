@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
+import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
 import { hasPro } from "@/lib/plan-features";
@@ -9,6 +10,8 @@ import { getDevisCountThisMonth } from "@/lib/plan-limits";
 import { getDevisStatusEmoji, getDevisStatusLabel } from "@/lib/services/devis";
 import { getFactureStatusLabel } from "@/lib/services/facture";
 import { ROUTES } from "@/lib/routes";
+
+export const metadata = dashboardMetadata("Tableau de bord");
 
 export default async function DashboardPage() {
   const user = await getSession();

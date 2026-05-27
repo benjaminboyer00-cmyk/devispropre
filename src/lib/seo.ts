@@ -66,14 +66,25 @@ export function pageMetadata(opts: {
   description: string;
   path: string;
   keywords?: string[];
+  /** OG dynamique par route (ex. pages SEO local). */
+  ogImagePath?: string;
 }): Metadata {
   const url = `${SITE.url}${opts.path}`;
   const ogTitle = `${opts.title} | ${SITE.name}`;
+  const ogImageUrl = opts.ogImagePath ?? OG_IMAGE.url;
+  const ogImage = { ...OG_IMAGE, url: ogImageUrl };
   return {
     title: opts.title,
     description: opts.description,
     keywords: opts.keywords ?? [...KEYWORDS],
-    alternates: { canonical: url },
+    alternates: {
+      canonical: url,
+      languages: {
+        "fr-FR": url,
+        fr: url,
+        "x-default": url,
+      },
+    },
     openGraph: {
       type: "website",
       locale: SITE.locale,
@@ -81,13 +92,13 @@ export function pageMetadata(opts: {
       siteName: SITE.name,
       title: ogTitle,
       description: opts.description,
-      ...sharedSocial,
+      images: [ogImage],
     },
     twitter: {
       card: "summary_large_image",
       title: ogTitle,
       description: opts.description,
-      ...sharedSocial,
+      images: [ogImage],
     },
   };
 }
@@ -95,7 +106,7 @@ export function pageMetadata(opts: {
 export const defaultMetadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: "Devis et factures pour artisans en 2 minutes | DevisPropre",
+    default: "Devis artisans en 2 min | DevisPropre",
     template: "%s | DevisPropre",
   },
   description: SITE.description,
@@ -109,19 +120,34 @@ export const defaultMetadata: Metadata = {
     locale: SITE.locale,
     url: SITE.url,
     siteName: SITE.name,
-    title: "Devis et factures pour artisans en 2 minutes | DevisPropre",
+    title: "Devis artisans en 2 min | DevisPropre",
     description: SITE.description,
     ...sharedSocial,
   },
   twitter: {
     card: "summary_large_image",
-    title: "Devis et factures pour artisans | DevisPropre",
+    title: "Devis & factures artisans | DevisPropre",
     description: SITE.description,
     ...sharedSocial,
   },
   robots: { index: true, follow: true },
-  alternates: { canonical: SITE.url },
+  alternates: {
+    canonical: SITE.url,
+    languages: {
+      "fr-FR": SITE.url,
+      fr: SITE.url,
+      "x-default": SITE.url,
+    },
+  },
 };
+
+/** JSON-LD site global — un seul bloc @graph (évite la duplication layout + pages). */
+export function jsonLdSiteGraph() {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [jsonLdWebSite(), jsonLdOrganization()],
+  };
+}
 
 export function jsonLdWebSite() {
   return {

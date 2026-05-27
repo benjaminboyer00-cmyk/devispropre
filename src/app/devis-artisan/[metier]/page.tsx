@@ -20,6 +20,7 @@ export async function generateMetadata({ params }: PageProps) {
     description: localPageDescription(trade),
     path: `/devis-artisan/${metier}`,
     keywords: localKeywords(trade),
+    ogImagePath: `/devis-artisan/${metier}/opengraph-image`,
   });
 }
 

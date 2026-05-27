@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { SettingsForm } from "@/components/settings/SettingsForm";
 import { SubscriptionPanel } from "@/components/settings/SubscriptionPanel";
 import { AccountSessionsPanel } from "@/components/settings/AccountSessionsPanel";
@@ -13,6 +14,8 @@ const SECTIONS = [
   { id: "securite", label: "Sécurité" },
   { id: "equipe", label: "Équipe" },
 ] as const;
+
+export const metadata = dashboardMetadata("Mon compte");
 
 export default async function SettingsPage() {
   const user = await getSession();

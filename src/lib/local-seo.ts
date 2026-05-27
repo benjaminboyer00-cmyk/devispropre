@@ -75,6 +75,19 @@ export function getCity(slug: string): CityMeta | undefined {
   return CITIES[slug];
 }
 
+/** Dernière mise à jour du contenu SEO local — évite un lastmod=new Date() à chaque build. */
+export const LOCAL_SEO_LAST_MODIFIED = new Date("2026-05-27T00:00:00.000Z");
+
+/** Pages marketing statiques — date de révision éditoriale. */
+export const MARKETING_SITEMAP_LAST_MODIFIED = new Date("2026-05-27T00:00:00.000Z");
+
+export function sitemapLastModifiedForPath(path: string): Date {
+  if (path.startsWith("/devis-artisan/")) {
+    return LOCAL_SEO_LAST_MODIFIED;
+  }
+  return MARKETING_SITEMAP_LAST_MODIFIED;
+}
+
 export function localSeoPath(metier: string, ville?: string): string {
   return ville ? `/devis-artisan/${metier}/${ville}` : `/devis-artisan/${metier}`;
 }
@@ -226,9 +239,9 @@ export function getLocalBreadcrumbs(trade: TradeMeta, city?: CityMeta) {
 
 export function localPageTitle(trade: TradeMeta, city?: CityMeta): string {
   if (city) {
-    return `Devis ${trade.label} à ${city.label} — logiciel artisan`;
+    return `Devis ${trade.label} ${city.label}`;
   }
-  return `Devis ${trade.label} — logiciel facturation BTP`;
+  return `Devis ${trade.label} — logiciel BTP`;
 }
 
 export function localPageDescription(trade: TradeMeta, city?: CityMeta): string {

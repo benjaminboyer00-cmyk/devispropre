@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getAllLocalSeoPaths } from "@/lib/local-seo";
+import { getAllLocalSeoPaths, sitemapLastModifiedForPath } from "@/lib/local-seo";
 import { MARKETING_ROUTES } from "@/lib/routes";
 import { SITE } from "@/lib/seo";
 
@@ -19,14 +19,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const marketing = MARKETING_ROUTES.map((path) => ({
     url: `${SITE.url}${path}`,
-    lastModified: new Date(),
+    lastModified: sitemapLastModifiedForPath(path),
     changeFrequency: changeFreq(path),
     priority: priorities[path] ?? 0.5,
   }));
 
   const local = getAllLocalSeoPaths().map((path) => ({
     url: `${SITE.url}${path}`,
-    lastModified: new Date(),
+    lastModified: sitemapLastModifiedForPath(path),
     changeFrequency: changeFreq(path) as MetadataRoute.Sitemap[number]["changeFrequency"],
     priority: path.split("/").length === 3 ? 0.75 : 0.65,
   }));

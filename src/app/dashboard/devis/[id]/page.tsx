@@ -2,9 +2,12 @@ import Link from "next/link";
 import { redirect, notFound } from "next/navigation";
 import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
+import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
 import { DevisActions } from "@/components/devis/DevisActions";
 import { ROUTES } from "@/lib/routes";
+
+export const metadata = dashboardMetadata("Devis");
 
 type PageProps = { params: Promise<{ id: string }> };
 

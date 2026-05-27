@@ -34,6 +34,7 @@ export async function generateMetadata({ params }: PageProps) {
     description: localPageDescription(trade, city),
     path: `/devis-artisan/${metier}/${ville}`,
     keywords: localKeywords(trade, city),
+    ogImagePath: `/devis-artisan/${metier}/${ville}/opengraph-image`,
   });
 }
 

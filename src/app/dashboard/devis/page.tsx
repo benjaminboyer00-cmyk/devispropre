@@ -2,11 +2,14 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
+import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
 import { getDevisCountThisMonth } from "@/lib/plan-limits";
 import { getDevisStatusEmoji, getDevisStatusLabel } from "@/lib/services/devis";
 import { ROUTES } from "@/lib/routes";
+
+export const metadata = dashboardMetadata("Devis");
 
 export default async function DevisListPage() {
   const user = await getSession();

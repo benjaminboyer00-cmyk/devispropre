@@ -5,7 +5,7 @@ import { WebVitals } from "@/components/analytics/WebVitals";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
-import { defaultMetadata, jsonLdOrganization, jsonLdWebSite } from "@/lib/seo";
+import { defaultMetadata, jsonLdSiteGraph } from "@/lib/seo";
 import "./globals.css";
 
 const geist = Geist({
@@ -43,13 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <NonceScript
           type="application/ld+json"
           dangerouslySetInnerHTML={{
-            __html: JSON.stringify(jsonLdWebSite()),
-          }}
-        />
-        <NonceScript
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify(jsonLdOrganization()),
+            __html: JSON.stringify(jsonLdSiteGraph()),
           }}
         />
       </head>

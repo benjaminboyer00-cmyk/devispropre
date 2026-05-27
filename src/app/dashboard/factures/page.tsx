@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
+import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
 import { formatEuro } from "@/lib/format";
 import { hasStarter } from "@/lib/plan-features";
@@ -29,6 +30,8 @@ function resolveView(vue?: string): ViewKey {
   if (vue === "brouillons" || vue === "definitives") return vue;
   return "all";
 }
+
+export const metadata = dashboardMetadata("Factures");
 
 export default async function FacturesListPage({ searchParams }: PageProps) {
   const user = await getSession();
