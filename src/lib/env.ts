@@ -50,6 +50,7 @@ export const env = {
   supportEmail: process.env.SUPPORT_EMAIL?.trim() ?? "contact@devispropre.fr",
   slackWebhookUrl: process.env.SLACK_WEBHOOK_URL?.trim() ?? "",
   alertWebhookUrl: process.env.ALERT_WEBHOOK_URL?.trim() ?? "",
+  turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY?.trim() ?? "",
   siteSameAs: (process.env.SITE_SAME_AS?.trim() ?? "")
     .split(",")
     .map((s) => s.trim())

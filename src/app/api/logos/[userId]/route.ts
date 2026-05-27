@@ -5,12 +5,6 @@ import { prisma } from "@/lib/db";
 
 type RouteParams = { params: Promise<{ userId: string }> };
 
-const MIME_BY_EXT: Record<string, string> = {
-  png: "image/png",
-  jpg: "image/jpeg",
-  webp: "image/webp",
-};
-
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth.error) return auth.error;
@@ -22,10 +16,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
   const buffer = await loadLogoBuffer(userId);
   if (buffer) {
-    const ext = buffer[0] === 0x89 ? "png" : buffer[0] === 0xff ? "jpg" : "webp";
     return new Response(new Uint8Array(buffer), {
       headers: {
-        "Content-Type": MIME_BY_EXT[ext] ?? "image/png",
+        "Content-Type": "image/png",
+        "Content-Disposition": "inline",
+        "X-Content-Type-Options": "nosniff",
         "Cache-Control": "private, max-age=3600",
       },
     });
@@ -33,9 +28,9 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 
   const company = await prisma.company.findUnique({
     where: { userId },
-    select: { logoUrl: true, updatedAt: true },
+    select: { logoUrl: true },
   });
-  const legacy = parseLegacyLogoDataUri(company?.logoUrl);
+  const legacy = await parseLegacyLogoDataUri(company?.logoUrl);
   if (!legacy) {
     return new Response("Not found", { status: 404 });
   }
@@ -43,6 +38,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   return new Response(new Uint8Array(legacy), {
     headers: {
       "Content-Type": "image/png",
+      "Content-Disposition": "inline",
+      "X-Content-Type-Options": "nosniff",
       "Cache-Control": "private, max-age=3600",
     },
   });

@@ -1,9 +1,20 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiError, assertMutationSecurity, handleServiceError } from "@/lib/api-helpers";
-import { authIpRateLimitKey, authRateLimitKey, checkRateLimit } from "@/lib/rate-limit";
+import {
+  authEmailOnlyKey,
+  authGlobalMagicLinkKey,
+  authIpRateLimitKey,
+  authRateLimitKey,
+  checkRateLimit,
+} from "@/lib/rate-limit";
 import { requestMagicLink } from "@/lib/magic-link";
 import { magicLinkSchema, formatZodError } from "@/lib/schemas/forms";
+import { verifyTurnstileToken } from "@/lib/turnstile";
+
+const bodySchema = magicLinkSchema.extend({
+  turnstileToken: z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
@@ -11,12 +22,16 @@ export async function POST(request: NextRequest) {
   const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
 
   try {
-    await checkRateLimit(authIpRateLimitKey(ip), { maxAttempts: 10, windowMs: 15 * 60 * 1000 });
+    await checkRateLimit(authGlobalMagicLinkKey(), { maxAttempts: 40, windowMs: 60 * 60 * 1000 });
+    await checkRateLimit(authIpRateLimitKey(ip), { maxAttempts: 8, windowMs: 15 * 60 * 1000 });
 
-    const body = await request.json();
-    const { email } = magicLinkSchema.parse(body);
+    const body = bodySchema.parse(await request.json());
+    const email = body.email.toLowerCase().trim();
 
-    await checkRateLimit(authRateLimitKey(ip, email), { maxAttempts: 3, windowMs: 15 * 60 * 1000 });
+    await checkRateLimit(authEmailOnlyKey(email), { maxAttempts: 2, windowMs: 15 * 60 * 1000 });
+    await checkRateLimit(authRateLimitKey(ip, email), { maxAttempts: 2, windowMs: 15 * 60 * 1000 });
+
+    await verifyTurnstileToken(body.turnstileToken, ip);
 
     await requestMagicLink(email);
 

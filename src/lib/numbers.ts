@@ -1,11 +1,13 @@
+import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "./db";
 
 type DocType = "DEVIS" | "FACTURE";
+type DbClient = Prisma.TransactionClient | typeof prisma;
 
-async function nextSequence(userId: string, docType: DocType): Promise<number> {
+async function nextSequence(db: DbClient, userId: string, docType: DocType): Promise<number> {
   const year = new Date().getFullYear();
 
-  const rows = await prisma.$queryRaw<{ lastSeq: number }[]>`
+  const rows = await db.$queryRaw<{ lastSeq: number }[]>`
     INSERT INTO "DocumentCounter" ("id", "userId", "year", "docType", "lastSeq", "updatedAt")
     VALUES (gen_random_uuid()::text, ${userId}, ${year}, ${docType}, 1, NOW())
     ON CONFLICT ("userId", "year", "docType")
@@ -18,13 +20,22 @@ async function nextSequence(userId: string, docType: DocType): Promise<number> {
 
 export async function nextDevisNumero(userId: string): Promise<string> {
   const year = new Date().getFullYear();
-  const seq = await nextSequence(userId, "DEVIS");
+  const seq = await nextSequence(prisma, userId, "DEVIS");
+  return `DEV-${year}-${String(seq).padStart(4, "0")}`;
+}
+
+export async function nextDevisNumeroInTransaction(
+  tx: Prisma.TransactionClient,
+  userId: string
+): Promise<string> {
+  const year = new Date().getFullYear();
+  const seq = await nextSequence(tx, userId, "DEVIS");
   return `DEV-${year}-${String(seq).padStart(4, "0")}`;
 }
 
 export async function nextFactureNumero(userId: string): Promise<string> {
   const year = new Date().getFullYear();
-  const seq = await nextSequence(userId, "FACTURE");
+  const seq = await nextSequence(prisma, userId, "FACTURE");
   return `FAC-${year}-${String(seq).padStart(4, "0")}`;
 }
 

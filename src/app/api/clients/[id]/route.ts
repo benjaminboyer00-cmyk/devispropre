@@ -4,9 +4,11 @@ import {
   apiError,
   assertMutationSecurity,
   getRequestMeta,
+  handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
+import { assertClientArchivable, ClientArchiveError } from "@/lib/client-guard";
 
 const schema = z.object({
   nom: z.string().min(1).optional(),
@@ -64,6 +66,13 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
     where: { id, userId: auth.workspaceUserId, deletedAt: null },
   });
   if (!existing) return apiError("Client introuvable", 404);
+
+  try {
+    await assertClientArchivable(auth.workspaceUserId, id);
+  } catch (e) {
+    if (e instanceof ClientArchiveError) return apiError(e.message, 409);
+    return handleServiceError(e);
+  }
 
   await prisma.client.updateMany({
     where: { id, userId: auth.workspaceUserId, deletedAt: null },

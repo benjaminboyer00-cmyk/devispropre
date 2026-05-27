@@ -134,7 +134,7 @@ export async function PATCH(request: NextRequest) {
         if (data.logoUrl === null) {
           logoPath = null;
         } else {
-          const { buffer, ext } = parseLogoDataUri(data.logoUrl);
+          const { buffer, ext } = await parseLogoDataUri(data.logoUrl);
           logoPath = await saveLogoFile(auth.workspaceUserId, buffer, ext);
         }
       }

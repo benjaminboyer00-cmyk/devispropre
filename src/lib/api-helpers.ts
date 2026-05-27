@@ -5,6 +5,8 @@ import { getSession, type SessionUser } from "./auth";
 import { assertSameOrigin, CsrfError } from "./csrf";
 import { PlanFeatureError } from "./plan-features";
 import { PlanLimitError } from "./plan-limits";
+import { TurnstileError } from "./turnstile";
+import { ClientArchiveError } from "./client-guard";
 import { RateLimitError } from "./rate-limit";
 import { ImmutabilityError } from "./immutability";
 import { ForbiddenError } from "./errors";
@@ -93,6 +95,8 @@ export function handleServiceError(error: unknown) {
   if (error instanceof ForbiddenError) return apiError(error.message, 403);
   if (error instanceof ImmutabilityError) return apiError(error.message, 403);
   if (error instanceof ObjectStorageError) return apiError(error.message, 503);
+  if (error instanceof TurnstileError) return apiError(error.message, 403);
+  if (error instanceof ClientArchiveError) return apiError(error.message, 409);
   if (error instanceof Error) {
     if (error.name === "ImmutabilityError") {
       return apiError(error.message, 403);

@@ -50,3 +50,13 @@ export function authRateLimitKey(ip: string, email?: string): string {
 export function authIpRateLimitKey(ip: string): string {
   return `auth:ip:${ip}`;
 }
+
+/** Limite par email seul — résiste aux proxys rotatifs. */
+export function authEmailOnlyKey(email: string): string {
+  return `auth:email-only:${email.toLowerCase().trim()}`;
+}
+
+/** Plafond global d'emails magic link (EDoS / facture Resend). */
+export function authGlobalMagicLinkKey(): string {
+  return "auth:global:magic-link";
+}

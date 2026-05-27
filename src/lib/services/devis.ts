@@ -10,8 +10,8 @@ import {
 import { prisma } from "../db";
 import { assertDevisEditable, ImmutabilityError } from "../immutability";
 import { ForbiddenError } from "../errors";
-import { assertCanCreateDevis } from "../plan-limits";
-import { computeLineTotalHT, computeTotals, nextDevisNumero } from "../numbers";
+import { assertCanCreateDevis, enforceFreeDevisQuotaInTransaction } from "../plan-limits";
+import { computeLineTotalHT, computeTotals, nextDevisNumeroInTransaction } from "../numbers";
 import { logCriticalAlert } from "../critical-alert";
 import {
   archivePdf,
@@ -27,16 +27,6 @@ export interface LigneInput {
   quantite: number;
   prixUnitaireHT: number;
   tva?: number;
-}
-
-async function assertClientOwnership(userId: string, clientId: string) {
-  const client = await prisma.client.findFirst({
-    where: { id: clientId, userId, deletedAt: null },
-  });
-  if (!client) {
-    throw new ForbiddenError("Client introuvable ou non autorisé.");
-  }
-  return client;
 }
 
 export async function createDevis(
@@ -55,12 +45,10 @@ export async function createDevis(
   if (!user) throw new Error("Utilisateur introuvable");
 
   await assertCanCreateDevis(ctx.userId, user.plan);
-  await assertClientOwnership(ctx.userId, data.clientId);
 
   const company = await prisma.company.findUnique({ where: { userId: ctx.userId } });
   const tvaApplicable = company?.tvaApplicable ?? true;
 
-  const numero = await nextDevisNumero(ctx.userId);
   const lignesData = data.lignes.map((l, i) => {
     const tva = tvaApplicable ? (l.tva ?? 20) : 0;
     const totalHT = computeLineTotalHT(l.quantite, l.prixUnitaireHT);
@@ -76,17 +64,30 @@ export async function createDevis(
 
   const totals = computeTotals(lignesData, tvaApplicable);
 
-  const devis = await prisma.devis.create({
-    data: {
-      userId: ctx.userId,
-      clientId: data.clientId,
-      numero,
-      notes: data.notes,
-      validUntil: data.validUntil,
-      ...totals,
-      lignes: { create: lignesData },
-    },
-    include: { lignes: true, client: true },
+  const devis = await prisma.$transaction(async (tx) => {
+    await enforceFreeDevisQuotaInTransaction(tx, ctx.userId, user.plan);
+
+    const client = await tx.client.findFirst({
+      where: { id: data.clientId, userId: ctx.userId, deletedAt: null },
+    });
+    if (!client) {
+      throw new ForbiddenError("Client introuvable ou non autorisé.");
+    }
+
+    const numero = await nextDevisNumeroInTransaction(tx, ctx.userId);
+
+    return tx.devis.create({
+      data: {
+        userId: ctx.userId,
+        clientId: data.clientId,
+        numero,
+        notes: data.notes,
+        validUntil: data.validUntil,
+        ...totals,
+        lignes: { create: lignesData },
+      },
+      include: { lignes: true, client: true },
+    });
   });
 
   await logAudit(ctx, {
@@ -94,7 +95,7 @@ export async function createDevis(
     entityType: "devis",
     entityId: devis.id,
     devisId: devis.id,
-    metadata: { numero },
+    metadata: { numero: devis.numero },
   });
 
   return devis;
