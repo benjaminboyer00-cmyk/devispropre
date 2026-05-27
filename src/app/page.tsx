@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { IconDocument, IconEdit, IconShare, IconShield } from "@/components/icons/Icons";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { pageMetadata, jsonLdFaq, jsonLdSoftwareApplication, SITE } from "@/lib/seo";
+import { pageMetadata, jsonLdFaq, jsonLdHowToCreateDevis, jsonLdSoftwareApplication, SITE } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Devis et factures pour artisans en 2 minutes",
@@ -32,6 +32,7 @@ export default function HomePage() {
     <>
       <JsonLd data={jsonLdSoftwareApplication()} />
       <JsonLd data={jsonLdFaq()} />
+      <JsonLd data={jsonLdHowToCreateDevis()} />
 
       <section className="hero-section">
         <div className="relative mx-auto max-w-4xl text-center">
@@ -39,13 +40,13 @@ export default function HomePage() {
           <h1 className="heading-hero mt-5">
             Logiciel de devis et factures pour artisans
             <br />
-            <span className="font-bold" style={{ color: "var(--blue)" }}>
+            <span className="font-bold text-brand">
               Pro en 2 minutes, conforme TVA 2018
             </span>
           </h1>
           <p className="text-lead mx-auto mt-8 max-w-2xl font-light">
             Devis en 2 minutes · WhatsApp & factures dès 19€/mois · Conforme loi anti-fraude TVA 2018.
-            Essai gratuit 30 jours.
+            Essai gratuit 15 jours · Carte requise · Puis 19€/mois
           </p>
           <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row sm:justify-center">
             <Link href="/inscription" className="ui-btn-primary ui-btn-lg">
@@ -121,7 +122,7 @@ export default function HomePage() {
             « Vous signez votre premier devis accepté, DevisPropre est rentabilisé pour l&apos;année. »
           </p>
           <Link href="/inscription" className="ui-btn-inverse ui-btn-lg mt-10">
-            Essai gratuit — 30 jours
+            Essai gratuit — 15 jours · Carte requise
           </Link>
         </div>
       </section>

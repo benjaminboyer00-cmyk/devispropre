@@ -5,7 +5,7 @@ export const PLAN_CATALOG = {
     name: "Gratuit",
     price: "0€",
     period: "",
-    desc: "3 devis / mois — pour découvrir",
+    desc: "Après essai ou résiliation — 3 devis / mois",
     highlight: false,
     features: [
       "3 devis PDF par mois",
@@ -24,7 +24,7 @@ export const PLAN_CATALOG = {
     name: "Starter",
     price: "19€",
     period: "/mois",
-    desc: "Artisan solo — devis illimités",
+    desc: "15 jours gratuits puis 19€/mois — carte requise",
     highlight: true,
     features: [
       "Devis illimités + PDF professionnel",
@@ -55,6 +55,10 @@ export const PLAN_CATALOG = {
 } as const;
 
 export const TARIFS_FAQ = [
+  {
+    q: "Comment fonctionne l'essai gratuit ?",
+    a: "À l'inscription, vous enregistrez votre carte bancaire via Stripe. Vous profitez de 15 jours gratuits sur le plan Starter (devis illimités, WhatsApp, factures). Si vous ne résiliez pas avant la fin, l'abonnement à 19€/mois démarre automatiquement.",
+  },
   {
     q: "Comment fonctionnent les relances J+3 ?",
     a: "3 jours après l'envoi d'un devis sans réponse, DevisPropre envoie automatiquement un email de rappel au client (si son email est renseigné). Vous recevez aussi un email avec un lien WhatsApp pré-rempli pour relancer manuellement. Réservé au plan Starter et Pro.",

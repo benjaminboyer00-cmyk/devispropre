@@ -7,9 +7,12 @@ export function RegisterServiceWorker() {
     if (process.env.NODE_ENV !== "production") return;
     if (!("serviceWorker" in navigator)) return;
 
-    navigator.serviceWorker.register("/sw.js").catch(() => {
-      /* PWA optionnelle — échec silencieux */
-    });
+    navigator.serviceWorker
+      .register("/sw.js")
+      .then((reg) => reg.update())
+      .catch(() => {
+        /* PWA optionnelle — échec silencieux */
+      });
   }, []);
 
   return null;

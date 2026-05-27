@@ -197,6 +197,29 @@ body {
     color: var(--text-heading);
   }
 
+  .site-header {
+    border-color: var(--border);
+    background: var(--header-bg);
+  }
+
+  .site-footer {
+    border-color: var(--border);
+    background: var(--surface-muted);
+  }
+
+  .text-brand {
+    color: var(--blue);
+  }
+
+  .ui-plan-highlight {
+    border-color: var(--blue);
+    box-shadow: 0 0 0 2px var(--blue);
+  }
+
+  .border-divide-theme {
+    border-color: var(--border);
+  }
+
   /* Cartes & formulaires */
   .ui-card {
     @apply rounded-2xl shadow-sm transition-shadow duration-300;
@@ -403,9 +426,18 @@ body {
     @apply list-disc space-y-2 pl-6;
   }
 
-  .prose-legal a {
+  .prose-legal a:not(.ui-btn-primary):not(.ui-btn-outline):not(.ui-btn-inverse) {
     @apply font-medium hover:underline;
     color: var(--blue);
+  }
+
+  .prose-legal a.ui-btn-primary {
+    @apply no-underline;
+    color: white;
+  }
+
+  .prose-legal a.ui-btn-primary:hover {
+    color: white;
   }
 
   .prose-legal strong {

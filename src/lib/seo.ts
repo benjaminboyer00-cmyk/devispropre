@@ -132,6 +132,14 @@ export function jsonLdWebSite() {
     description: SITE.description,
     inLanguage: "fr-FR",
     publisher: { "@type": "Organization", name: SITE.name, url: SITE.url },
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${SITE.url}/devis-artisan/{search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
   };
 }
 
@@ -218,5 +226,69 @@ export function jsonLdTarifs() {
       { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "EUR" },
       { "@type": "Offer", name: "Pro", price: "39", priceCurrency: "EUR" },
     ],
+  };
+}
+
+export interface BreadcrumbItem {
+  name: string;
+  path: string;
+}
+
+export function jsonLdBreadcrumbList(items: BreadcrumbItem[]) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: `${SITE.url}${item.path}`,
+    })),
+  };
+}
+
+export function jsonLdHowToCreateDevis() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "Créer un devis artisan en 2 minutes avec DevisPropre",
+    description: "Guide rapide pour rédiger et envoyer un devis PDF conforme depuis votre téléphone.",
+    totalTime: "PT2M",
+    step: [
+      {
+        "@type": "HowToStep",
+        position: 1,
+        name: "Saisir le client et les prestations",
+        text: "Renseignez le client, la description, la quantité et le prix TTC. Le calcul se fait automatiquement.",
+      },
+      {
+        "@type": "HowToStep",
+        position: 2,
+        name: "Générer le PDF professionnel",
+        text: "DevisPropre produit un PDF avec logo, SIRET et mentions légales conformes au BTP.",
+      },
+      {
+        "@type": "HowToStep",
+        position: 3,
+        name: "Partager au client",
+        text: "Envoyez le devis par WhatsApp ou email. Le client peut valider en ligne via un lien sécurisé.",
+      },
+    ],
+  };
+}
+
+export function jsonLdLocalBusiness(tradeLabel: string, cityLabel: string, region: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "LocalBusiness",
+    name: `DevisPropre pour ${tradeLabel} à ${cityLabel}`,
+    description: `Logiciel de devis et factures pour ${tradeLabel.toLowerCase()} à ${cityLabel} (${region}).`,
+    url: SITE.url,
+    areaServed: {
+      "@type": "City",
+      name: cityLabel,
+      containedInPlace: { "@type": "AdministrativeArea", name: region },
+    },
+    parentOrganization: { "@type": "Organization", name: SITE.name, url: SITE.url },
   };
 }

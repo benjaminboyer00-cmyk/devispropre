@@ -9,6 +9,7 @@ import {
 } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
 import { createDevisSchema, formatZodError } from "@/lib/schemas/forms";
+import { checkRateLimit, devisCreateKey } from "@/lib/rate-limit";
 import { createDevis } from "@/lib/services/devis";
 
 export async function GET() {
@@ -31,6 +32,11 @@ export async function POST(request: NextRequest) {
   if (auth.error) return auth.error;
 
   try {
+    await checkRateLimit(devisCreateKey(auth.workspaceUserId), {
+      maxAttempts: 20,
+      windowMs: 60 * 60 * 1000,
+    });
+
     const body = createDevisSchema.parse(await request.json());
     const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
 

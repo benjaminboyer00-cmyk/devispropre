@@ -53,7 +53,7 @@ export function DocumentAuditTrail({ entityType, entityId, enabled }: DocumentAu
             <li className="p-3 text-subtle">Aucune entrée</li>
           ) : (
             entries.map((e) => (
-              <li key={e.id} className="border-b px-3 py-2" style={{ borderColor: "var(--border)" }}>
+              <li key={e.id} className="border-divide-theme border-b px-3 py-2">
                 <span className="font-medium">{e.action}</span>
                 <span className="text-subtle ml-2">
                   {new Date(e.createdAt).toLocaleString("fr-FR")}

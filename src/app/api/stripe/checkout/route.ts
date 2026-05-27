@@ -1,9 +1,8 @@
 import { NextRequest } from "next/server";
-import type Stripe from "stripe";
-import { getStripe } from "@/lib/stripe";
+import { Plan } from "@/generated/prisma/client";
 import { assertMutationSecurity, requireAuth, apiError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
-import { env } from "@/lib/env";
+import { createSubscriptionCheckoutSession, type CheckoutPlan } from "@/lib/stripe-checkout";
 
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
@@ -11,39 +10,30 @@ export async function POST(request: NextRequest) {
   const { user, error } = await requireAuth();
   if (error) return error;
 
-  const stripe = getStripe();
-  if (!stripe) {
-    return apiError("Paiement non configuré. Contactez le support.", 503);
-  }
-
   const body = await request.json();
   const plan = body.plan as string;
+  const withTrial = body.trial === true;
 
-  const priceId =
-    plan === "PRO" ? env.stripePricePro : plan === "STARTER" ? env.stripePriceStarter : null;
-
-  if (!priceId) return apiError("Plan invalide");
+  if (plan !== Plan.STARTER && plan !== Plan.PRO) {
+    return apiError("Plan invalide");
+  }
 
   const dbUser = await prisma.user.findUnique({
     where: { id: user.id },
     select: { stripeCustomerId: true, email: true },
   });
 
-  const sessionParams: Stripe.Checkout.SessionCreateParams = {
-    mode: "subscription",
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${env.appUrl}/dashboard?checkout=success`,
-    cancel_url: `${env.appUrl}/tarifs?checkout=cancel`,
-    metadata: { userId: user.id, plan },
-  };
+  const result = await createSubscriptionCheckoutSession({
+    userId: user.id,
+    email: dbUser?.email ?? user.email,
+    plan: plan as CheckoutPlan,
+    stripeCustomerId: dbUser?.stripeCustomerId,
+    withTrial,
+  });
 
-  if (dbUser?.stripeCustomerId) {
-    sessionParams.customer = dbUser.stripeCustomerId;
-  } else {
-    sessionParams.customer_email = dbUser?.email ?? user.email;
+  if ("error" in result) {
+    return apiError(result.error, result.error.includes("configuré") ? 503 : 400);
   }
 
-  const session = await stripe.checkout.sessions.create(sessionParams);
-
-  return Response.json({ url: session.url });
+  return Response.json({ url: result.url });
 }

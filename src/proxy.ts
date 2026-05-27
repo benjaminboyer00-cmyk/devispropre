@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
-import { COOKIE_NAME, getJwtSecretKey } from "@/lib/jwt";
-import { isMarketingCacheable } from "@/lib/local-seo";
+import { COOKIE_NAME, getJwtSecretKey, parseJwtSessionPayload } from "@/lib/jwt";
+import { isLocalSeoPath, isMarketingCacheable } from "@/lib/local-seo";
 import { ROUTES } from "@/lib/routes";
 import { applySecurityHeaders, buildContentSecurityPolicy } from "@/lib/security-headers";
 
@@ -17,7 +17,12 @@ export async function proxy(request: NextRequest) {
   function withHeaders(response: NextResponse): NextResponse {
     applySecurityHeaders(response, csp);
 
-    if (isMarketingCacheable(pathname) && process.env.NODE_ENV === "production") {
+    if (isLocalSeoPath(pathname) && process.env.NODE_ENV === "production") {
+      response.headers.set(
+        "Cache-Control",
+        "public, s-maxage=86400, stale-while-revalidate=604800"
+      );
+    } else if (isMarketingCacheable(pathname) && process.env.NODE_ENV === "production") {
       response.headers.set(
         "Cache-Control",
         "public, s-maxage=3600, stale-while-revalidate=86400"
@@ -43,7 +48,31 @@ export async function proxy(request: NextRequest) {
     }
 
     try {
-      await jwtVerify(token, getJwtSecretKey());
+      const { payload } = await jwtVerify(token, getJwtSecretKey());
+      const sessionPayload = parseJwtSessionPayload(payload as Record<string, unknown>);
+      if (!sessionPayload) {
+        return withHeaders(NextResponse.redirect(new URL(ROUTES.connexion, request.url)));
+      }
+
+      const { isSessionActive } = await import("@/lib/user-session");
+      const active = await isSessionActive(
+        sessionPayload.jti,
+        sessionPayload.sub,
+        sessionPayload.sv
+      );
+      if (!active) {
+        return withHeaders(NextResponse.redirect(new URL(ROUTES.connexion, request.url)));
+      }
+
+      if (!pathname.startsWith("/dashboard/activer")) {
+        const { userNeedsSubscriptionSetup } = await import("@/lib/billing");
+        if (await userNeedsSubscriptionSetup(sessionPayload.sub)) {
+          return withHeaders(
+            NextResponse.redirect(new URL("/dashboard/activer", request.url))
+          );
+        }
+      }
+
       return withHeaders(NextResponse.next({ request: { headers: requestHeaders } }));
     } catch {
       return withHeaders(NextResponse.redirect(new URL(ROUTES.connexion, request.url)));

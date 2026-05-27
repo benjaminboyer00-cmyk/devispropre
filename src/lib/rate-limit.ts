@@ -60,3 +60,16 @@ export function authEmailOnlyKey(email: string): string {
 export function authGlobalMagicLinkKey(): string {
   return "auth:global:magic-link";
 }
+
+/** Brute-force mot de passe — limite agressive par IP. */
+export function authPasswordLoginIpKey(ip: string): string {
+  return `auth:password:ip:${ip}`;
+}
+
+export function devisCreateKey(userId: string): string {
+  return `devis:create:${userId}`;
+}
+
+export function devisSendKey(userId: string): string {
+  return `devis:send:${userId}`;
+}

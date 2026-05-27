@@ -78,7 +78,7 @@ export function TeamPanel() {
         </form>
       )}
 
-      <ul className="divide-y" style={{ borderColor: "var(--border)" }}>
+      <ul className="border-divide-theme divide-y">
         {members.map((m) => (
           <li key={m.id} className="flex items-center justify-between py-3 text-sm">
             <div>

@@ -6,10 +6,16 @@ import {
   getRequestMeta,
   handleServiceError,
 } from "@/lib/api-helpers";
-import { authIpRateLimitKey, authRateLimitKey, checkRateLimit } from "@/lib/rate-limit";
+import {
+  authIpRateLimitKey,
+  authPasswordLoginIpKey,
+  authRateLimitKey,
+  checkRateLimit,
+} from "@/lib/rate-limit";
 import {
   createSession,
   hashPassword,
+  sessionMetaFromRequest,
   setSessionCookie,
   verifyPassword,
 } from "@/lib/auth";
@@ -71,7 +77,7 @@ export async function POST(request: NextRequest) {
         metadata: { email: user.email },
       });
 
-      const token = await createSession(user);
+      const token = await createSession(user, sessionMetaFromRequest(request));
       await setSessionCookie(token);
 
       return Response.json(
@@ -81,8 +87,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "login") {
-      await checkRateLimit(authIpRateLimitKey(ip), { maxAttempts: 30, windowMs: 15 * 60 * 1000 });
-      await checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 10, windowMs: 15 * 60 * 1000 });
+      await checkRateLimit(authPasswordLoginIpKey(ip), { maxAttempts: 5, windowMs: 60 * 1000 });
+      await checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 5, windowMs: 60 * 1000 });
 
       const data = loginSchema.parse(body);
       const user = await prisma.user.findFirst({
@@ -94,12 +100,15 @@ export async function POST(request: NextRequest) {
         return apiError("Email ou mot de passe incorrect", 401);
       }
 
-      const token = await createSession({
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        plan: user.plan,
-      });
+      const token = await createSession(
+        {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          plan: user.plan,
+        },
+        sessionMetaFromRequest(request)
+      );
       await acceptTeamInvites(user.email, user.id);
       await setSessionCookie(token);
 
@@ -109,6 +118,12 @@ export async function POST(request: NextRequest) {
     return apiError("Action invalide");
   } catch (e) {
     if (e instanceof z.ZodError) return apiError(formatZodError(e));
+    if (e instanceof Error && e.message.includes("sessionVersion")) {
+      return apiError(
+        "Mise à jour base de données requise. Arrêtez le serveur et lancez : npm run dev:clean",
+        503
+      );
+    }
     return handleServiceError(e);
   }
 }

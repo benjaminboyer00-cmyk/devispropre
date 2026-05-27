@@ -40,13 +40,14 @@ Ce document liste **ce que vous devez faire vous-même** après le déploiement.
 
 1. Créer les produits **Starter (19€/mois)** et **Pro (39€/mois)** en mode **live**
 2. Copier les `price_...` dans `.env.production`
-3. **Webhook** → URL : `https://devispropre.fr/api/stripe/webhook`
-4. **Événements à cocher** :
+3. **Essai gratuit** : géré côté app (`trial_period_days: 15` + carte obligatoire à l'inscription). Ne pas configurer de trial sur le prix Stripe Dashboard (éviter le double essai).
+4. **Webhook** → URL : `https://devispropre.fr/api/stripe/webhook`
+5. **Événements à cocher** :
    - `checkout.session.completed`
    - `customer.subscription.updated`
    - `customer.subscription.deleted`
 5. Copier le **signing secret** (`whsec_...`) dans `STRIPE_WEBHOOK_SECRET`
-6. Tester : souscrire Starter → vérifier plan dans le dashboard → annuler dans Stripe → vérifier retour en FREE
+6. Tester : inscription → carte Stripe → essai 15 j → plan Starter actif → annuler dans Stripe → retour FREE (3 devis/mois)
 
 ---
 

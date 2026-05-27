@@ -3,19 +3,11 @@ import { SITE } from "@/lib/seo";
 
 export function Footer() {
   return (
-    <footer
-      className="mt-auto border-t"
-      style={{
-        borderColor: "var(--border)",
-        background: "var(--surface-muted)",
-      }}
-    >
+    <footer className="site-footer mt-auto border-t">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
         <div className="grid gap-10 md:grid-cols-4">
           <div>
-            <p className="text-lg font-bold" style={{ color: "var(--blue)" }}>
-              DevisPropre
-            </p>
+            <p className="text-brand text-lg font-bold">DevisPropre</p>
             <p className="text-body mt-3 text-sm leading-relaxed">
               Devis et factures pour artisans. Simple, rapide, conforme.
             </p>
@@ -76,7 +68,7 @@ export function Footer() {
             </p>
           </div>
         </div>
-        <p className="text-subtle mt-12 text-center text-xs">
+        <p className="text-subtle mt-12 text-center text-xs" suppressHydrationWarning>
           © {new Date().getFullYear()} DevisPropre · devispropre.fr
         </p>
       </div>

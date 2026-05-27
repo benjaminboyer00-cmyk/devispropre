@@ -32,7 +32,7 @@ export const registerSchema = z
   });
 
 export const devisLigneSchema = z.object({
-  description: z.string().min(1, "Description requise."),
+  description: z.string().min(1, "Description requise.").max(500, "Description trop longue (500 car. max)."),
   quantite: z.number().positive("Quantité invalide."),
   prixUnitaireHT: z.number().min(0, "Prix unitaire invalide."),
   tva: z.number().min(0).max(100).optional(),
@@ -40,8 +40,11 @@ export const devisLigneSchema = z.object({
 
 export const createDevisSchema = z.object({
   clientId: z.string().min(1, "Client requis."),
-  lignes: z.array(devisLigneSchema).min(1, "Ajoutez au moins une ligne."),
-  notes: z.string().optional(),
+  lignes: z
+    .array(devisLigneSchema)
+    .min(1, "Ajoutez au moins une ligne.")
+    .max(50, "Maximum 50 lignes par devis."),
+  notes: z.string().max(2000, "Notes trop longues (2000 car. max).").optional(),
   validUntil: z.string().datetime().optional(),
 });
 

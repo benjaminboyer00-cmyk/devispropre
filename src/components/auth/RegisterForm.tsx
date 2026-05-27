@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { TRIAL_PERIOD_DAYS } from "@/lib/billing-constants";
 import { registerSchema, formatZodError } from "@/lib/schemas/forms";
 import {
   validateFrenchPhone,
@@ -72,7 +73,20 @@ export function RegisterForm() {
       return;
     }
 
-    router.push("/dashboard/devis/nouveau");
+    const checkoutRes = await fetch("/api/stripe/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ plan: "STARTER", trial: true }),
+    });
+    const checkout = await checkoutRes.json();
+
+    if (checkout.url) {
+      window.location.href = checkout.url;
+      return;
+    }
+
+    setLoading(false);
+    router.push("/dashboard/activer");
     router.refresh();
   }
 
@@ -143,11 +157,11 @@ export function RegisterForm() {
       )}
 
       <button type="submit" disabled={loading} className="ui-btn-primary w-full py-4 text-base">
-        {loading ? "Création…" : "Créer mon compte → premier devis"}
+        {loading ? "Création…" : "Créer mon compte → essai gratuit 15 jours"}
       </button>
 
       <p className="text-subtle text-center text-xs">
-        Gratuit · Sans carte ·{" "}
+        Essai Starter {TRIAL_PERIOD_DAYS} jours · Carte requise · Puis 19€/mois sans résiliation ·{" "}
         <Link href="/connexion" className="link-underline font-medium">Déjà inscrit ?</Link>
       </p>
     </form>

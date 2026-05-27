@@ -32,6 +32,13 @@ export async function POST(request: NextRequest) {
     const userId = session.metadata?.userId;
     const plan = session.metadata?.plan as Plan | undefined;
 
+    if (userId && typeof session.customer === "string") {
+      await prisma.user.update({
+        where: { id: userId },
+        data: { stripeCustomerId: session.customer },
+      });
+    }
+
     if (userId && plan && (plan === Plan.STARTER || plan === Plan.PRO)) {
       await prisma.user.update({
         where: { id: userId },
@@ -43,6 +50,11 @@ export async function POST(request: NextRequest) {
       if (plan === Plan.PRO) {
         await ensureProTeam(userId);
       }
+    }
+
+    if (session.subscription && typeof session.subscription === "string") {
+      const subscription = await stripe.subscriptions.retrieve(session.subscription);
+      await syncUserPlanFromSubscription(subscription);
     }
   }
 

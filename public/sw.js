@@ -1,8 +1,6 @@
-const CACHE = "devispropre-shell-v2";
-const SHELL = ["/", "/offline", "/connexion", "/dashboard/devis/nouveau"];
+const CACHE = "devispropre-shell-v4";
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
   self.skipWaiting();
 });
 
@@ -23,33 +21,21 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
 
-  if (
-    url.pathname.startsWith("/_next/static/") ||
-    url.pathname.startsWith("/icons/")
-  ) {
+  // Pages HTML : toujours le réseau (nonce CSP change à chaque requête).
+  if (request.mode === "navigate") {
     event.respondWith(
-      caches.match(request).then((cached) => cached ?? fetch(request).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((cache) => cache.put(request, copy));
-        return res;
-      }))
+      fetch(request).catch(() => caches.match("/offline"))
     );
     return;
   }
 
-  if (request.mode === "navigate") {
+  if (url.pathname === "/offline") {
     event.respondWith(
-      fetch(request)
-        .then((response) => {
-          if (response.ok) {
-            const copy = response.clone();
-            caches.open(CACHE).then((cache) => cache.put(request, copy));
-          }
-          return response;
-        })
-        .catch(() =>
-          caches.match(request).then((cached) => cached ?? caches.match("/offline"))
-        )
+      fetch(request).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((cache) => cache.put(request, copy));
+        return res;
+      })
     );
   }
 });

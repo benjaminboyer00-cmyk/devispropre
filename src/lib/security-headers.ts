@@ -10,11 +10,14 @@ const STATIC_HEADERS: Record<string, string> = {
 };
 
 export function buildContentSecurityPolicy(nonce: string): string {
-  const devEval = process.env.NODE_ENV !== "production" ? " 'unsafe-eval'" : "";
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com${devEval}`,
-    "style-src 'self' 'unsafe-inline'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com`,
+    // style-src-elem : feuilles <link> + balises <style> (Next.js)
+    `style-src-elem 'self' 'unsafe-inline' 'nonce-${nonce}'`,
+    // style-src-attr : style="" sur les éléments (legacy)
+    "style-src-attr 'unsafe-inline'",
+    `style-src 'self' 'unsafe-inline' 'nonce-${nonce}'`,
     "img-src 'self' data: blob:",
     "font-src 'self'",
     "connect-src 'self' https://api.stripe.com https://m.stripe.network",
@@ -26,12 +29,6 @@ export function buildContentSecurityPolicy(nonce: string): string {
   ].join("; ");
 }
 
-export const SECURITY_HEADERS: Record<string, string> = {
-  ...STATIC_HEADERS,
-  // Fallback sans nonce (next.config) — remplacé par middleware pour les pages HTML
-  "Content-Security-Policy": buildContentSecurityPolicy("fallback"),
-};
-
 export function applySecurityHeaders(response: Response, csp?: string): Response {
   for (const [key, value] of Object.entries(STATIC_HEADERS)) {
     if (key === "Strict-Transport-Security" && process.env.NODE_ENV !== "production") {
@@ -39,8 +36,11 @@ export function applySecurityHeaders(response: Response, csp?: string): Response
     }
     response.headers.set(key, value);
   }
-  if (csp) {
+
+  // CSP désactivée en dev : Turbopack injecte des <style> sans nonce → styles cassés.
+  if (csp && process.env.NODE_ENV === "production") {
     response.headers.set("Content-Security-Policy", csp);
   }
+
   return response;
 }

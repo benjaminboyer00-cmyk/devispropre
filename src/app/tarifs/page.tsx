@@ -16,7 +16,7 @@ const PLANS = [PLAN_CATALOG.FREE, PLAN_CATALOG.STARTER, PLAN_CATALOG.PRO];
 function CellValue({ value }: { value: boolean | string }) {
   if (value === true) {
     return (
-      <span style={{ color: "var(--blue)" }} aria-label="Inclus">
+      <span className="text-brand" aria-label="Inclus">
         <IconCheck className="mx-auto h-5 w-5" />
       </span>
     );
@@ -44,13 +44,8 @@ export default function TarifsPage() {
               key={plan.name}
               className={
                 plan.highlight
-                  ? "ui-card-interactive rounded-2xl p-6 ring-2 sm:p-8"
+                  ? "ui-card-interactive ui-plan-highlight rounded-2xl p-6 ring-2 sm:p-8"
                   : "ui-card-interactive p-6 sm:p-8"
-              }
-              style={
-                plan.highlight
-                  ? { borderColor: "var(--blue)", boxShadow: "0 0 0 2px var(--blue)" }
-                  : undefined
               }
             >
               <h2 className="heading-card">{plan.name}</h2>
@@ -62,7 +57,7 @@ export default function TarifsPage() {
               <ul className="text-body mt-8 space-y-3 text-sm">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2.5">
-                    <span style={{ color: "var(--blue)" }}>
+                    <span className="text-brand">
                       <IconCheck className="mt-0.5 h-5 w-5 shrink-0" />
                     </span>
                     <span>{f}</span>
@@ -83,7 +78,7 @@ export default function TarifsPage() {
           <div className="ui-list mt-8 overflow-x-auto">
             <table className="w-full min-w-[540px] text-sm">
               <thead>
-                <tr className="border-b text-left" style={{ borderColor: "var(--border)" }}>
+                <tr className="border-divide-theme border-b text-left">
                   <th className="p-3 font-medium">Fonctionnalité</th>
                   <th className="p-3 text-center font-medium">Gratuit</th>
                   <th className="p-3 text-center font-medium">Starter</th>
@@ -92,7 +87,7 @@ export default function TarifsPage() {
               </thead>
               <tbody>
                 {COMPARISON_ROWS.map((row) => (
-                  <tr key={row.label} className="border-b" style={{ borderColor: "var(--border)" }}>
+                  <tr key={row.label} className="border-divide-theme border-b">
                     <td className="text-body p-3">{row.label}</td>
                     <td className="p-3 text-center">
                       <CellValue value={row.free} />
@@ -124,7 +119,7 @@ export default function TarifsPage() {
 
         <div className="mt-14 text-center">
           <Link href="/inscription" className="ui-btn-primary ui-btn-lg">
-            Essai gratuit 30 jours — sans carte
+            Essai gratuit 15 jours — carte requise
           </Link>
           <p className="text-subtle mt-4 text-sm">
             Déjà inscrit ?{" "}

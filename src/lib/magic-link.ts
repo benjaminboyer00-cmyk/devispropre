@@ -3,17 +3,40 @@ import { prisma } from "./db";
 import { env } from "./env";
 import { sendMagicLinkEmail } from "./email";
 import type { SessionUser } from "./auth";
+import { AUTH_RESPONSE_MIN_MS, ensureMinimumElapsed } from "./timing-safe";
 
 const TTL_MS = 15 * 60 * 1000;
+/** Ne pas renvoyer d'email si un token valide a déjà été émis récemment (coût Resend). */
+const RESEND_COOLDOWN_MS = 60 * 1000;
 
 /** Envoie un lien de connexion si le compte existe (réponse uniforme côté API). */
 export async function requestMagicLink(email: string): Promise<void> {
+  const start = Date.now();
+
   const user = await prisma.user.findFirst({
     where: { email: email.toLowerCase().trim(), deletedAt: null },
     select: { id: true, email: true, name: true },
   });
 
-  if (!user) return;
+  if (!user) {
+    await ensureMinimumElapsed(start, AUTH_RESPONSE_MIN_MS);
+    return;
+  }
+
+  const recentToken = await prisma.magicLinkToken.findFirst({
+    where: {
+      userId: user.id,
+      usedAt: null,
+      expiresAt: { gt: new Date() },
+      createdAt: { gt: new Date(Date.now() - RESEND_COOLDOWN_MS) },
+    },
+    select: { id: true },
+  });
+
+  if (recentToken) {
+    await ensureMinimumElapsed(start, AUTH_RESPONSE_MIN_MS);
+    return;
+  }
 
   const rawToken = generateShareToken();
   const tokenHash = sha256(rawToken);
@@ -33,6 +56,8 @@ export async function requestMagicLink(email: string): Promise<void> {
     name: user.name,
     verifyUrl,
   });
+
+  await ensureMinimumElapsed(start, AUTH_RESPONSE_MIN_MS);
 }
 
 export async function consumeMagicLink(rawToken: string): Promise<SessionUser | null> {

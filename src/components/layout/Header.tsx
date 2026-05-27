@@ -3,18 +3,11 @@ import { ThemeToggle } from "@/components/layout/ThemeToggle";
 
 export function Header() {
   return (
-    <header
-      className="sticky top-0 z-50 border-b backdrop-blur-md"
-      style={{
-        borderColor: "var(--border)",
-        background: "var(--header-bg)",
-      }}
-    >
+    <header className="site-header sticky top-0 z-50 border-b backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
         <Link
           href="/"
-          className="text-xl font-bold transition-colors duration-200"
-          style={{ color: "var(--blue)" }}
+          className="text-brand text-xl font-bold transition-colors duration-200"
         >
           DevisPropre
         </Link>

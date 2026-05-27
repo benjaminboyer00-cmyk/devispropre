@@ -52,6 +52,7 @@ model User {
   phone        String?
   plan         Plan      @default(FREE)
   stripeCustomerId String? @unique
+  sessionVersion   Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   deletedAt    DateTime?
@@ -66,6 +67,22 @@ model User {
   teamMembership TeamMember?
   supportTickets SupportTicket[]
   magicLinkTokens MagicLinkToken[]
+  sessions        UserSession[]
+}
+
+model UserSession {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime  @default(now())
+  lastSeenAt DateTime  @default(now())
+
+  @@index([userId, revokedAt])
+  @@index([expiresAt])
 }
 
 model MagicLinkToken {

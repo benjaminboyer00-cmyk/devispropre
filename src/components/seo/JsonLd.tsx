@@ -1,14 +1,12 @@
-import { headers } from "next/headers";
+import { NonceScript } from "@/components/NonceScript";
 
 interface JsonLdProps {
   data: Record<string, unknown> | object;
 }
 
-export async function JsonLd({ data }: JsonLdProps) {
-  const nonce = (await headers()).get("x-nonce") ?? undefined;
+export function JsonLd({ data }: JsonLdProps) {
   return (
-    <script
-      nonce={nonce}
+    <NonceScript
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
     />

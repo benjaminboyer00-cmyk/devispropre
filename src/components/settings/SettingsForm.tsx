@@ -161,7 +161,8 @@ export function SettingsForm() {
           </p>
           {plan === "FREE" && (
             <p className="text-body text-sm">
-              Passez au Starter pour WhatsApp, factures TVA 2018, relances J+3 et attestation PDF.
+              Réactivez Starter (19€/mois, sans nouvel essai) pour WhatsApp, factures TVA 2018,
+              relances J+3 et attestation PDF.
             </p>
           )}
           {plan !== "PRO" && (

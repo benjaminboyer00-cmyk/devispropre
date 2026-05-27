@@ -78,7 +78,9 @@ export function LoginForm() {
       return;
     }
 
-    setInfo("✉️ Lien envoyé — ouvrez votre email et cliquez pour vous connecter.");
+    setInfo(
+      "Si un compte existe avec cet email, un lien de connexion vient d'être envoyé. Vérifiez votre boîte mail (et les spams)."
+    );
   }
 
   return (
