@@ -2,6 +2,16 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import {
+  companyUpdateSchema,
+  formatZodError,
+  profileUpdateSchema,
+} from "@/lib/schemas/forms";
+import {
+  validateFrenchPhone,
+  validateFrenchPostcode,
+  validateSiret,
+} from "@/lib/validation";
 
 interface SettingsData {
   profile: { name: string; email: string; phone: string | null; plan: string };
@@ -49,35 +59,58 @@ export function SettingsForm() {
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setMessage("");
     const fd = new FormData(e.currentTarget);
+    const parsed = profileUpdateSchema.safeParse({
+      name: fd.get("name"),
+      email: fd.get("email"),
+      phone: (fd.get("phone") as string) || null,
+    });
+    if (!parsed.success) {
+      setMessage(formatZodError(parsed.error));
+      return;
+    }
+    const phoneErr = parsed.data.phone ? validateFrenchPhone(parsed.data.phone) : null;
+    if (phoneErr) {
+      setMessage(phoneErr);
+      return;
+    }
     const res = await fetch("/api/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        section: "profile",
-        name: fd.get("name"),
-        email: fd.get("email"),
-        phone: fd.get("phone"),
-      }),
+      body: JSON.stringify({ section: "profile", ...parsed.data }),
     });
     setMessage(res.ok ? "Profil mis à jour" : "Erreur profil");
   }
 
   async function saveCompany(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    setMessage("");
     const fd = new FormData(e.currentTarget);
+    const parsed = companyUpdateSchema.safeParse({
+      raisonSociale: fd.get("raisonSociale"),
+      siret: fd.get("siret"),
+      adresse: fd.get("adresse"),
+      codePostal: fd.get("codePostal"),
+      ville: fd.get("ville"),
+      tvaApplicable: fd.get("tvaApplicable") === "on",
+    });
+    if (!parsed.success) {
+      setMessage(formatZodError(parsed.error));
+      return;
+    }
+    const extra = [
+      parsed.data.siret ? validateSiret(parsed.data.siret) : null,
+      parsed.data.codePostal ? validateFrenchPostcode(parsed.data.codePostal) : null,
+    ].filter(Boolean);
+    if (extra.length > 0) {
+      setMessage(extra[0]!);
+      return;
+    }
     const res = await fetch("/api/settings", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        section: "company",
-        raisonSociale: fd.get("raisonSociale"),
-        siret: fd.get("siret"),
-        adresse: fd.get("adresse"),
-        codePostal: fd.get("codePostal"),
-        ville: fd.get("ville"),
-        tvaApplicable: fd.get("tvaApplicable") === "on",
-      }),
+      body: JSON.stringify({ section: "company", ...parsed.data }),
     });
     setMessage(res.ok ? "Entreprise mise à jour" : "Erreur entreprise");
   }
@@ -114,7 +147,11 @@ export function SettingsForm() {
 
   return (
     <div className="space-y-10">
-      {message && <p className="ui-alert-success">{message}</p>}
+      {message && (
+        <p className={message.includes("Erreur") || message.includes("invalide") ? "ui-alert-error" : "ui-alert-success"}>
+          {message}
+        </p>
+      )}
 
       {!data.isTeamMember && (
         <div className="ui-card-padded space-y-4">

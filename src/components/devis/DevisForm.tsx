@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { createDevisSchema, formatZodError } from "@/lib/schemas/forms";
+import { enqueueDevis, isBrowserOnline } from "@/lib/offline-queue";
+import {
+  createDevisSchema,
+  formatZodError,
+  queuedDevisPayloadSchema,
+} from "@/lib/schemas/forms";
 
 interface Client {
   id: string;
@@ -27,6 +32,7 @@ export function DevisForm({ clients, tvaApplicable = true }: { clients: Client[]
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
   const totalHT = lignes.reduce((s, l) => s + l.quantite * l.prixUnitaireHT, 0);
   const totalTVA = tvaApplicable
@@ -42,10 +48,37 @@ export function DevisForm({ clients, tvaApplicable = true }: { clients: Client[]
     e.preventDefault();
     setLoading(true);
     setError("");
+    setInfo("");
 
     if (!newClient.trim() && !clientId) {
       setError("Sélectionnez un client ou saisissez un nouveau nom.");
       setLoading(false);
+      return;
+    }
+
+    const normalizedLignes = lignes.map((l) => ({
+      description: l.description.trim(),
+      quantite: Number(l.quantite),
+      prixUnitaireHT: Number(l.prixUnitaireHT),
+      tva: Number(l.tva),
+    }));
+
+    if (!isBrowserOnline()) {
+      const offlinePayload = queuedDevisPayloadSchema.safeParse({
+        clientId: newClient.trim() ? undefined : clientId,
+        newClient: newClient.trim() || undefined,
+        lignes: normalizedLignes,
+      });
+      if (!offlinePayload.success) {
+        setError(formatZodError(offlinePayload.error));
+        setLoading(false);
+        return;
+      }
+      enqueueDevis(offlinePayload.data);
+      setInfo("Devis enregistré localement — synchronisation au retour du réseau.");
+      setLoading(false);
+      router.push("/dashboard");
+      router.refresh();
       return;
     }
 
@@ -64,13 +97,6 @@ export function DevisForm({ clients, tvaApplicable = true }: { clients: Client[]
       const client = await cr.json();
       cid = client.id;
     }
-
-    const normalizedLignes = lignes.map((l) => ({
-      description: l.description.trim(),
-      quantite: Number(l.quantite),
-      prixUnitaireHT: Number(l.prixUnitaireHT),
-      tva: Number(l.tva),
-    }));
 
     const devisPayload = createDevisSchema.safeParse({ clientId: cid, lignes: normalizedLignes });
     if (!devisPayload.success) {
@@ -100,6 +126,7 @@ export function DevisForm({ clients, tvaApplicable = true }: { clients: Client[]
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && <p className="ui-alert-error">{error}</p>}
+      {info && <p className="ui-alert-success">{info}</p>}
 
       <div>
         <label className="ui-label">Client</label>

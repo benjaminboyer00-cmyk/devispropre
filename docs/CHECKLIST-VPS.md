@@ -103,6 +103,7 @@ Installer le crontab depuis `deploy/cron/crontab.example` :
 
 - [ ] Remplacer `SITE_SAME_AS` par vos **vrais** profils LinkedIn / X
 - [ ] Soumettre `https://devispropre.fr/sitemap.xml` dans **Google Search Console**
+- [ ] Vérifier l'indexation des pages locales (ex. `/devis-artisan/plombier/paris`)
 - [ ] Vérifier l’aperçu Open Graph (partage WhatsApp / LinkedIn) — image générée via `/opengraph-image`
 - [ ] Contenu : témoignages artisans, pages métier (plombier, électricien…) si vous visez la longue traîne
 
@@ -135,12 +136,14 @@ Installer le crontab depuis `deploy/cron/crontab.example` :
 - Webhook Stripe annulation / mise à jour abonnement
 - Partage facture (`shareToken` + page publique)
 - Volume Docker PDFs fallback
-- Magic link connexion par email
+- Magic link connexion par email (onglet par défaut)
 - Validation Zod partagée client/serveur
 - Bouton déconnexion dashboard
-- Sitemap, robots.txt, JSON-LD SEO
-- PWA + mode sombre
-- CSP Stripe
+- Sitemap (66+ pages SEO local), robots.txt, JSON-LD
+- PWA + sync devis hors-ligne (file d'attente locale)
+- Pages SEO local `/devis-artisan/[metier]/[ville]` (6 métiers × 10 villes)
+- Migration Next.js 16 : `src/proxy.ts` (ex-middleware)
+- CSP Stripe + mode sombre
 
 ---
 

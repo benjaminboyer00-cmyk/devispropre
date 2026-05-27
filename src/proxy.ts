@@ -2,12 +2,11 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";
 import { COOKIE_NAME, getJwtSecretKey } from "@/lib/jwt";
-import { MARKETING_ROUTES, ROUTES } from "@/lib/routes";
+import { isMarketingCacheable } from "@/lib/local-seo";
+import { ROUTES } from "@/lib/routes";
 import { applySecurityHeaders, buildContentSecurityPolicy } from "@/lib/security-headers";
 
-const MARKETING_PATHS = new Set<string>(MARKETING_ROUTES);
-
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const csp = buildContentSecurityPolicy(nonce);
@@ -18,7 +17,7 @@ export async function middleware(request: NextRequest) {
   function withHeaders(response: NextResponse): NextResponse {
     applySecurityHeaders(response, csp);
 
-    if (MARKETING_PATHS.has(pathname) && process.env.NODE_ENV === "production") {
+    if (isMarketingCacheable(pathname) && process.env.NODE_ENV === "production") {
       response.headers.set(
         "Cache-Control",
         "public, s-maxage=3600, stale-while-revalidate=86400"
@@ -55,7 +54,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|icon|opengraph-image).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|opengraph-image).*)"],
 };

@@ -4,7 +4,7 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import { pageMetadata, jsonLdFaq, jsonLdSoftwareApplication, SITE } from "@/lib/seo";
 
 export const metadata = pageMetadata({
-  title: "Devis & factures pour artisans en 2 minutes",
+  title: "Devis et factures pour artisans en 2 minutes",
   description: SITE.description,
   path: "/",
 });

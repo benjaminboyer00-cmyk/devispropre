@@ -10,7 +10,7 @@ export function LoginForm() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
 
-  const [mode, setMode] = useState<"password" | "magic">("password");
+  const [mode, setMode] = useState<"password" | "magic">("magic");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

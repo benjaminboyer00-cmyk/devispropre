@@ -35,6 +35,15 @@ export const createDevisSchema = z.object({
   validUntil: z.string().datetime().optional(),
 });
 
+/** Payload devis pour file d'attente hors-ligne. */
+export const queuedDevisPayloadSchema = z.object({
+  clientId: z.string().optional(),
+  newClient: z.string().optional(),
+  lignes: z.array(devisLigneSchema).min(1),
+});
+
+export type QueuedDevisPayload = z.infer<typeof queuedDevisPayloadSchema>;
+
 export const profileUpdateSchema = z.object({
   name: z.string().min(2, "Nom : 2 caractères minimum.").optional(),
   email: z.string().email("Adresse email invalide.").optional(),
