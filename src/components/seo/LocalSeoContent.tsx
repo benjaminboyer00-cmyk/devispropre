@@ -10,6 +10,7 @@ import {
   getLocalUniqueInsight,
   localSeoPath,
 } from "@/lib/local-seo";
+import { getLocalPageSections, getTradeOnlySections } from "@/lib/local-seo-body";
 import { ROUTES } from "@/lib/routes";
 import { jsonLdBreadcrumbList, jsonLdLocalBusiness } from "@/lib/seo";
 
@@ -26,6 +27,7 @@ export function LocalSeoContent({ trade, city }: LocalSeoContentProps) {
   const breadcrumbs = getLocalBreadcrumbs(trade, city);
   const testimonial = city ? getLocalTestimonial(trade, city) : null;
   const seeAlso = getLocalSeeAlsoLinks(trade, city);
+  const sections = city ? getLocalPageSections(trade, city) : getTradeOnlySections(trade);
 
   return (
     <>
@@ -75,12 +77,67 @@ export function LocalSeoContent({ trade, city }: LocalSeoContentProps) {
           </blockquote>
         )}
 
-        <ul className="mt-8 space-y-3 text-body">
-          <li>✓ Devis PDF avec SIRET et mentions légales</li>
-          <li>✓ Partage WhatsApp (plan Starter)</li>
-          <li>✓ Facturation conforme loi anti-fraude TVA 2018</li>
-          <li>✓ Connexion par lien email — sans mot de passe</li>
-        </ul>
+        <section className="mt-12">
+          <h2 className="heading-section text-xl">{sections.whyTitle}</h2>
+          {sections.whyParagraphs.map((p) => (
+            <p key={p.slice(0, 40)} className="text-body mt-4 leading-relaxed">
+              {p}
+            </p>
+          ))}
+        </section>
+
+        <section className="mt-12">
+          <h2 className="heading-section text-xl">{sections.featuresTitle}</h2>
+          <ul className="mt-4 space-y-2 text-body">
+            <li>✓ Devis PDF avec SIRET et mentions légales</li>
+            <li>✓ Partage WhatsApp (plan Starter)</li>
+            <li>✓ Facturation conforme loi anti-fraude TVA 2018</li>
+            <li>✓ Connexion par lien email — sans mot de passe</li>
+            <li>✓ Relance automatique J+3 au client (Starter+)</li>
+          </ul>
+          {sections.featuresParagraphs.map((p) => (
+            <p key={p.slice(0, 40)} className="text-body mt-4 leading-relaxed">
+              {p}
+            </p>
+          ))}
+        </section>
+
+        <section className="mt-12">
+          <h2 className="heading-section text-xl">{sections.workflowTitle}</h2>
+          <ol className="mt-4 list-decimal space-y-3 pl-5 text-body">
+            {sections.workflowSteps.map((step) => (
+              <li key={step}>{step}</li>
+            ))}
+          </ol>
+        </section>
+
+        {city && (
+          <section className="mt-12">
+            <h2 className="heading-section text-xl">{sections.marketTitle}</h2>
+            {sections.marketParagraphs.map((p) => (
+              <p key={p.slice(0, 40)} className="text-body mt-4 leading-relaxed">
+                {p}
+              </p>
+            ))}
+          </section>
+        )}
+
+        <section className="mt-12">
+          <h2 className="heading-section text-xl">{sections.pricingTitle}</h2>
+          <p className="text-body mt-4 leading-relaxed">{sections.pricingParagraph}</p>
+        </section>
+
+        <section className="mt-12">
+          <h2 className="heading-section text-xl">{sections.faqTitle}</h2>
+          <dl className="mt-4 space-y-6">
+            {sections.faq.map((item) => (
+              <div key={item.q}>
+                <dt className="heading text-sm font-semibold">{item.q}</dt>
+                <dd className="text-body mt-2 text-sm leading-relaxed">{item.a}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
 
         <div className="mt-10 flex flex-wrap gap-3">
           <Link href={ROUTES.inscription} className="ui-btn-primary px-6 py-3">

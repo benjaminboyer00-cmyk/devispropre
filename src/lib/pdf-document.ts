@@ -38,20 +38,24 @@ function drawHeader(
   if (logoBuffer) {
     try {
       doc.image(logoBuffer, 50, 80, { width: 80 });
+      if (company?.raisonSociale) {
+        doc.fontSize(7).fillColor("#64748b").text(`Logo : ${company.raisonSociale}`, 50, 165, { width: 120 });
+      }
     } catch {
       /* logo invalide */
     }
   }
 
+  const companyTop = logoBuffer ? 180 : 130;
   if (company) {
     doc.fontSize(10).fillColor("#333");
-    doc.text(company.raisonSociale, 50, 130);
+    doc.text(company.raisonSociale, 50, companyTop);
     doc.text(`${company.adresse}, ${company.codePostal} ${company.ville}`);
     doc.text(`SIRET : ${company.siret}`);
     if (company.tvaIntracom) doc.text(`N° TVA : ${company.tvaIntracom}`);
     if (company.telephone) doc.text(`Tél : ${company.telephone}`);
     if (isFranchiseTva(company)) {
-      doc.fontSize(8).fillColor("#444").text(FRANCHISE_MENTION, 50, 195);
+      doc.fontSize(8).fillColor("#444").text(FRANCHISE_MENTION, 50, companyTop + 48);
     }
   }
 }

@@ -8,6 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/": 1,
     "/tarifs": 0.9,
     "/conformite": 0.85,
+    "/guide/devis-artisan-conforme": 0.8,
     "/inscription": 0.8,
   };
 

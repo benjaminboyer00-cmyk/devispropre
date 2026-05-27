@@ -76,10 +76,10 @@ export function getCity(slug: string): CityMeta | undefined {
 }
 
 /** Dernière mise à jour du contenu SEO local — évite un lastmod=new Date() à chaque build. */
-export const LOCAL_SEO_LAST_MODIFIED = new Date("2026-05-27T00:00:00.000Z");
+export const LOCAL_SEO_LAST_MODIFIED = new Date("2026-05-28T00:00:00.000Z");
 
 /** Pages marketing statiques — date de révision éditoriale. */
-export const MARKETING_SITEMAP_LAST_MODIFIED = new Date("2026-05-27T00:00:00.000Z");
+export const MARKETING_SITEMAP_LAST_MODIFIED = new Date("2026-05-28T00:00:00.000Z");
 
 export function sitemapLastModifiedForPath(path: string): Date {
   if (path.startsWith("/devis-artisan/")) {

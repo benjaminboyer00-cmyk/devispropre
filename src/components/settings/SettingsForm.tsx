@@ -226,7 +226,11 @@ export function SettingsForm() {
             />
             {company?.logoUrl && (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={company.logoUrl} alt="Logo" className="mt-2 h-16 object-contain" />
+              <img
+                src={company.logoUrl}
+                alt={company.raisonSociale ? `Logo de ${company.raisonSociale}` : "Logo entreprise"}
+                className="mt-2 h-16 object-contain"
+              />
             )}
           </div>
           <button type="submit" className="ui-btn-primary">

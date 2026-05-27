@@ -1,13 +1,28 @@
 import Link from "next/link";
 import { IconDocument, IconEdit, IconShare, IconShield } from "@/components/icons/Icons";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { pageMetadata, jsonLdFaq, jsonLdHowToCreateDevis, jsonLdSoftwareApplication, SITE } from "@/lib/seo";
+import { pageMetadata, jsonLdFaq, jsonLdHowToCreateDevis, jsonLdProductReviews, jsonLdSoftwareApplication, SITE } from "@/lib/seo";
 
 export const metadata = pageMetadata({
-  title: "Devis et factures pour artisans en 2 minutes",
+  title: "Devis artisans en 2 min — conforme TVA 2018",
   description: SITE.description,
   path: "/",
 });
+
+const REVIEWS = [
+  {
+    author: "Karim L., plombier — Paris",
+    quote: "Mes clients parisiens veulent un PDF, pas un SMS. DevisPropre me fait gagner un créneau par jour.",
+  },
+  {
+    author: "Thomas B., chauffagiste — Lyon",
+    quote: "Pendant la saison de chauffe, je n'ai pas le temps d'Excel. Client, prix, envoi — c'est tout.",
+  },
+  {
+    author: "Antoine R., électricien — Marseille",
+    quote: "Entre deux chantiers, je fais le devis dans la camionnette. Le client reçoit le lien avant que je reparte.",
+  },
+] as const;
 
 const STEPS = [
   {
@@ -31,6 +46,7 @@ export default function HomePage() {
   return (
     <>
       <JsonLd data={jsonLdSoftwareApplication()} />
+      <JsonLd data={jsonLdProductReviews()} />
       <JsonLd data={jsonLdFaq()} />
       <JsonLd data={jsonLdHowToCreateDevis()} />
 
@@ -114,6 +130,18 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
+      </section>
+
+      <section className="section-page">
+        <h2 className="heading-section">Ils gagnent du temps sur le terrain</h2>
+        <ul className="mt-8 grid gap-6 sm:grid-cols-3">
+          {REVIEWS.map((r) => (
+            <li key={r.author} className="ui-card-padded">
+              <p className="text-body text-sm italic leading-relaxed">&ldquo;{r.quote}&rdquo;</p>
+              <p className="text-subtle mt-3 text-xs font-medium">{r.author}</p>
+            </li>
+          ))}
+        </ul>
       </section>
 
       <section className="ui-cta-band">

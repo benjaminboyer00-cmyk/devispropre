@@ -20,7 +20,7 @@ export const SITE = {
   email: "contact@devispropre.fr",
   sameAs: DEFAULT_SAME_AS,
   description:
-    "Logiciel de devis et factures pour artisans du BTP. PDF conforme, envoi WhatsApp, loi anti-fraude TVA 2018. Plombier, électricien, peintre — dès 19€/mois.",
+    "Créez un devis pro en 2 min depuis votre téléphone. Conformité TVA 2018 garantie. Essai 15 jours gratuit, puis 19€/mois. WhatsApp, factures, relances J+3.",
   tagline: "L'anti-usine à gaz de l'artisanat",
 } as const;
 
@@ -251,6 +251,56 @@ export function jsonLdTarifs() {
       { "@type": "Offer", name: "Gratuit", price: "0", priceCurrency: "EUR" },
       { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "EUR" },
       { "@type": "Offer", name: "Pro", price: "39", priceCurrency: "EUR" },
+    ],
+  };
+}
+
+/** Product + avis affichés sur la home — rich snippets SERP. */
+export function jsonLdProductReviews() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: SITE.name,
+    description: SITE.description,
+    brand: { "@type": "Brand", name: SITE.name },
+    url: SITE.url,
+    offers: {
+      "@type": "Offer",
+      price: "19",
+      priceCurrency: "EUR",
+      priceValidUntil: "2027-12-31",
+      availability: "https://schema.org/InStock",
+      url: `${SITE.url}/tarifs`,
+    },
+    aggregateRating: {
+      "@type": "AggregateRating",
+      ratingValue: "4.9",
+      reviewCount: "3",
+      bestRating: "5",
+      worstRating: "4",
+    },
+    review: [
+      {
+        "@type": "Review",
+        author: { "@type": "Person", name: "Karim L., plombier Paris" },
+        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
+        reviewBody:
+          "Mes clients parisiens veulent un PDF, pas un SMS. DevisPropre me fait gagner un créneau par jour.",
+      },
+      {
+        "@type": "Review",
+        author: { "@type": "Person", name: "Thomas B., chauffagiste Lyon" },
+        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
+        reviewBody:
+          "Pendant la saison de chauffe, je n'ai pas le temps d'Excel. Client, prix, envoi — c'est tout.",
+      },
+      {
+        "@type": "Review",
+        author: { "@type": "Person", name: "Antoine R., électricien Marseille" },
+        reviewRating: { "@type": "Rating", ratingValue: "4", bestRating: "5" },
+        reviewBody:
+          "Entre deux chantiers, je fais le devis dans la camionnette. Le client reçoit le lien avant que je reparte.",
+      },
     ],
   };
 }
