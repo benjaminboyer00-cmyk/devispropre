@@ -12,20 +12,26 @@ interface Ligne {
   description: string;
   quantite: number;
   prixUnitaireHT: number;
+  tva: number;
 }
 
-export function DevisForm({ clients }: { clients: Client[] }) {
+const TVA_OPTIONS = [0, 5.5, 10, 20];
+
+export function DevisForm({ clients, tvaApplicable = true }: { clients: Client[]; tvaApplicable?: boolean }) {
   const router = useRouter();
   const [clientId, setClientId] = useState(clients[0]?.id ?? "");
   const [newClient, setNewClient] = useState("");
   const [lignes, setLignes] = useState<Ligne[]>([
-    { description: "", quantite: 1, prixUnitaireHT: 0 },
+    { description: "", quantite: 1, prixUnitaireHT: 0, tva: tvaApplicable ? 20 : 0 },
   ]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   const totalHT = lignes.reduce((s, l) => s + l.quantite * l.prixUnitaireHT, 0);
-  const totalTTC = totalHT * 1.2;
+  const totalTVA = tvaApplicable
+    ? lignes.reduce((s, l) => s + l.quantite * l.prixUnitaireHT * (l.tva / 100), 0)
+    : 0;
+  const totalTTC = totalHT + totalTVA;
 
   function updateLigne(i: number, field: keyof Ligne, value: string | number) {
     setLignes((ls) => ls.map((l, idx) => (idx === i ? { ...l, [field]: value } : l)));
@@ -35,6 +41,12 @@ export function DevisForm({ clients }: { clients: Client[] }) {
     e.preventDefault();
     setLoading(true);
     setError("");
+
+    if (!newClient.trim() && !clientId) {
+      setError("Sélectionnez un client ou saisissez un nouveau nom.");
+      setLoading(false);
+      return;
+    }
 
     let cid = clientId;
     if (newClient.trim()) {
@@ -76,12 +88,11 @@ export function DevisForm({ clients }: { clients: Client[] }) {
 
       <div>
         <label className="block text-sm font-medium">Client</label>
+        {clients.length === 0 && !newClient && (
+          <p className="mt-1 text-sm text-amber-700">Aucun client — saisissez un nom ci-dessous.</p>
+        )}
         {clients.length > 0 && (
-          <select
-            value={clientId}
-            onChange={(e) => setClientId(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
-          >
+          <select value={clientId} onChange={(e) => setClientId(e.target.value)} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2">
             {clients.map((c) => (
               <option key={c.id} value={c.id}>{c.nom}</option>
             ))}
@@ -98,7 +109,7 @@ export function DevisForm({ clients }: { clients: Client[] }) {
       <div className="space-y-3">
         <p className="text-sm font-medium">Prestations</p>
         {lignes.map((l, i) => (
-          <div key={i} className="grid gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-4">
+          <div key={i} className="grid gap-2 rounded-lg border border-slate-200 p-3 sm:grid-cols-5">
             <input
               placeholder="Description"
               required
@@ -124,27 +135,37 @@ export function DevisForm({ clients }: { clients: Client[] }) {
               onChange={(e) => updateLigne(i, "prixUnitaireHT", parseFloat(e.target.value) || 0)}
               className="rounded border border-slate-300 px-2 py-1.5 text-sm"
             />
+            {tvaApplicable ? (
+              <select
+                value={l.tva}
+                onChange={(e) => updateLigne(i, "tva", parseFloat(e.target.value))}
+                className="rounded border border-slate-300 px-2 py-1.5 text-sm"
+              >
+                {TVA_OPTIONS.filter((t) => t > 0).map((t) => (
+                  <option key={t} value={t}>TVA {t}%</option>
+                ))}
+              </select>
+            ) : (
+              <span className="self-center text-xs text-slate-500">Franchise TVA</span>
+            )}
           </div>
         ))}
-        <button
-          type="button"
-          onClick={() => setLignes([...lignes, { description: "", quantite: 1, prixUnitaireHT: 0 }])}
-          className="text-sm text-blue-600 hover:underline"
-        >
+        <button type="button" onClick={() => setLignes([...lignes, { description: "", quantite: 1, prixUnitaireHT: 0, tva: tvaApplicable ? 20 : 0 }])} className="text-sm text-blue-600 hover:underline">
           + Ajouter une ligne
         </button>
       </div>
 
       <div className="rounded-lg bg-slate-50 p-4 text-right">
         <p className="text-sm text-slate-600">Total HT : {totalHT.toFixed(2)} €</p>
+        {tvaApplicable ? (
+          <p className="text-sm text-slate-600">TVA : {totalTVA.toFixed(2)} €</p>
+        ) : (
+          <p className="text-xs text-slate-500">TVA non applicable, art. 293 B du CGI</p>
+        )}
         <p className="text-lg font-bold">Total TTC : {totalTTC.toFixed(2)} €</p>
       </div>
 
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full rounded-lg bg-blue-600 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50"
-      >
+      <button type="submit" disabled={loading} className="w-full rounded-lg bg-blue-600 py-3 font-medium text-white hover:bg-blue-700 disabled:opacity-50">
         {loading ? "Création…" : "Créer le devis"}
       </button>
     </form>

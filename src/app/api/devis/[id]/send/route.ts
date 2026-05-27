@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
-import { getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
+import { assertMutationSecurity, getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
 import { sendDevis } from "@/lib/services/devis";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  assertMutationSecurity(request);
   const { user, error } = await requireAuth();
   if (error) return error;
 

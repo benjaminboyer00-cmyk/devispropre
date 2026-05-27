@@ -20,6 +20,7 @@ function buildCompanyPayload(company: Company | null) {
     codePostal: company.codePostal,
     ville: company.ville,
     tvaIntracom: company.tvaIntracom,
+    tvaApplicable: company.tvaApplicable,
   };
 }
 

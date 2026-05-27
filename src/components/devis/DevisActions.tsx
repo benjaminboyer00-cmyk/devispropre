@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatEuro } from "@/lib/format";
-import { devisShareMessage } from "@/lib/format";
+import { formatEuro, devisShareMessage } from "@/lib/format";
 
 interface DevisDetailProps {
   devis: {
@@ -31,8 +30,14 @@ export function DevisActions({ devis }: DevisDetailProps) {
   const router = useRouter();
   const [loading, setLoading] = useState("");
   const [verifyResult, setVerifyResult] = useState<boolean | null>(null);
+  const [origin, setOrigin] = useState("");
+
+  useEffect(() => {
+    setOrigin(window.location.origin);
+  }, []);
 
   async function send() {
+    if (!confirm("Envoyer et verrouiller ce devis ? Il ne pourra plus être modifié.")) return;
     setLoading("send");
     await fetch(`/api/devis/${devis.id}/send`, { method: "POST" });
     setLoading("");
@@ -68,13 +73,15 @@ export function DevisActions({ devis }: DevisDetailProps) {
     setVerifyResult(data.valid);
   }
 
-  function whatsAppLink() {
-    if (!devis.shareToken) return "#";
-    const url = `${window.location.origin}/devis/${devis.shareToken}`;
-    const msg = devisShareMessage(devis.numero, devis.client.nom, url);
-    const phone = devis.client.telephone?.replace(/\D/g, "") ?? "";
-    return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
-  }
+  const whatsAppHref =
+    devis.shareToken && origin
+      ? (() => {
+          const url = `${origin}/devis/${devis.shareToken}`;
+          const msg = devisShareMessage(devis.numero, devis.client.nom, url);
+          const phone = devis.client.telephone?.replace(/\D/g, "") ?? "";
+          return phone ? `https://wa.me/${phone}?text=${encodeURIComponent(msg)}` : null;
+        })()
+      : null;
 
   return (
     <div className="space-y-4">
@@ -90,6 +97,14 @@ export function DevisActions({ devis }: DevisDetailProps) {
       </div>
 
       <div className="flex flex-wrap gap-2">
+        <a
+          href={`/api/devis/${devis.id}/pdf`}
+          target="_blank"
+          className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
+        >
+          {devis.status === "BROUILLON" ? "Prévisualiser le PDF" : "Voir le PDF"}
+        </a>
+
         {devis.status === "BROUILLON" && (
           <button
             onClick={send}
@@ -100,9 +115,9 @@ export function DevisActions({ devis }: DevisDetailProps) {
           </button>
         )}
 
-        {devis.status === "ENVOYE" && devis.shareToken && (
+        {devis.status === "ENVOYE" && whatsAppHref && (
           <a
-            href={whatsAppLink()}
+            href={whatsAppHref}
             target="_blank"
             rel="noopener noreferrer"
             className="rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
@@ -127,14 +142,6 @@ export function DevisActions({ devis }: DevisDetailProps) {
             Créer la facture
           </button>
         )}
-
-        <a
-          href={`/api/devis/${devis.id}/pdf`}
-          target="_blank"
-          className="rounded-lg border border-slate-300 px-4 py-2 text-sm"
-        >
-          Voir le PDF
-        </a>
 
         {devis.contentHash && (
           <button onClick={verify} className="rounded-lg border border-slate-300 px-4 py-2 text-sm">

@@ -32,9 +32,10 @@ export default function HomePage() {
             >
               Je veux gagner du temps et paraître plus pro
             </Link>
-            <p className="text-sm text-slate-500">
-              Gratuit 30 jours · Sans carte · Inscription en 30 secondes
-            </p>
+          <p className="text-sm text-slate-500">
+            Ou appelez Benjamin Boyer au{" "}
+            <a href={`tel:+${SITE.phoneRaw}`} className="text-blue-600 hover:underline">{SITE.phone}</a>
+          </p>
           </div>
         </div>
       </section>

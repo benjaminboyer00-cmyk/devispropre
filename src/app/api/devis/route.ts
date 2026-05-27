@@ -2,19 +2,13 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import {
   apiError,
+  assertMutationSecurity,
   getRequestMeta,
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
-import {
-  createDevis,
-  sendDevis,
-  softDeleteDevis,
-  transitionDevisStatus,
-  updateDevis,
-  verifyDevisIntegrity,
-} from "@/lib/services/devis";
+import { createDevis } from "@/lib/services/devis";
 
 const ligneSchema = z.object({
   description: z.string().min(1),
@@ -44,6 +38,8 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  assertMutationSecurity(request);
+
   const { user, error } = await requireAuth();
   if (error) return error;
 

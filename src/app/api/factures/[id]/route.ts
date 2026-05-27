@@ -1,6 +1,11 @@
 import { NextRequest } from "next/server";
-import { getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
-import { issueFacture, markFacturePaid } from "@/lib/services/facture";
+import {
+  assertMutationSecurity,
+  getRequestMeta,
+  handleServiceError,
+  requireAuth,
+} from "@/lib/api-helpers";
+import { cancelFacture, issueFacture, markFacturePaid } from "@/lib/services/facture";
 import { prisma } from "@/lib/db";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -24,6 +29,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
+  assertMutationSecurity(request);
+
   const { user, error } = await requireAuth();
   if (error) return error;
 
@@ -34,6 +41,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     if (body.action === "pay") {
       const facture = await markFacturePaid(ctx, id);
+      return Response.json(facture);
+    }
+    if (body.action === "cancel") {
+      const facture = await cancelFacture(ctx, id);
       return Response.json(facture);
     }
 

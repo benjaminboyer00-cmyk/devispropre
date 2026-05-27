@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { requireAuth } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
-import { renderFactureHtml } from "@/lib/pdf";
+import { generateFacturePdf } from "@/lib/pdf-document";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -18,12 +18,12 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   if (!facture) return Response.json({ error: "Facture introuvable" }, { status: 404 });
 
   const company = await prisma.company.findUnique({ where: { userId: user.id } });
-  const html = renderFactureHtml(facture, company);
+  const pdf = await generateFacturePdf(facture, company);
 
-  return new Response(html, {
+  return new Response(new Uint8Array(pdf), {
     headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Content-Disposition": `inline; filename="facture-${facture.numero}.html"`,
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="facture-${facture.numero}.pdf"`,
     },
   });
 }

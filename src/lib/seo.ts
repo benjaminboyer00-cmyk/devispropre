@@ -4,7 +4,10 @@ export const SITE = {
   name: "DevisPropre",
   url: "https://devispropre.fr",
   locale: "fr_FR",
-  phone: "06 XX XX XX XX",
+  phone: "06 60 61 48 39",
+  phoneRaw: "33660614839",
+  owner: "Benjamin Boyer",
+  email: "contact@devispropre.fr",
   description:
     "Devis et factures pour artisans en 2 minutes. PDF pro, envoi WhatsApp, conformité loi anti-fraude TVA 2018. À partir de 19€/mois, sans engagement.",
   tagline: "L'anti-usine à gaz de l'artisanat",
@@ -28,7 +31,7 @@ export const defaultMetadata: Metadata = {
     "devis électricien",
     "devis peintre",
   ],
-  authors: [{ name: SITE.name, url: SITE.url }],
+  authors: [{ name: SITE.owner, url: SITE.url }],
   creator: SITE.name,
   openGraph: {
     type: "website",
@@ -73,7 +76,7 @@ export function jsonLdSoftwareApplication() {
         name: "Starter",
         price: "19",
         priceCurrency: "EUR",
-        description: "Devis illimités, WhatsApp, relances auto",
+        description: "Devis illimités, WhatsApp, relances auto J+3",
       },
       {
         "@type": "Offer",
@@ -98,6 +101,7 @@ export function jsonLdOrganization() {
     contactPoint: {
       "@type": "ContactPoint",
       contactType: "customer service",
+      telephone: `+${SITE.phoneRaw}`,
       availableLanguage: "French",
     },
   };

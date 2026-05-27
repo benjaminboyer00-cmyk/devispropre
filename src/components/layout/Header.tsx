@@ -25,37 +25,3 @@ export function Header() {
     </header>
   );
 }
-
-export function Footer() {
-  return (
-    <footer className="border-t border-slate-200 bg-slate-50 mt-auto">
-      <div className="mx-auto max-w-6xl px-4 py-12">
-        <div className="grid gap-8 md:grid-cols-3">
-          <div>
-            <p className="font-bold text-blue-600">DevisPropre</p>
-            <p className="mt-2 text-sm text-slate-600">
-              Devis et factures pour artisans. Simple, rapide, conforme.
-            </p>
-          </div>
-          <div>
-            <p className="font-semibold text-slate-900">Produit</p>
-            <ul className="mt-2 space-y-1 text-sm text-slate-600">
-              <li><Link href="/tarifs">Tarifs</Link></li>
-              <li><Link href="/conformite">Loi anti-fraude TVA</Link></li>
-              <li><Link href="/inscription">Inscription</Link></li>
-            </ul>
-          </div>
-          <div>
-            <p className="font-semibold text-slate-900">Contact</p>
-            <p className="mt-2 text-sm text-slate-600">
-              Assistance WhatsApp · Réponse sous 1h
-            </p>
-          </div>
-        </div>
-        <p className="mt-8 text-center text-xs text-slate-400">
-          © {new Date().getFullYear()} DevisPropre · devispropre.fr
-        </p>
-      </div>
-    </footer>
-  );
-}

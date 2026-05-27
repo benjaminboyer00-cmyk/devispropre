@@ -2,10 +2,12 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import {
   apiError,
+  assertMutationSecurity,
   getRequestMeta,
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
+import { authRateLimitKey, checkRateLimit } from "@/lib/rate-limit";
 import {
   createSession,
   hashPassword,
@@ -33,11 +35,17 @@ const loginSchema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const action = body.action as string;
+  assertMutationSecurity(request);
 
-  if (action === "register") {
-    try {
+  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+
+  try {
+    const body = await request.json();
+    const action = body.action as string;
+
+    if (action === "register") {
+      checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 5, windowMs: 60 * 60 * 1000 });
+
       const data = registerSchema.parse(body);
       const existing = await prisma.user.findUnique({ where: { email: data.email } });
       if (existing) return apiError("Cet email est déjà utilisé", 409);
@@ -72,15 +80,15 @@ export async function POST(request: NextRequest) {
       const token = await createSession(user);
       await setSessionCookie(token);
 
-      return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name } }, { status: 201 });
-    } catch (e) {
-      if (e instanceof z.ZodError) return apiError(e.message);
-      return handleServiceError(e);
+      return Response.json(
+        { ok: true, user: { id: user.id, email: user.email, name: user.name } },
+        { status: 201 }
+      );
     }
-  }
 
-  if (action === "login") {
-    try {
+    if (action === "login") {
+      checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 10, windowMs: 15 * 60 * 1000 });
+
       const data = loginSchema.parse(body);
       const user = await prisma.user.findFirst({
         where: { email: data.email, deletedAt: null },
@@ -94,11 +102,11 @@ export async function POST(request: NextRequest) {
       await setSessionCookie(token);
 
       return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name } });
-    } catch (e) {
-      if (e instanceof z.ZodError) return apiError(e.message);
-      return handleServiceError(e);
     }
-  }
 
-  return apiError("Action invalide");
+    return apiError("Action invalide");
+  } catch (e) {
+    if (e instanceof z.ZodError) return apiError(e.message);
+    return handleServiceError(e);
+  }
 }

@@ -1,8 +1,7 @@
 import "dotenv/config";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
 import { PrismaClient } from "@/generated/prisma/client";
-
-const connectionString = process.env.DATABASE_URL ?? "file:./dev.db";
+import { env } from "./env";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient;
@@ -11,7 +10,7 @@ const globalForPrisma = globalThis as unknown as {
 
 const adapter =
   globalForPrisma.adapter ??
-  new PrismaBetterSqlite3({ url: connectionString });
+  new PrismaBetterSqlite3({ url: env.databaseUrl });
 
 export const prisma =
   globalForPrisma.prisma ?? new PrismaClient({ adapter });

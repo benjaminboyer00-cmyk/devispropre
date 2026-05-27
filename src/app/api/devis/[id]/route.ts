@@ -2,18 +2,13 @@ import { NextRequest } from "next/server";
 import { z } from "zod";
 import {
   apiError,
+  assertMutationSecurity,
   getRequestMeta,
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
-import {
-  sendDevis,
-  softDeleteDevis,
-  transitionDevisStatus,
-  updateDevis,
-  verifyDevisIntegrity,
-} from "@/lib/services/devis";
+import { softDeleteDevis, updateDevis } from "@/lib/services/devis";
 
 const ligneSchema = z.object({
   description: z.string().min(1),
@@ -45,6 +40,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  assertMutationSecurity(request);
+
   const { user, error } = await requireAuth();
   if (error) return error;
 
@@ -57,7 +54,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     const devis = await updateDevis(ctx, id, {
       lignes: body.lignes,
       notes: body.notes,
-      validUntil: body.validUntil === undefined ? undefined : body.validUntil ? new Date(body.validUntil) : null,
+      validUntil:
+        body.validUntil === undefined
+          ? undefined
+          : body.validUntil
+            ? new Date(body.validUntil)
+            : null,
     });
 
     return Response.json(devis);
@@ -68,6 +70,8 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  assertMutationSecurity(request);
+
   const { user, error } = await requireAuth();
   if (error) return error;
 

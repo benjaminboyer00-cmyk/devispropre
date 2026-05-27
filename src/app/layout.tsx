@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist } from "next/font/google";
 import { defaultMetadata, jsonLdOrganization, jsonLdSoftwareApplication } from "@/lib/seo";
 import { Header } from "@/components/layout/Header";
-import { Footer } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import "./globals.css";
 
 const geist = Geist({

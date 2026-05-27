@@ -40,6 +40,7 @@ enum AuditAction {
   VERIFY_HASH
   ISSUE
   PAY
+  CANCEL
 }
 
 model User {
@@ -58,6 +59,7 @@ model User {
   devis     Devis[]
   factures  Facture[]
   auditLogs AuditLog[]
+  attestations Attestation[]
 }
 
 model Company {
@@ -76,6 +78,7 @@ model Company {
   capitalSocial String?
   rcs           String?
   assurances    String?
+  tvaApplicable Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 }
@@ -140,6 +143,7 @@ model DevisLigne {
   prixUnitaireHT Float
   tva            Float  @default(20)
   totalHT        Float
+  @@index([devisId])
 }
 
 model Facture {
@@ -186,6 +190,7 @@ model FactureLigne {
   prixUnitaireHT Float
   tva            Float   @default(20)
   totalHT        Float
+  @@index([factureId])
 }
 
 model AuditLog {
@@ -212,10 +217,13 @@ model AuditLog {
 model Attestation {
   id          String   @id @default(cuid())
   userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   factureId   String   @unique
   facture     Facture  @relation(fields: [factureId], references: [id], onDelete: Cascade)
   numero      String   @unique
   contentHash String
   signedAt    DateTime @default(now())
   createdAt   DateTime @default(now())
+
+  @@index([userId])
 }

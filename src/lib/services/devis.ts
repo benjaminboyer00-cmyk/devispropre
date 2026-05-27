@@ -8,7 +8,8 @@ import {
   verifyDocumentIntegrity,
 } from "../document-hash";
 import { prisma } from "../db";
-import { assertDevisEditable, ImmutabilityError, isDevisLocked } from "../immutability";
+import { assertDevisEditable, ImmutabilityError } from "../immutability";
+import { assertCanCreateDevis } from "../plan-limits";
 import { computeLineTotalHT, computeTotals, nextDevisNumero } from "../numbers";
 
 export interface LigneInput {
@@ -16,6 +17,16 @@ export interface LigneInput {
   quantite: number;
   prixUnitaireHT: number;
   tva?: number;
+}
+
+async function assertClientOwnership(userId: string, clientId: string) {
+  const client = await prisma.client.findFirst({
+    where: { id: clientId, userId, deletedAt: null },
+  });
+  if (!client) {
+    throw new Error("Client introuvable ou non autorisé.");
+  }
+  return client;
 }
 
 export async function createDevis(
@@ -27,9 +38,21 @@ export async function createDevis(
     validUntil?: Date;
   }
 ) {
+  const user = await prisma.user.findFirst({
+    where: { id: ctx.userId, deletedAt: null },
+    select: { plan: true },
+  });
+  if (!user) throw new Error("Utilisateur introuvable");
+
+  await assertCanCreateDevis(ctx.userId, user.plan);
+  await assertClientOwnership(ctx.userId, data.clientId);
+
+  const company = await prisma.company.findUnique({ where: { userId: ctx.userId } });
+  const tvaApplicable = company?.tvaApplicable ?? true;
+
   const numero = await nextDevisNumero(ctx.userId);
   const lignesData = data.lignes.map((l, i) => {
-    const tva = l.tva ?? 20;
+    const tva = tvaApplicable ? (l.tva ?? 20) : 0;
     const totalHT = computeLineTotalHT(l.quantite, l.prixUnitaireHT);
     return {
       ordre: i + 1,
@@ -41,7 +64,7 @@ export async function createDevis(
     };
   });
 
-  const totals = computeTotals(lignesData);
+  const totals = computeTotals(lignesData, tvaApplicable);
 
   const devis = await prisma.devis.create({
     data: {
@@ -84,14 +107,27 @@ export async function updateDevis(
   if (!existing) throw new Error("Devis introuvable");
   assertDevisEditable(existing.status, existing.lockedAt);
 
-  let updateData: Record<string, unknown> = {};
+  const company = await prisma.company.findUnique({ where: { userId: ctx.userId } });
+  const tvaApplicable = company?.tvaApplicable ?? true;
 
+  let updateData: Record<string, unknown> = {};
   if (data.notes !== undefined) updateData.notes = data.notes;
   if (data.validUntil !== undefined) updateData.validUntil = data.validUntil;
 
+  let lignesData:
+    | {
+        ordre: number;
+        description: string;
+        quantite: number;
+        prixUnitaireHT: number;
+        tva: number;
+        totalHT: number;
+      }[]
+    | undefined;
+
   if (data.lignes) {
-    const lignesData = data.lignes.map((l, i) => {
-      const tva = l.tva ?? 20;
+    lignesData = data.lignes.map((l, i) => {
+      const tva = tvaApplicable ? (l.tva ?? 20) : 0;
       const totalHT = computeLineTotalHT(l.quantite, l.prixUnitaireHT);
       return {
         ordre: i + 1,
@@ -102,19 +138,22 @@ export async function updateDevis(
         totalHT,
       };
     });
-    const totals = computeTotals(lignesData);
-    updateData = { ...updateData, ...totals };
-
-    await prisma.devisLigne.deleteMany({ where: { devisId } });
-    await prisma.devisLigne.createMany({
-      data: lignesData.map((l) => ({ ...l, devisId })),
-    });
+    updateData = { ...updateData, ...computeTotals(lignesData, tvaApplicable) };
   }
 
-  const devis = await prisma.devis.update({
-    where: { id: devisId },
-    data: updateData,
-    include: { lignes: true, client: true },
+  const devis = await prisma.$transaction(async (tx) => {
+    if (lignesData) {
+      await tx.devisLigne.deleteMany({ where: { devisId } });
+      await tx.devisLigne.createMany({
+        data: lignesData.map((l) => ({ ...l, devisId })),
+      });
+    }
+
+    return tx.devis.update({
+      where: { id: devisId },
+      data: updateData,
+      include: { lignes: { orderBy: { ordre: "asc" } }, client: true },
+    });
   });
 
   await logAudit(ctx, {
@@ -181,6 +220,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
   return updated;
 }
 
+/** Transition atomique — évite la double acceptation (race condition). */
 export async function transitionDevisStatus(
   ctx: AuditContext,
   devisId: string,
@@ -191,17 +231,22 @@ export async function transitionDevisStatus(
   });
 
   if (!devis) throw new Error("Devis introuvable");
-  if (devis.status !== "ENVOYE") {
-    throw new Error("Seul un devis envoyé peut être accepté ou refusé.");
-  }
 
   const now = new Date();
-  const updated = await prisma.devis.update({
-    where: { id: devisId },
+  const result = await prisma.devis.updateMany({
+    where: { id: devisId, userId: ctx.userId, status: "ENVOYE", deletedAt: null },
     data: {
       status,
       ...(status === "ACCEPTE" ? { acceptedAt: now } : { refusedAt: now }),
     },
+  });
+
+  if (result.count === 0) {
+    throw new Error("Ce devis a déjà été traité ou n'est plus disponible.");
+  }
+
+  const updated = await prisma.devis.findFirst({
+    where: { id: devisId },
     include: { lignes: true, client: true },
   });
 
@@ -213,7 +258,7 @@ export async function transitionDevisStatus(
     contentHash: devis.contentHash,
   });
 
-  return updated;
+  return updated!;
 }
 
 export async function verifyDevisIntegrity(ctx: AuditContext, devisId: string) {
@@ -284,5 +329,3 @@ export function getDevisStatusEmoji(status: DevisStatus): string {
   };
   return emojis[status];
 }
-
-export { isDevisLocked };

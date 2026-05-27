@@ -1,0 +1,71 @@
+import { NextRequest } from "next/server";
+import { z } from "zod";
+import {
+  apiError,
+  assertMutationSecurity,
+  getRequestMeta,
+  requireAuth,
+} from "@/lib/api-helpers";
+import { prisma } from "@/lib/db";
+
+const schema = z.object({
+  nom: z.string().min(1).optional(),
+  email: z.string().email().optional().or(z.literal("")),
+  telephone: z.string().optional(),
+  adresse: z.string().optional(),
+});
+
+type RouteParams = { params: Promise<{ id: string }> };
+
+export async function PATCH(request: NextRequest, { params }: RouteParams) {
+  assertMutationSecurity(request);
+
+  const { user, error } = await requireAuth();
+  if (error) return error;
+
+  const { id } = await params;
+
+  try {
+    const data = schema.parse(await request.json());
+    const existing = await prisma.client.findFirst({
+      where: { id, userId: user.id, deletedAt: null },
+    });
+    if (!existing) return apiError("Client introuvable", 404);
+
+    const client = await prisma.client.update({
+      where: { id },
+      data: {
+        ...(data.nom !== undefined && { nom: data.nom }),
+        ...(data.email !== undefined && { email: data.email || null }),
+        ...(data.telephone !== undefined && { telephone: data.telephone }),
+        ...(data.adresse !== undefined && { adresse: data.adresse }),
+      },
+    });
+
+    return Response.json(client);
+  } catch (e) {
+    if (e instanceof z.ZodError) return apiError(e.message);
+    return apiError("Erreur mise à jour client");
+  }
+}
+
+export async function DELETE(request: NextRequest, { params }: RouteParams) {
+  assertMutationSecurity(request);
+
+  const { user, error } = await requireAuth();
+  if (error) return error;
+
+  const { id } = await params;
+
+  const existing = await prisma.client.findFirst({
+    where: { id, userId: user.id, deletedAt: null },
+  });
+  if (!existing) return apiError("Client introuvable", 404);
+
+  await prisma.client.update({
+    where: { id },
+    data: { deletedAt: new Date() },
+  });
+
+  return Response.json({ ok: true });
+}

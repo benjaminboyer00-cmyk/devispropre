@@ -1,0 +1,33 @@
+import type { Metadata } from "next";
+import { LEGAL } from "@/lib/legal";
+
+export const metadata: Metadata = {
+  title: "Politique de confidentialité",
+};
+
+export default function PolitiqueConfidentialitePage() {
+  return (
+    <article className="mx-auto max-w-3xl px-4 py-16 prose prose-slate">
+      <h1>Politique de confidentialité</h1>
+      <p>
+        DevisPropre ({LEGAL.editor.name}) collecte les données nécessaires à la facturation :
+        identité professionnelle (SIRET, adresse), coordonnées clients et documents commerciaux.
+      </p>
+      <h2>Finalités</h2>
+      <ul>
+        <li>Création et envoi de devis et factures</li>
+        <li>Conformité fiscale (loi anti-fraude TVA 2018)</li>
+        <li>Support client</li>
+      </ul>
+      <h2>Conservation</h2>
+      <p>
+        Les documents fiscaux sont conservés conformément aux obligations légales (10 ans).
+        Soft delete uniquement — aucune suppression définitive des factures émises.
+      </p>
+      <h2>Vos droits</h2>
+      <p>
+        Contact : {LEGAL.editor.email} — droit d&apos;accès, rectification, opposition (RGPD).
+      </p>
+    </article>
+  );
+}

@@ -1,29 +1,33 @@
 import { prisma } from "./db";
 
 export async function nextDevisNumero(userId: string): Promise<string> {
-  const year = new Date().getFullYear();
-  const prefix = `DEV-${year}-`;
-  const last = await prisma.devis.findFirst({
-    where: { userId, numero: { startsWith: prefix } },
-    orderBy: { numero: "desc" },
-    select: { numero: true },
-  });
+  return prisma.$transaction(async (tx) => {
+    const year = new Date().getFullYear();
+    const prefix = `DEV-${year}-`;
+    const last = await tx.devis.findFirst({
+      where: { userId, numero: { startsWith: prefix } },
+      orderBy: { numero: "desc" },
+      select: { numero: true },
+    });
 
-  const lastSeq = last ? parseInt(last.numero.split("-").pop() ?? "0", 10) : 0;
-  return `${prefix}${String(lastSeq + 1).padStart(4, "0")}`;
+    const lastSeq = last ? parseInt(last.numero.split("-").pop() ?? "0", 10) : 0;
+    return `${prefix}${String(lastSeq + 1).padStart(4, "0")}`;
+  });
 }
 
 export async function nextFactureNumero(userId: string): Promise<string> {
-  const year = new Date().getFullYear();
-  const prefix = `FAC-${year}-`;
-  const last = await prisma.facture.findFirst({
-    where: { userId, numero: { startsWith: prefix } },
-    orderBy: { numero: "desc" },
-    select: { numero: true },
-  });
+  return prisma.$transaction(async (tx) => {
+    const year = new Date().getFullYear();
+    const prefix = `FAC-${year}-`;
+    const last = await tx.facture.findFirst({
+      where: { userId, numero: { startsWith: prefix } },
+      orderBy: { numero: "desc" },
+      select: { numero: true },
+    });
 
-  const lastSeq = last ? parseInt(last.numero.split("-").pop() ?? "0", 10) : 0;
-  return `${prefix}${String(lastSeq + 1).padStart(4, "0")}`;
+    const lastSeq = last ? parseInt(last.numero.split("-").pop() ?? "0", 10) : 0;
+    return `${prefix}${String(lastSeq + 1).padStart(4, "0")}`;
+  });
 }
 
 export function computeLineTotalHT(quantite: number, prixUnitaireHT: number): number {
@@ -31,14 +35,17 @@ export function computeLineTotalHT(quantite: number, prixUnitaireHT: number): nu
 }
 
 export function computeTotals(
-  lignes: { totalHT: number; tva: number }[]
+  lignes: { totalHT: number; tva: number }[],
+  tvaApplicable = true
 ): { totalHT: number; totalTVA: number; totalTTC: number } {
   let totalHT = 0;
   let totalTVA = 0;
 
   for (const l of lignes) {
     totalHT += l.totalHT;
-    totalTVA += Math.round(l.totalHT * (l.tva / 100) * 100) / 100;
+    if (tvaApplicable) {
+      totalTVA += Math.round(l.totalHT * (l.tva / 100) * 100) / 100;
+    }
   }
 
   totalHT = Math.round(totalHT * 100) / 100;

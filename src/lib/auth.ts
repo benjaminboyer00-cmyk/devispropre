@@ -1,14 +1,10 @@
 import bcrypt from "bcryptjs";
-import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { prisma } from "./db";
+import { env } from "./env";
+import { COOKIE_NAME, signJwt, verifyJwt } from "./jwt";
 
-const JWT_SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? "dev-secret-change-in-production-min-32-chars!!"
-);
-
-const COOKIE_NAME = "devispropre_session";
-const SESSION_DURATION = "7d";
+export { COOKIE_NAME };
 
 export interface SessionUser {
   id: string;
@@ -29,11 +25,12 @@ export async function verifyPassword(
 }
 
 export async function createSession(user: SessionUser): Promise<string> {
-  return new SignJWT({ sub: user.id, email: user.email, name: user.name, plan: user.plan })
-    .setProtectedHeader({ alg: "HS256" })
-    .setIssuedAt()
-    .setExpirationTime(SESSION_DURATION)
-    .sign(JWT_SECRET);
+  return signJwt({
+    sub: user.id,
+    email: user.email,
+    name: user.name,
+    plan: user.plan,
+  });
 }
 
 export async function getSession(): Promise<SessionUser | null> {
@@ -42,7 +39,7 @@ export async function getSession(): Promise<SessionUser | null> {
   if (!token) return null;
 
   try {
-    const { payload } = await jwtVerify(token, JWT_SECRET);
+    const { payload } = await verifyJwt(token);
     if (!payload.sub || !payload.email || !payload.name) return null;
 
     const user = await prisma.user.findFirst({
@@ -60,8 +57,8 @@ export async function setSessionCookie(token: string) {
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: env.isProd,
+    sameSite: "strict",
     path: "/",
     maxAge: 60 * 60 * 24 * 7,
   });
@@ -71,5 +68,3 @@ export async function clearSessionCookie() {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);
 }
-
-export { COOKIE_NAME };

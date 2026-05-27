@@ -62,9 +62,28 @@ export function FactureActions({ facture }: FactureDetailProps) {
           </button>
         )}
         {facture.status === "EMISE" && (
-          <button onClick={pay} disabled={!!loading} className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white">
-            Marquer payée
-          </button>
+          <>
+            <button onClick={pay} disabled={!!loading} className="rounded-lg bg-green-600 px-4 py-2 text-sm text-white">
+              Marquer payée
+            </button>
+            <button
+              onClick={async () => {
+                if (!confirm("Annuler cette facture ?")) return;
+                setLoading("cancel");
+                await fetch(`/api/factures/${facture.id}`, {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ action: "cancel" }),
+                });
+                setLoading("");
+                router.refresh();
+              }}
+              disabled={!!loading}
+              className="rounded-lg border border-red-600 px-4 py-2 text-sm text-red-700"
+            >
+              Annuler
+            </button>
+          </>
         )}
         <a href={`/api/factures/${facture.id}/pdf`} target="_blank" className="rounded-lg border px-4 py-2 text-sm">
           Voir le PDF

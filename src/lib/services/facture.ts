@@ -259,4 +259,32 @@ export function getFactureStatusLabel(status: FactureStatus): string {
   return labels[status];
 }
 
-export { isFactureLocked, assertFactureEditable };
+export async function cancelFacture(ctx: AuditContext, factureId: string) {
+  const facture = await prisma.facture.findFirst({
+    where: { id: factureId, userId: ctx.userId, deletedAt: null },
+  });
+
+  if (!facture) throw new Error("Facture introuvable");
+  if (facture.status === "PAYEE") {
+    throw new Error("Impossible d'annuler une facture déjà payée.");
+  }
+  if (facture.status === "ANNULEE") {
+    throw new Error("Cette facture est déjà annulée.");
+  }
+
+  const updated = await prisma.facture.update({
+    where: { id: factureId },
+    data: { status: "ANNULEE" },
+    include: { lignes: true, client: true, attestation: true },
+  });
+
+  await logAudit(ctx, {
+    action: "CANCEL",
+    entityType: "facture",
+    entityId: factureId,
+    factureId,
+    contentHash: facture.contentHash,
+  });
+
+  return updated;
+}

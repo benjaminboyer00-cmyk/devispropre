@@ -1,12 +1,6 @@
 import { NextRequest } from "next/server";
 import { getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
-import {
-  createFactureFromDevis,
-  issueFacture,
-  markFacturePaid,
-  softDeleteFacture,
-  verifyFactureIntegrity,
-} from "@/lib/services/facture";
+import { createFactureFromDevis } from "@/lib/services/facture";
 import { prisma } from "@/lib/db";
 
 export async function GET() {

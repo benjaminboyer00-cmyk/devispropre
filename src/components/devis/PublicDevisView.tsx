@@ -22,24 +22,36 @@ export function PublicDevisView({ token }: { token: string }) {
 
   useEffect(() => {
     fetch(`/api/public/devis/${token}`)
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("Devis introuvable");
+        return r.json();
+      })
       .then((data) => {
         if (data.error) setError(data.error);
         else setDevis(data);
-        setLoading(false);
-      });
+      })
+      .catch(() => setError("Impossible de charger le devis. Réessayez plus tard."))
+      .finally(() => setLoading(false));
   }, [token]);
 
   async function respond(status: "ACCEPTE" | "REFUSE") {
     setActionLoading(true);
-    const res = await fetch(`/api/public/devis/${token}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status }),
-    });
-    setActionLoading(false);
-    if (res.ok) {
+    try {
+      const res = await fetch(`/api/public/devis/${token}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.error ?? "Erreur");
+        return;
+      }
       setDevis((d) => (d ? { ...d, status } : d));
+    } catch {
+      setError("Erreur réseau — réessayez.");
+    } finally {
+      setActionLoading(false);
     }
   }
 
