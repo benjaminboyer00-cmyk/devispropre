@@ -221,6 +221,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
 }
 
 export async function markFacturePaid(ctx: AuditContext, factureId: string) {
+  await assertFacturationAllowed(ctx.userId);
   const facture = await prisma.facture.findFirst({
     where: { id: factureId, userId: ctx.userId, deletedAt: null },
   });

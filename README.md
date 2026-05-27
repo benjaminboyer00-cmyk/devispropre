@@ -6,11 +6,23 @@ Contact : **Benjamin Boyer** — 06 60 61 48 39
 
 ## Démarrage local
 
+**Prérequis : Node.js ≥ 20.19** (recommandé : 22 LTS). Prisma 7 ne fonctionne pas avec Node 18.
+
 ```bash
+node -v   # doit afficher v20.19+ ou v22+
+
+# Option A — fnm (recommandé si nvm absent)
+curl -fsSL https://fnm.vercel.app/install | bash
+# Puis ajouter à ~/.zshrc : eval "$(fnm env)" && fnm use 22
+fnm install 22 && fnm use 22
+
+# Option B — nvm (si déjà installé)
+nvm install 22 && nvm use
+
 cp .env.example .env
 npm install
 npm run db:up          # PostgreSQL Docker (port 5433)
-npm run db:migrate:deploy
+npm run db:migrate:deploy   # préférer npm run plutôt que npx prisma seul
 npm run dev
 ```
 

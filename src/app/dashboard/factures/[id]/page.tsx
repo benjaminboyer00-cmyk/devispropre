@@ -23,5 +23,5 @@ export default async function FactureDetailPage({ params }: PageProps) {
 
   if (!facture) notFound();
 
-  return <FacturePageWrapper facture={JSON.parse(JSON.stringify(facture))} />;
+  return <FacturePageWrapper facture={JSON.parse(JSON.stringify(facture))} plan={account.plan} />;
 }

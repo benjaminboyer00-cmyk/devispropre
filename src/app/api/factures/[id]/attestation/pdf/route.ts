@@ -2,13 +2,20 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { generateAttestationPdf } from "@/lib/pdf-document";
 import { pdfResponse } from "@/lib/pdf-response";
-import { requireAuth } from "@/lib/api-helpers";
+import { requireAuth, handleServiceError } from "@/lib/api-helpers";
+import { assertStarterFeature } from "@/lib/plan-features";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth.error) return auth.error;
+
+  try {
+    assertStarterFeature(auth.plan, "Attestation individuelle PDF");
+  } catch (e) {
+    return handleServiceError(e);
+  }
 
   const { id } = await params;
   const facture = await prisma.facture.findFirst({

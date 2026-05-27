@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DocumentAuditTrail } from "@/components/audit/DocumentAuditTrail";
 import { formatEuro } from "@/lib/format";
 
 interface FactureDetailProps {
@@ -19,9 +20,11 @@ interface FactureDetailProps {
     lignes: { description: string; quantite: number; prixUnitaireHT: number; totalHT: number }[];
     attestation: { numero: string } | null;
   };
+  plan: string;
 }
 
-export function FactureActions({ facture }: FactureDetailProps) {
+export function FactureActions({ facture, plan }: FactureDetailProps) {
+  const starterPlus = plan === "STARTER" || plan === "PRO";
   const router = useRouter();
   const [loading, setLoading] = useState("");
   const [verifyResult, setVerifyResult] = useState<boolean | null>(null);
@@ -144,6 +147,8 @@ export function FactureActions({ facture }: FactureDetailProps) {
         </p>
       )}
 
+      <DocumentAuditTrail entityType="facture" entityId={facture.id} enabled={starterPlus} />
+
       <div className="rounded-lg border">
         <table className="w-full text-sm">
           <tbody>
@@ -161,7 +166,7 @@ export function FactureActions({ facture }: FactureDetailProps) {
   );
 }
 
-export function FacturePageWrapper({ facture }: FactureDetailProps) {
+export function FacturePageWrapper({ facture, plan }: FactureDetailProps) {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <Link href="/dashboard" className="text-sm text-blue-600 hover:underline">
@@ -170,7 +175,7 @@ export function FacturePageWrapper({ facture }: FactureDetailProps) {
       <h1 className="mt-4 text-2xl font-bold">Facture {facture.numero}</h1>
       <p className="text-slate-600">Client : {facture.client.nom}</p>
       <div className="mt-8">
-        <FactureActions facture={facture} />
+        <FactureActions facture={facture} plan={plan} />
       </div>
     </div>
   );

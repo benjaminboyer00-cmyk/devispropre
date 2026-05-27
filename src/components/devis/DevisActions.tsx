@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatEuro, devisShareMessage } from "@/lib/format";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { DocumentAuditTrail } from "@/components/audit/DocumentAuditTrail";
 
 interface DevisDetailProps {
   devis: {
@@ -189,6 +190,8 @@ export function DevisActions({ devis, plan }: DevisDetailProps) {
           Hash : {devis.contentHash.slice(0, 32)}…
         </p>
       )}
+
+      <DocumentAuditTrail entityType="devis" entityId={devis.id} enabled={starterPlus} />
 
       <div className="ui-list overflow-hidden">
         <table className="w-full text-sm">

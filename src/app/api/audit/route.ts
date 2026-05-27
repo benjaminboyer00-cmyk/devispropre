@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { handleServiceError, requireAuth } from "@/lib/api-helpers";
 import { getEntityAuditTrail } from "@/lib/audit";
 import { assertEntityOwnedByUser } from "@/lib/entity-access";
+import { assertStarterFeature } from "@/lib/plan-features";
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth();
@@ -16,6 +17,7 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    assertStarterFeature(auth.plan, "Journal d'audit par document");
     await assertEntityOwnedByUser(auth.workspaceUserId, entityType, entityId);
     const trail = await getEntityAuditTrail(auth.workspaceUserId, entityType, entityId);
     return Response.json(trail);
