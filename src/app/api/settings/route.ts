@@ -9,6 +9,7 @@ import {
 } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
+import { logoApiPath, parseLogoDataUri, saveLogoFile } from "@/lib/logo-storage";
 
 const companySchema = z.object({
   raisonSociale: z.string().min(2).optional(),
@@ -24,6 +25,14 @@ const companySchema = z.object({
   assurances: z.string().optional().nullable(),
   tvaApplicable: z.boolean().optional(),
   logoUrl: z.string().optional().nullable(),
+}).superRefine((data, ctx) => {
+  if (data.logoUrl && !data.logoUrl.startsWith("data:image")) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "logoUrl doit être un data URI image ou null.",
+      path: ["logoUrl"],
+    });
+  }
 });
 
 const profileSchema = z.object({
@@ -41,10 +50,39 @@ export async function GET() {
       where: { id: user.id },
       select: { id: true, email: true, name: true, phone: true, plan: true },
     }),
-    prisma.company.findUnique({ where: { userId: user.id } }),
+    prisma.company.findUnique({
+      where: { userId: user.id },
+      select: {
+        id: true,
+        raisonSociale: true,
+        siret: true,
+        adresse: true,
+        codePostal: true,
+        ville: true,
+        tvaIntracom: true,
+        telephone: true,
+        email: true,
+        capitalSocial: true,
+        rcs: true,
+        assurances: true,
+        tvaApplicable: true,
+        updatedAt: true,
+        logoUrl: true,
+      },
+    }),
   ]);
 
-  return Response.json({ profile, company });
+  return Response.json({
+    profile,
+    company: company
+      ? {
+          ...company,
+          logoUrl: company.logoUrl?.startsWith("data:image")
+            ? logoApiPath(user.id)
+            : company.logoUrl,
+        }
+      : null,
+  });
 }
 
 export async function PATCH(request: NextRequest) {
@@ -80,13 +118,45 @@ export async function PATCH(request: NextRequest) {
 
     if (body.section === "company") {
       const data = companySchema.parse(body);
+
+      let logoPath: string | null | undefined;
+      if (data.logoUrl !== undefined) {
+        if (data.logoUrl === null) {
+          logoPath = null;
+        } else {
+          const { buffer, ext } = parseLogoDataUri(data.logoUrl);
+          logoPath = await saveLogoFile(user.id, buffer, ext);
+        }
+      }
+
       const company = await prisma.company.update({
         where: { userId: user.id },
-        data,
+        data: {
+          ...(data.raisonSociale !== undefined && { raisonSociale: data.raisonSociale }),
+          ...(data.siret !== undefined && { siret: data.siret }),
+          ...(data.adresse !== undefined && { adresse: data.adresse }),
+          ...(data.codePostal !== undefined && { codePostal: data.codePostal }),
+          ...(data.ville !== undefined && { ville: data.ville }),
+          ...(data.tvaIntracom !== undefined && { tvaIntracom: data.tvaIntracom }),
+          ...(data.telephone !== undefined && { telephone: data.telephone }),
+          ...(data.email !== undefined && { email: data.email }),
+          ...(data.capitalSocial !== undefined && { capitalSocial: data.capitalSocial }),
+          ...(data.rcs !== undefined && { rcs: data.rcs }),
+          ...(data.assurances !== undefined && { assurances: data.assurances }),
+          ...(data.tvaApplicable !== undefined && { tvaApplicable: data.tvaApplicable }),
+          ...(logoPath !== undefined && { logoUrl: logoPath }),
+        },
       });
 
       await logAudit(ctx, { action: "UPDATE", entityType: "company", entityId: company.id });
-      return Response.json({ company });
+      return Response.json({
+        company: {
+          ...company,
+          logoUrl: company.logoUrl?.startsWith("data:image")
+            ? logoApiPath(user.id)
+            : company.logoUrl,
+        },
+      });
     }
 
     return apiError("Section invalide (profile | company)");

@@ -76,7 +76,12 @@ export function SettingsForm() {
         body: JSON.stringify({ section: "company", logoUrl }),
       });
       setMessage(res.ok ? "Logo mis à jour" : "Erreur logo");
-      if (res.ok) setData((d) => d && d.company ? { ...d, company: { ...d.company, logoUrl } } : d);
+      if (res.ok) {
+        const json = await res.json();
+        setData((d) =>
+          d && d.company ? { ...d, company: { ...d.company, logoUrl: json.company?.logoUrl ?? null } } : d
+        );
+      }
     };
     reader.readAsDataURL(file);
   }

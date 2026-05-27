@@ -7,7 +7,7 @@ import {
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
-import { authRateLimitKey, checkRateLimit } from "@/lib/rate-limit";
+import { authIpRateLimitKey, authRateLimitKey, checkRateLimit } from "@/lib/rate-limit";
 import {
   createSession,
   hashPassword,
@@ -44,7 +44,8 @@ export async function POST(request: NextRequest) {
     const action = body.action as string;
 
     if (action === "register") {
-      checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 5, windowMs: 60 * 60 * 1000 });
+      await checkRateLimit(authIpRateLimitKey(ip), { maxAttempts: 20, windowMs: 60 * 60 * 1000 });
+      await checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 5, windowMs: 60 * 60 * 1000 });
 
       const data = registerSchema.parse(body);
       const existing = await prisma.user.findUnique({ where: { email: data.email } });
@@ -87,7 +88,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "login") {
-      checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 10, windowMs: 15 * 60 * 1000 });
+      await checkRateLimit(authIpRateLimitKey(ip), { maxAttempts: 30, windowMs: 15 * 60 * 1000 });
+      await checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 10, windowMs: 15 * 60 * 1000 });
 
       const data = loginSchema.parse(body);
       const user = await prisma.user.findFirst({

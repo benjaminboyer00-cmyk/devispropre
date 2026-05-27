@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { formatEuro } from "@/lib/format";
 
 interface FactureDetailProps {
@@ -24,6 +25,7 @@ export function FactureActions({ facture }: FactureDetailProps) {
   const router = useRouter();
   const [loading, setLoading] = useState("");
   const [verifyResult, setVerifyResult] = useState<boolean | null>(null);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   async function issue() {
     setLoading("issue");
@@ -43,6 +45,18 @@ export function FactureActions({ facture }: FactureDetailProps) {
     router.refresh();
   }
 
+  async function cancelDraft() {
+    setLoading("cancel");
+    await fetch(`/api/factures/${facture.id}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "cancel" }),
+    });
+    setLoading("");
+    setConfirmCancel(false);
+    router.refresh();
+  }
+
   async function verify() {
     const res = await fetch(`/api/factures/${facture.id}/verify`);
     const data = await res.json();
@@ -51,6 +65,17 @@ export function FactureActions({ facture }: FactureDetailProps) {
 
   return (
     <div className="space-y-4">
+      <ConfirmDialog
+        open={confirmCancel}
+        title="Annuler le brouillon ?"
+        message="Ce brouillon de facture sera définitivement annulé. Cette action est irréversible."
+        confirmLabel="Annuler le brouillon"
+        variant="danger"
+        loading={loading === "cancel"}
+        onConfirm={cancelDraft}
+        onCancel={() => setConfirmCancel(false)}
+      />
+
       <div className="flex flex-wrap gap-2">
         {facture.status === "BROUILLON" && (
           <>
@@ -62,17 +87,7 @@ export function FactureActions({ facture }: FactureDetailProps) {
               Émettre & verrouiller (conformité TVA)
             </button>
             <button
-              onClick={async () => {
-                if (!confirm("Annuler ce brouillon de facture ?")) return;
-                setLoading("cancel");
-                await fetch(`/api/factures/${facture.id}`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ action: "cancel" }),
-                });
-                setLoading("");
-                router.refresh();
-              }}
+              onClick={() => setConfirmCancel(true)}
               disabled={!!loading}
               className="rounded-lg border border-red-600 px-4 py-2 text-sm text-red-700"
             >

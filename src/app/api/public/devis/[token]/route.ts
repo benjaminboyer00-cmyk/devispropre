@@ -1,10 +1,11 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiError, assertMutationSecurity, getRequestMeta } from "@/lib/api-helpers";
+import { apiError, assertMutationSecurity, getRequestMeta, handleServiceError } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { verifyDocumentIntegrity, buildDevisPayload } from "@/lib/document-hash";
-import { transitionDevisStatus } from "@/lib/services/devis";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { transitionDevisStatusFromPublic } from "@/lib/services/devis";
 
 const statusSchema = z.object({
   status: z.enum(["ACCEPTE", "REFUSE"]),
@@ -49,6 +50,17 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function POST(request: NextRequest, { params }: RouteParams) {
   assertMutationSecurity(request);
 
+  const ip =
+    request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown";
+
+  try {
+    await checkRateLimit(`public-devis:${ip}`, { maxAttempts: 20, windowMs: 60 * 60 * 1000 });
+  } catch {
+    return Response.json({ error: "Trop de tentatives." }, { status: 429 });
+  }
+
   const { token } = await params;
 
   const devis = await prisma.devis.findFirst({
@@ -66,10 +78,10 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       ...getRequestMeta(request),
     };
 
-    const updated = await transitionDevisStatus(ctx, devis.id, status);
+    const updated = await transitionDevisStatusFromPublic(ctx, devis.id, token, status);
     return Response.json({ ok: true, status: updated.status });
   } catch (e) {
     if (e instanceof z.ZodError) return apiError(e.message);
-    return Response.json({ error: "Erreur" }, { status: 400 });
+    return handleServiceError(e);
   }
 }

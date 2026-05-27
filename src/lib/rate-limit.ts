@@ -1,6 +1,4 @@
-type Entry = { count: number; resetAt: number };
-
-const store = new Map<string, Entry>();
+import { prisma } from "./db";
 
 export class RateLimitError extends Error {
   constructor(message = "Trop de tentatives. Réessayez dans quelques minutes.") {
@@ -9,31 +7,46 @@ export class RateLimitError extends Error {
   }
 }
 
-/** Rate limiter en mémoire — suffisant pour un VPS mono-instance. */
-export function checkRateLimit(
+/** Rate limit partagé via PostgreSQL — safe multi-workers / redémarrages. */
+export async function checkRateLimit(
   key: string,
   { maxAttempts, windowMs }: { maxAttempts: number; windowMs: number }
-): void {
-  const now = Date.now();
-  const entry = store.get(key);
+): Promise<void> {
+  const now = new Date();
+  const resetAt = new Date(now.getTime() + windowMs);
 
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
-    return;
-  }
+  const allowed = await prisma.$transaction(async (tx) => {
+    const existing = await tx.rateLimitBucket.findUnique({ where: { key } });
 
-  if (entry.count >= maxAttempts) {
+    if (!existing || existing.resetAt <= now) {
+      await tx.rateLimitBucket.upsert({
+        where: { key },
+        create: { key, count: 1, resetAt },
+        update: { count: 1, resetAt },
+      });
+      return true;
+    }
+
+    if (existing.count >= maxAttempts) {
+      return false;
+    }
+
+    await tx.rateLimitBucket.update({
+      where: { key },
+      data: { count: { increment: 1 } },
+    });
+    return true;
+  });
+
+  if (!allowed) {
     throw new RateLimitError();
   }
-
-  entry.count += 1;
-}
-
-export function getClientIp(request: Request): string {
-  // Ne pas faire confiance à x-forwarded-for pour du blocking — clé de rate limit locale
-  return "local";
 }
 
 export function authRateLimitKey(ip: string, email?: string): string {
   return `auth:${ip}:${email?.toLowerCase() ?? "unknown"}`;
+}
+
+export function authIpRateLimitKey(ip: string): string {
+  return `auth:ip:${ip}`;
 }

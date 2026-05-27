@@ -1,33 +1,31 @@
 import { prisma } from "./db";
 
-export async function nextDevisNumero(userId: string): Promise<string> {
-  return prisma.$transaction(async (tx) => {
-    const year = new Date().getFullYear();
-    const prefix = `DEV-${year}-`;
-    const last = await tx.devis.findFirst({
-      where: { userId, numero: { startsWith: prefix } },
-      orderBy: { numero: "desc" },
-      select: { numero: true },
-    });
+type DocType = "DEVIS" | "FACTURE";
 
-    const lastSeq = last ? parseInt(last.numero.split("-").pop() ?? "0", 10) : 0;
-    return `${prefix}${String(lastSeq + 1).padStart(4, "0")}`;
-  });
+async function nextSequence(userId: string, docType: DocType): Promise<number> {
+  const year = new Date().getFullYear();
+
+  const rows = await prisma.$queryRaw<{ lastSeq: number }[]>`
+    INSERT INTO "DocumentCounter" ("id", "userId", "year", "docType", "lastSeq", "updatedAt")
+    VALUES (gen_random_uuid()::text, ${userId}, ${year}, ${docType}, 1, NOW())
+    ON CONFLICT ("userId", "year", "docType")
+    DO UPDATE SET "lastSeq" = "DocumentCounter"."lastSeq" + 1, "updatedAt" = NOW()
+    RETURNING "lastSeq"
+  `;
+
+  return rows[0]?.lastSeq ?? 1;
+}
+
+export async function nextDevisNumero(userId: string): Promise<string> {
+  const year = new Date().getFullYear();
+  const seq = await nextSequence(userId, "DEVIS");
+  return `DEV-${year}-${String(seq).padStart(4, "0")}`;
 }
 
 export async function nextFactureNumero(userId: string): Promise<string> {
-  return prisma.$transaction(async (tx) => {
-    const year = new Date().getFullYear();
-    const prefix = `FAC-${year}-`;
-    const last = await tx.facture.findFirst({
-      where: { userId, numero: { startsWith: prefix } },
-      orderBy: { numero: "desc" },
-      select: { numero: true },
-    });
-
-    const lastSeq = last ? parseInt(last.numero.split("-").pop() ?? "0", 10) : 0;
-    return `${prefix}${String(lastSeq + 1).padStart(4, "0")}`;
-  });
+  const year = new Date().getFullYear();
+  const seq = await nextSequence(userId, "FACTURE");
+  return `FAC-${year}-${String(seq).padStart(4, "0")}`;
 }
 
 export function computeLineTotalHT(quantite: number, prixUnitaireHT: number): number {

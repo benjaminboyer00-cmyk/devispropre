@@ -10,7 +10,12 @@
     "db:up": "docker start devispropre_postgres 2>/dev/null || docker run -d --name devispropre_postgres -e POSTGRES_USER=devispropre -e POSTGRES_PASSWORD=devispropre -e POSTGRES_DB=devispropre -p 5433:5432 postgres:16-alpine",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate:deploy": "prisma migrate deploy",
     "db:push": "prisma db push",
+    "docker:prod": "docker compose -f docker-compose.prod.yml up -d --build",
+    "docker:prod:down": "docker compose -f docker-compose.prod.yml down",
+    "deploy": "bash scripts/deploy.sh",
+    "backup:db": "bash scripts/backup-db.sh",
     "postinstall": "prisma generate",
     "test": "vitest run"
   },

@@ -1,6 +1,7 @@
 import PDFDocument from "pdfkit";
 import type { Company, Client, Devis, DevisLigne, Facture, FactureLigne } from "@/generated/prisma/client";
 import { formatDate, formatEuro } from "./format";
+import { resolveLogoBuffer } from "./logo-storage";
 
 const FRANCHISE_MENTION = "TVA non applicable, art. 293 B du CGI";
 
@@ -26,17 +27,17 @@ function drawHeader(
   title: string,
   numero: string,
   date: Date,
-  company: Company | null
+  company: Company | null,
+  logoBuffer: Buffer | null
 ) {
   doc.fontSize(20).fillColor("#2563eb").text("DevisPropre", 50, 50);
   doc.fontSize(16).fillColor("#000").text(title, 400, 50, { align: "right" });
   doc.fontSize(10).text(`N° ${numero}`, 400, 72, { align: "right" });
   doc.text(`Date : ${formatDate(date)}`, 400, 86, { align: "right" });
 
-  if (company?.logoUrl?.startsWith("data:image")) {
+  if (logoBuffer) {
     try {
-      const base64 = company.logoUrl.split(",")[1];
-      if (base64) doc.image(Buffer.from(base64, "base64"), 50, 80, { width: 80 });
+      doc.image(logoBuffer, 50, 80, { width: 80 });
     } catch {
       /* logo invalide */
     }
@@ -128,8 +129,9 @@ export async function generateDevisPdf(
   devis: DevisDoc,
   company: Company | null
 ): Promise<Buffer> {
+  const logoBuffer = company ? await resolveLogoBuffer(company.userId, company.logoUrl) : null;
   const doc = new PDFDocument({ size: "A4", margin: 50 });
-  drawHeader(doc, "DEVIS", devis.numero, devis.createdAt, company);
+  drawHeader(doc, "DEVIS", devis.numero, devis.createdAt, company, logoBuffer);
   drawClient(doc, devis.client, 130);
   drawLinesTable(doc, devis.lignes, company, {
     totalHT: devis.totalHT,
@@ -150,8 +152,9 @@ export async function generateFacturePdf(
   facture: FactureDoc,
   company: Company | null
 ): Promise<Buffer> {
+  const logoBuffer = company ? await resolveLogoBuffer(company.userId, company.logoUrl) : null;
   const doc = new PDFDocument({ size: "A4", margin: 50 });
-  drawHeader(doc, "FACTURE", facture.numero, facture.issuedAt ?? facture.createdAt, company);
+  drawHeader(doc, "FACTURE", facture.numero, facture.issuedAt ?? facture.createdAt, company, logoBuffer);
   drawClient(doc, facture.client, 130);
   drawLinesTable(doc, facture.lignes, company, {
     totalHT: facture.totalHT,

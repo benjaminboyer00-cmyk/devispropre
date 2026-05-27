@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { jsonLdTarifs, pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -41,10 +42,7 @@ const PLANS = [
 export default function TarifsPage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdTarifs()) }}
-      />
+      <JsonLd data={jsonLdTarifs()} />
       <div className="mx-auto max-w-5xl px-4 py-16">
       <h1 className="text-center text-3xl font-bold">Le pricing qui tue la prise de tête</h1>
       <p className="mt-4 text-center text-slate-600">

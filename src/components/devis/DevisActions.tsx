@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatEuro, devisShareMessage } from "@/lib/format";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface DevisDetailProps {
   devis: {
@@ -31,16 +32,17 @@ export function DevisActions({ devis }: DevisDetailProps) {
   const [loading, setLoading] = useState("");
   const [verifyResult, setVerifyResult] = useState<boolean | null>(null);
   const [origin, setOrigin] = useState("");
+  const [confirmSend, setConfirmSend] = useState(false);
 
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
 
   async function send() {
-    if (!confirm("Envoyer et verrouiller ce devis ? Il ne pourra plus être modifié.")) return;
     setLoading("send");
     await fetch(`/api/devis/${devis.id}/send`, { method: "POST" });
     setLoading("");
+    setConfirmSend(false);
     router.refresh();
   }
 
@@ -85,6 +87,16 @@ export function DevisActions({ devis }: DevisDetailProps) {
 
   return (
     <div className="space-y-4">
+      <ConfirmDialog
+        open={confirmSend}
+        title="Envoyer et verrouiller ?"
+        message="Une fois envoyé, ce devis ne pourra plus être modifié (conformité légale). Un lien client sera généré."
+        confirmLabel="Envoyer"
+        loading={loading === "send"}
+        onConfirm={send}
+        onCancel={() => setConfirmSend(false)}
+      />
+
       <div className="flex flex-wrap gap-2">
         <span className="rounded-full bg-slate-100 px-3 py-1 text-sm">
           {STATUS_LABELS[devis.status] ?? devis.status}
@@ -107,7 +119,7 @@ export function DevisActions({ devis }: DevisDetailProps) {
 
         {devis.status === "BROUILLON" && (
           <button
-            onClick={send}
+            onClick={() => setConfirmSend(true)}
             disabled={!!loading}
             className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
           >

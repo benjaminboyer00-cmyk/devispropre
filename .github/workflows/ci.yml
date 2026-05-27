@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: devispropre
+          POSTGRES_PASSWORD: devispropre
+          POSTGRES_DB: devispropre
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U devispropre"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql://devispropre:devispropre@localhost:5432/devispropre?schema=public
+      JWT_SECRET: ci-test-jwt-secret-minimum-32-characters-long
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      ALLOWED_ORIGINS: http://localhost:3000
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+
+      - run: npm ci
+
+      - run: npx prisma migrate deploy
+
+      - run: npm run test
+
+      - run: npm run build
+
+      - run: npm run lint

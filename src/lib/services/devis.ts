@@ -221,6 +221,51 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
   return updated;
 }
 
+/** Transition publique via shareToken — ownership explicite anti-IDOR. */
+export async function transitionDevisStatusFromPublic(
+  ctx: AuditContext,
+  devisId: string,
+  shareToken: string,
+  status: Extract<DevisStatus, "ACCEPTE" | "REFUSE">
+) {
+  const devis = await prisma.devis.findFirst({
+    where: { id: devisId, userId: ctx.userId, shareToken, deletedAt: null, status: "ENVOYE" },
+  });
+
+  if (!devis) {
+    throw new Error("Ce devis a déjà été traité ou n'est plus disponible.");
+  }
+
+  const now = new Date();
+  const result = await prisma.devis.updateMany({
+    where: { id: devisId, userId: ctx.userId, shareToken, status: "ENVOYE", deletedAt: null },
+    data: {
+      status,
+      ...(status === "ACCEPTE" ? { acceptedAt: now } : { refusedAt: now }),
+    },
+  });
+
+  if (result.count === 0) {
+    throw new Error("Ce devis a déjà été traité ou n'est plus disponible.");
+  }
+
+  const updated = await prisma.devis.findFirst({
+    where: { id: devisId },
+    include: { lignes: true, client: true },
+  });
+
+  await logAudit(ctx, {
+    action: status === "ACCEPTE" ? "ACCEPT" : "REFUSE",
+    entityType: "devis",
+    entityId: devisId,
+    devisId,
+    contentHash: devis.contentHash,
+    metadata: { via: "public_share_token" },
+  });
+
+  return updated!;
+}
+
 /** Transition atomique — évite la double acceptation (race condition). */
 export async function transitionDevisStatus(
   ctx: AuditContext,
@@ -294,6 +339,17 @@ export async function softDeleteDevis(ctx: AuditContext, devisId: string) {
   });
 
   if (!devis) throw new Error("Devis introuvable");
+
+  const linkedFacture = await prisma.facture.findFirst({
+    where: { devisId, userId: ctx.userId, deletedAt: null },
+    select: { id: true },
+  });
+
+  if (devis.status === "FACTURE" || linkedFacture) {
+    throw new ImmutabilityError(
+      "Impossible de supprimer un devis déjà converti en facture."
+    );
+  }
 
   await prisma.devis.update({
     where: { id: devisId },

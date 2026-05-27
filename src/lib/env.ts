@@ -44,6 +44,9 @@ export const env = {
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET?.trim() ?? "",
   stripePriceStarter: process.env.STRIPE_PRICE_STARTER?.trim() ?? "",
   stripePricePro: process.env.STRIPE_PRICE_PRO?.trim() ?? "",
+  resendApiKey: process.env.RESEND_API_KEY?.trim() ?? "",
+  resendFromEmail:
+    process.env.RESEND_FROM_EMAIL?.trim() ?? "DevisPropre <noreply@devispropre.fr>",
   allowedOrigins: (
     process.env.ALLOWED_ORIGINS?.trim() ||
     optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")

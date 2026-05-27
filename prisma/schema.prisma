@@ -34,6 +34,7 @@ enum AuditAction {
   SOFT_DELETE
   LOCK
   SEND
+  REMINDER_SCHEDULED
   ACCEPT
   REFUSE
   CONVERT_TO_FACTURE
@@ -219,11 +220,29 @@ model Attestation {
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   factureId   String   @unique
-  facture     Facture  @relation(fields: [factureId], references: [id], onDelete: Cascade)
+  facture     Facture  @relation(fields: [factureId], references: [id], onDelete: Restrict)
   numero      String   @unique
   contentHash String
   signedAt    DateTime @default(now())
   createdAt   DateTime @default(now())
 
   @@index([userId])
+}
+
+model RateLimitBucket {
+  key       String   @id
+  count     Int      @default(0)
+  resetAt   DateTime
+  updatedAt DateTime @updatedAt
+}
+
+model DocumentCounter {
+  id        String   @id @default(cuid())
+  userId    String
+  year      Int
+  docType   String
+  lastSeq   Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, year, docType])
 }

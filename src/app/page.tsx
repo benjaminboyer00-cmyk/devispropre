@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { JsonLd } from "@/components/seo/JsonLd";
 import { pageMetadata, jsonLdFaq, jsonLdSoftwareApplication, SITE } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -10,14 +11,8 @@ export const metadata = pageMetadata({
 export default function HomePage() {
   return (
     <>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftwareApplication()) }}
-      />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdFaq()) }}
-      />
+      <JsonLd data={jsonLdSoftwareApplication()} />
+      <JsonLd data={jsonLdFaq()} />
       <section className="bg-gradient-to-b from-blue-50 to-white px-4 py-20">
         <div className="mx-auto max-w-4xl text-center">
           <p className="text-sm font-medium uppercase tracking-wide text-blue-600">
