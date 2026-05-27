@@ -1,65 +1,116 @@
-import Image from "next/image";
+import Link from "next/link";
+import type { Metadata } from "next";
+import { SITE } from "@/lib/seo";
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: "Devis & factures pour artisans en 2 minutes",
+  description: SITE.description,
+  alternates: { canonical: SITE.url },
+};
+
+export default function HomePage() {
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+    <>
+      <section className="bg-gradient-to-b from-blue-50 to-white px-4 py-20">
+        <div className="mx-auto max-w-4xl text-center">
+          <p className="text-sm font-medium uppercase tracking-wide text-blue-600">
+            {SITE.tagline}
           </p>
+          <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 sm:text-5xl">
+            Faites du travail propre.
+            <br />
+            <span className="text-blue-600">Commencez par le devis.</span>
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg text-slate-600">
+            Devis en 2 minutes · Envoi WhatsApp · Facture conforme loi anti-fraude TVA 2018.
+            À partir de 19€/mois, sans engagement.
+          </p>
+          <div className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
+            <Link
+              href="/inscription"
+              className="rounded-xl bg-blue-600 px-8 py-4 text-lg font-semibold text-white shadow-lg hover:bg-blue-700"
+            >
+              Je veux gagner du temps et paraître plus pro
+            </Link>
+            <p className="text-sm text-slate-500">
+              Gratuit 30 jours · Sans carte · Inscription en 30 secondes
+            </p>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-4 py-16">
+        <h2 className="text-2xl font-bold text-slate-900">Le problème, cru</h2>
+        <blockquote className="mt-4 border-l-4 border-blue-600 pl-4 text-slate-600 italic">
+          « Je fais des devis sur papier ou Word. Je les perds. Les clients les oublient.
+          Je ne sais plus qui a accepté ou refusé. Et je passe pour un amateur face aux
+          grandes entreprises. »
+        </blockquote>
+        <p className="mt-4 text-slate-700">
+          DevisPropre a été bâti pour tuer ces frustrations. Aucune formation. Aucun jargon.
+          Juste votre téléphone et 2 minutes.
+        </p>
+      </section>
+
+      <section className="bg-white px-4 py-16">
+        <div className="mx-auto max-w-4xl">
+          <h2 className="text-2xl font-bold">Du chantier au client en 120 secondes</h2>
+          <ol className="mt-8 space-y-6">
+            {[
+              {
+                step: "1",
+                title: "Tapez vos prestations",
+                desc: "Client, description, quantité, prix — le TTC se calcule tout seul.",
+              },
+              {
+                step: "2",
+                title: "Générez le PDF pro",
+                desc: "Logo, SIRET, mentions légales — design impeccable.",
+              },
+              {
+                step: "3",
+                title: "Envoyez par WhatsApp",
+                desc: "Un clic, message pré-rempli, lien unique. Le client valide en ligne.",
+              },
+            ].map((item) => (
+              <li key={item.step} className="flex gap-4">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-600 font-bold text-white">
+                  {item.step}
+                </span>
+                <div>
+                  <h3 className="font-semibold">{item.title}</h3>
+                  <p className="text-slate-600">{item.desc}</p>
+                </div>
+              </li>
+            ))}
+          </ol>
         </div>
-      </main>
-    </div>
+      </section>
+
+      <section className="mx-auto max-w-4xl px-4 py-16">
+        <h2 className="text-2xl font-bold">Le bouclier légal invisible</h2>
+        <p className="mt-4 text-slate-600">
+          Conformité loi anti-fraude TVA 2018 : verrouillage automatique, empreinte SHA-256,
+          chaînage des factures, audit log complet, attestation individuelle générée.
+        </p>
+        <Link href="/conformite" className="mt-4 inline-block text-blue-600 hover:underline">
+          En savoir plus sur la conformité →
+        </Link>
+      </section>
+
+      <section className="bg-blue-600 px-4 py-16 text-white">
+        <div className="mx-auto max-w-4xl text-center">
+          <p className="text-2xl font-bold">
+            « Vous signez votre premier devis accepté, DevisPropre est rentabilisé pour l&apos;année. »
+          </p>
+          <Link
+            href="/inscription"
+            className="mt-8 inline-block rounded-xl bg-white px-8 py-4 font-semibold text-blue-600 hover:bg-blue-50"
+          >
+            Essai gratuit — 30 jours
+          </Link>
+        </div>
+      </section>
+    </>
   );
 }

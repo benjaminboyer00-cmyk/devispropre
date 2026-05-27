@@ -1,0 +1,221 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+enum Plan {
+  FREE
+  STARTER
+  PRO
+}
+
+enum DevisStatus {
+  BROUILLON
+  ENVOYE
+  ACCEPTE
+  REFUSE
+  FACTURE
+}
+
+enum FactureStatus {
+  BROUILLON
+  EMISE
+  PAYEE
+  ANNULEE
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  SOFT_DELETE
+  LOCK
+  SEND
+  ACCEPT
+  REFUSE
+  CONVERT_TO_FACTURE
+  VERIFY_HASH
+  ISSUE
+  PAY
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  phone        String?
+  plan         Plan      @default(FREE)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
+
+  company   Company?
+  clients   Client[]
+  devis     Devis[]
+  factures  Facture[]
+  auditLogs AuditLog[]
+}
+
+model Company {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  raisonSociale String
+  siret         String
+  adresse       String
+  codePostal    String
+  ville         String
+  tvaIntracom   String?
+  logoUrl       String?
+  telephone     String?
+  email         String?
+  capitalSocial String?
+  rcs           String?
+  assurances    String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Client {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nom       String
+  email     String?
+  telephone String?
+  adresse   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  devis    Devis[]
+  factures Facture[]
+}
+
+model Devis {
+  id             String      @id @default(cuid())
+  userId         String
+  user           User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId       String
+  client         Client      @relation(fields: [clientId], references: [id])
+  numero         String
+  status         DevisStatus @default(BROUILLON)
+  totalHT        Float       @default(0)
+  totalTVA       Float       @default(0)
+  totalTTC       Float       @default(0)
+  tauxTVA        Float       @default(20)
+  lockedAt       DateTime?
+  contentHash    String?
+  chainHash      String?
+  shareToken     String?     @unique
+  sentAt         DateTime?
+  acceptedAt     DateTime?
+  refusedAt      DateTime?
+  reminderSentAt DateTime?
+  notes          String?
+  validUntil     DateTime?
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+  deletedAt      DateTime?
+
+  lignes    DevisLigne[]
+  facture   Facture?
+  auditLogs AuditLog[] @relation("DevisAudit")
+
+  @@unique([userId, numero])
+  @@index([userId, status])
+}
+
+model DevisLigne {
+  id             String @id @default(cuid())
+  devisId        String
+  devis          Devis  @relation(fields: [devisId], references: [id], onDelete: Cascade)
+  ordre          Int
+  description    String
+  quantite       Float
+  prixUnitaireHT Float
+  tva            Float  @default(20)
+  totalHT        Float
+}
+
+model Facture {
+  id           String        @id @default(cuid())
+  userId       String
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId     String
+  client       Client        @relation(fields: [clientId], references: [id])
+  devisId      String?       @unique
+  devis        Devis?        @relation(fields: [devisId], references: [id])
+  numero       String
+  status       FactureStatus @default(BROUILLON)
+  totalHT      Float         @default(0)
+  totalTVA     Float         @default(0)
+  totalTTC     Float         @default(0)
+  tauxTVA      Float         @default(20)
+  lockedAt     DateTime?
+  contentHash  String?
+  chainHash    String?
+  previousHash String?
+  issuedAt     DateTime?
+  paidAt       DateTime?
+  notes        String?
+  dateEcheance DateTime?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?
+
+  lignes      FactureLigne[]
+  attestation Attestation?
+  auditLogs   AuditLog[] @relation("FactureAudit")
+
+  @@unique([userId, numero])
+  @@index([userId, status])
+}
+
+model FactureLigne {
+  id             String  @id @default(cuid())
+  factureId      String
+  facture        Facture @relation(fields: [factureId], references: [id], onDelete: Cascade)
+  ordre          Int
+  description    String
+  quantite       Float
+  prixUnitaireHT Float
+  tva            Float   @default(20)
+  totalHT        Float
+}
+
+model AuditLog {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action      AuditAction
+  entityType  String
+  entityId    String
+  devisId     String?
+  devis       Devis?      @relation("DevisAudit", fields: [devisId], references: [id])
+  factureId   String?
+  facture     Facture?    @relation("FactureAudit", fields: [factureId], references: [id])
+  metadata    String
+  ipAddress   String?
+  userAgent   String?
+  contentHash String?
+  createdAt   DateTime    @default(now())
+
+  @@index([userId, entityType, entityId])
+  @@index([createdAt])
+}
+
+model Attestation {
+  id          String   @id @default(cuid())
+  userId      String
+  factureId   String   @unique
+  facture     Facture  @relation(fields: [factureId], references: [id], onDelete: Cascade)
+  numero      String   @unique
+  contentHash String
+  signedAt    DateTime @default(now())
+  createdAt   DateTime @default(now())
+}
