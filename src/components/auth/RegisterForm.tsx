@@ -12,6 +12,7 @@ import {
   validateFrenchPostcode,
   validateSiret,
 } from "@/lib/validation";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -29,6 +30,7 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   function update(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -44,7 +46,9 @@ export function RegisterForm() {
       password: form.password.trim() || undefined,
     });
     if (!parsed.success) {
-      setError(formatZodError(parsed.error));
+      const msg = formatZodError(parsed.error);
+      toast(msg, "error");
+      setError(msg);
       return;
     }
 
@@ -55,6 +59,7 @@ export function RegisterForm() {
     ].filter(Boolean);
 
     if (extraChecks.length > 0) {
+      toast(extraChecks[0]!, "error");
       setError(extraChecks[0]!);
       return;
     }
@@ -71,12 +76,17 @@ export function RegisterForm() {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Erreur inscription");
+      const msg = data.error ?? "Erreur inscription";
+      toast(msg, "error");
+      setError(msg);
       return;
     }
 
+    toast("Compte créé — finalisation en cours…");
+
     const claim = await claimGuestDraftIfPresent();
     if (claim.error) {
+      toast(claim.error, "error");
       setError(claim.error);
     }
 
@@ -167,7 +177,7 @@ export function RegisterForm() {
         </button>
       )}
 
-      <button type="submit" disabled={loading} className="ui-btn-primary w-full py-4 text-base">
+      <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-4 text-base">
         {loading ? "Création…" : "Créer mon compte → essai gratuit 15 jours"}
       </button>
 

@@ -1,4 +1,4 @@
-/** En-têtes HTTP de sécurité — appliqués via next.config et middleware. */
+/** En-têtes HTTP de sécurité — appliqués via next.config et proxy.ts (middleware Next.js 16). */
 
 const STATIC_HEADERS: Record<string, string> = {
   "X-Frame-Options": "DENY",

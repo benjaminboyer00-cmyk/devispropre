@@ -6,6 +6,7 @@ import Link from "next/link";
 import { claimGuestDraftIfPresent } from "@/lib/claim-guest-draft-client";
 import { ROUTES } from "@/lib/routes";
 import { loginSchema, magicLinkSchema, formatZodError } from "@/lib/schemas/forms";
+import { useToast } from "@/components/ui/ToastProvider";
 
 export function LoginForm() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const linkError =
     urlError === "lien_expire"
@@ -35,7 +37,9 @@ export function LoginForm() {
 
     const parsed = loginSchema.safeParse({ email, password });
     if (!parsed.success) {
-      setError(formatZodError(parsed.error));
+      const msg = formatZodError(parsed.error);
+      toast(msg, "error");
+      setError(msg);
       return;
     }
 
@@ -49,12 +53,17 @@ export function LoginForm() {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Erreur de connexion");
+      const msg = data.error ?? "Erreur de connexion";
+      toast(msg, "error");
+      setError(msg);
       return;
     }
 
+    toast("Connexion réussie");
+
     const claim = await claimGuestDraftIfPresent();
     if (claim.error) {
+      toast(claim.error, "error");
       setError(claim.error);
       if (claim.id) {
         router.push(`${ROUTES.dashboardDevis(claim.id)}?claimed=1`);
@@ -73,7 +82,9 @@ export function LoginForm() {
 
     const parsed = magicLinkSchema.safeParse({ email });
     if (!parsed.success) {
-      setError(formatZodError(parsed.error));
+      const msg = formatZodError(parsed.error);
+      toast(msg, "error");
+      setError(msg);
       return;
     }
 
@@ -87,13 +98,16 @@ export function LoginForm() {
     setLoading(false);
 
     if (!res.ok) {
-      setError(data.error ?? "Erreur");
+      const msg = data.error ?? "Erreur";
+      toast(msg, "error");
+      setError(msg);
       return;
     }
 
     setInfo(
       "Si un compte existe avec cet email, un lien de connexion vient d'être envoyé. Vérifiez votre boîte mail (et les spams)."
     );
+    toast("Lien de connexion envoyé — vérifiez votre boîte mail", "info");
   }
 
   return (
@@ -125,7 +139,7 @@ export function LoginForm() {
               className="ui-input mt-1 text-base"
             />
           </div>
-          <button type="submit" disabled={loading} className="ui-btn-primary w-full py-4 text-base">
+          <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-4 text-base">
             {loading ? "Envoi…" : "Recevoir mon lien de connexion"}
           </button>
           <button
@@ -158,7 +172,7 @@ export function LoginForm() {
               className="ui-input mt-1"
             />
           </div>
-          <button type="submit" disabled={loading} className="ui-btn-primary w-full py-3">
+          <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-3">
             {loading ? "Connexion…" : "Se connecter"}
           </button>
           <button

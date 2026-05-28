@@ -1,4 +1,16 @@
-// Next.js 16 : proxy.ts remplace middleware.ts — protection /dashboard, CSP, cache SEO.
+/**
+ * Next.js 16 — MIDDLEWARE DE SÉCURITÉ (nom de fichier imposé : proxy.ts)
+ *
+ * ⚠️ Ce n'est PAS un proxy HTTP forward (pas de fetch vers des URLs utilisateur).
+ * Aucune requête sortante : pas de vecteur SSRF.
+ *
+ * Rôle :
+ * - Protection routes /dashboard (JWT + session DB)
+ * - En-têtes CSP / HSTS via applySecurityHeaders
+ * - Cache-Control pages marketing / SEO local
+ *
+ * Équivalent historique : middleware.ts (Next.js ≤15)
+ */
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";

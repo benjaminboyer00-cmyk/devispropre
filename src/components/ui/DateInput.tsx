@@ -11,6 +11,7 @@ interface DateInputProps {
   required?: boolean;
   hint?: string;
   min?: string;
+  invalid?: boolean;
   /** Valeur initiale côté client uniquement (évite mismatch SSR). */
   defaultValue?: string;
 }
@@ -27,6 +28,7 @@ export function DateInput({
   required,
   hint,
   min,
+  invalid,
   defaultValue,
 }: DateInputProps) {
   const [ready, setReady] = useState(false);
@@ -50,7 +52,8 @@ export function DateInput({
         min={todayMin}
         value={ready ? value : ""}
         onChange={(e) => onChange(e.target.value)}
-        className="ui-input ui-input-date mt-1 text-base"
+        className={`ui-input ui-input-date mt-1 text-base ${invalid ? "ui-input-invalid" : ""}`}
+        aria-invalid={invalid || undefined}
       />
       {hint && <p className="text-subtle mt-1 text-xs">{hint}</p>}
     </div>

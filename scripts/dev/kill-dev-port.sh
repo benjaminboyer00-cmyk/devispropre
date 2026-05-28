@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Libère le port du serveur Next.js local avant un redémarrage propre.
+# Dev local uniquement — libère le port Next.js avant redémarrage (npm run dev:clean).
 set -euo pipefail
 
 PORT="${PORT:-3000}"

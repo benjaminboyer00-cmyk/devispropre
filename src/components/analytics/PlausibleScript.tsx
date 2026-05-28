@@ -1,11 +1,12 @@
 import Script from "next/script";
-import { ANALYTICS } from "@/lib/analytics";
 import { getRequestNonce } from "@/lib/nonce";
 
-/** Script Plausible — mesure trafic SEO (pages, referrers, goals). */
+/** Script Plausible — actif uniquement si c'est le fournisseur principal. */
 export async function PlausibleScript() {
+  const { ANALYTICS, primaryAnalyticsProvider } = await import("@/lib/analytics");
+  if (primaryAnalyticsProvider() !== "plausible" || !ANALYTICS.plausibleDomain) return null;
+
   const domain = ANALYTICS.plausibleDomain;
-  if (!domain) return null;
 
   const nonce = await getRequestNonce();
 

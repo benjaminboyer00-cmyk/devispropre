@@ -2,22 +2,30 @@
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { ANALYTICS } from "@/lib/analytics";
+import { primaryAnalyticsProvider } from "@/lib/analytics";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { WebVitals } from "@/components/analytics/WebVitals";
 
-/** Stack analytics : Vercel (perf) + PostHog (UX) + Web Vitals custom. */
+/** Un seul stack analytics actif — voir primaryAnalyticsProvider() et .env.example. */
 export function SiteAnalytics({ children }: { children: React.ReactNode }) {
-  return (
-    <PostHogProvider>
+  const provider = primaryAnalyticsProvider();
+
+  const body = (
+    <>
       {children}
-      <WebVitals />
-      {ANALYTICS.vercelInsights && (
+      {provider && <WebVitals />}
+      {provider === "vercel" && (
         <>
           <Analytics />
           <SpeedInsights />
         </>
       )}
-    </PostHogProvider>
+    </>
   );
+
+  if (provider === "posthog") {
+    return <PostHogProvider>{body}</PostHogProvider>;
+  }
+
+  return body;
 }

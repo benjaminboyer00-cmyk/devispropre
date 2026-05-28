@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { CopyButton } from "@/components/ui/CopyButton";
+import { useToast } from "@/components/ui/ToastProvider";
 import { mailShareHref, normalizePhone, smsShareHref, whatsAppShareHref } from "@/lib/share-utils";
 
 interface DocumentSharePanelProps {
@@ -24,6 +25,7 @@ export function DocumentSharePanel({
   emailSubject,
   variant = "devis",
 }: DocumentSharePanelProps) {
+  const { toast } = useToast();
   const phone = normalizePhone(clientPhone);
   const whatsAppHref = phone ? whatsAppShareHref(phone, message) : null;
   const smsHref = phone ? smsShareHref(phone, message) : null;
@@ -70,6 +72,7 @@ export function DocumentSharePanel({
             href={whatsAppHref}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => toast("Ouverture de WhatsApp…", "info")}
             className="rounded-lg bg-green-600 py-3 text-center text-sm font-semibold text-white hover:bg-green-700"
           >
             WhatsApp
@@ -80,7 +83,11 @@ export function DocumentSharePanel({
           </p>
         )}
         {smsHref && (
-          <a href={smsHref} className="ui-btn-outline py-3 text-center text-sm font-semibold">
+          <a
+            href={smsHref}
+            onClick={() => toast("Ouverture de l'application SMS…", "info")}
+            className="ui-btn-outline py-3 text-center text-sm font-semibold"
+          >
             SMS
           </a>
         )}

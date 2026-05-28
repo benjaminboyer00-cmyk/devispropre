@@ -59,7 +59,6 @@ export function DevisForm({
   const [clientEmail, setClientEmail] = useState("");
   const [clientAdresse, setClientAdresse] = useState("");
   const [validUntil, setValidUntil] = useState("");
-  const handleValidUntilChange = useCallback((v: string) => setValidUntil(v), []);
   const [notes, setNotes] = useState("");
   const [simpleDesc, setSimpleDesc] = useState("");
   const [simplePriceTtc, setSimplePriceTtc] = useState("");
@@ -72,8 +71,33 @@ export function DevisForm({
   const [guestTvaApplicable, setGuestTvaApplicable] = useState(true);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
   const [hydrated, setHydrated] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<Set<string>>(new Set());
 
   const effectiveTvaApplicable = mode === "guest" ? guestTvaApplicable : tvaApplicable;
+
+  function clearField(key: string) {
+    setFieldErrors((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  }
+
+  function fieldClass(key: string, extra = ""): string {
+    const invalid = fieldErrors.has(key) ? "ui-input-invalid" : "";
+    return ["ui-input", "text-base", invalid, extra].filter(Boolean).join(" ");
+  }
+
+  const handleValidUntilChange = useCallback((v: string) => {
+    setValidUntil(v);
+    setFieldErrors((prev) => {
+      if (!prev.has("validUntil")) return prev;
+      const next = new Set(prev);
+      next.delete("validUntil");
+      return next;
+    });
+  }, []);
 
   const tvaRate = effectiveTvaApplicable ? 20 : 0;
 
@@ -315,12 +339,12 @@ export function DevisForm({
     setLoading(true);
     setError("");
     setInfo("");
+    setFieldErrors(new Set());
 
     const clientName = newClient.trim();
+    const nextErrors = new Set<string>();
     if (!clientName && !clientId) {
-      setError("Indiquez le nom du client.");
-      setLoading(false);
-      return;
+      nextErrors.add("client");
     }
 
     const normalizedLignes = displayLignes.map((l) => ({
@@ -331,24 +355,32 @@ export function DevisForm({
     }));
 
     if (simpleMode) {
-      if (!normalizedLignes[0]?.description || normalizedLignes[0].prixUnitaireHT <= 0) {
-        setError("Décrivez la prestation et indiquez un prix.");
-        setLoading(false);
-        return;
+      if (!normalizedLignes[0]?.description) nextErrors.add("description");
+      if (!normalizedLignes[0]?.prixUnitaireHT || normalizedLignes[0].prixUnitaireHT <= 0) {
+        nextErrors.add("price");
       }
     } else {
-      const invalid = normalizedLignes.some(
-        (l) => !l.description || l.quantite <= 0 || l.prixUnitaireHT <= 0
-      );
-      if (invalid) {
-        setError("Chaque ligne doit avoir une description, une quantité et un prix unitaire HT.");
-        setLoading(false);
-        return;
-      }
+      normalizedLignes.forEach((l, i) => {
+        if (!l.description) nextErrors.add(`ligne-${i}-desc`);
+        if (l.quantite <= 0) nextErrors.add(`ligne-${i}-qty`);
+        if (l.prixUnitaireHT <= 0) nextErrors.add(`ligne-${i}-price`);
+      });
+      if (!validUntil.trim()) nextErrors.add("validUntil");
     }
 
-    if (!simpleMode && !validUntil.trim()) {
-      setError("Indiquez la date de validité du devis.");
+    if (nextErrors.size > 0) {
+      setFieldErrors(nextErrors);
+      setError(
+        simpleMode
+          ? "Décrivez la prestation et indiquez un prix."
+          : "Complétez les champs obligatoires en rouge."
+      );
+      toast(
+        simpleMode
+          ? "Décrivez la prestation et indiquez un prix."
+          : "Complétez les champs obligatoires.",
+        "error"
+      );
       setLoading(false);
       return;
     }
@@ -356,6 +388,7 @@ export function DevisForm({
     if (mode === "guest") {
       const name = clientName || newClient.trim();
       if (!name) {
+        setFieldErrors(new Set(["client"]));
         setError("Indiquez le nom du client.");
         setLoading(false);
         return;
@@ -403,8 +436,12 @@ export function DevisForm({
               required={!pickExisting || mode === "guest"}
               autoFocus
               value={newClient}
-              onChange={(e) => setNewClient(e.target.value)}
-              className="ui-input text-base"
+              onChange={(e) => {
+                setNewClient(e.target.value);
+                clearField("client");
+              }}
+              className={fieldClass("client")}
+              aria-invalid={fieldErrors.has("client") || undefined}
             />
             {!simpleMode && (
               <>
@@ -457,8 +494,12 @@ export function DevisForm({
             placeholder="Ex : Remplacement chaudière — fourniture et pose"
             required
             value={simpleDesc}
-            onChange={(e) => setSimpleDesc(e.target.value)}
-            className="ui-input text-base"
+            onChange={(e) => {
+              setSimpleDesc(e.target.value);
+              clearField("description");
+            }}
+            className={fieldClass("description")}
+            aria-invalid={fieldErrors.has("description") || undefined}
           />
           <div>
             <label className="ui-label">Prix {effectiveTvaApplicable ? "TTC" : "HT"} (€)</label>
@@ -469,8 +510,12 @@ export function DevisForm({
               required
               placeholder="1500"
               value={simplePriceTtc}
-              onChange={(e) => setSimplePriceTtc(e.target.value)}
-              className="ui-input mt-1 text-base"
+              onChange={(e) => {
+                setSimplePriceTtc(e.target.value);
+                clearField("price");
+              }}
+              className={fieldClass("price", "mt-1")}
+              aria-invalid={fieldErrors.has("price") || undefined}
               inputMode="decimal"
             />
           </div>
@@ -486,14 +531,18 @@ export function DevisForm({
           {lignes.map((l, i) => (
             <div
               key={i}
-              className="grid gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 sm:grid-cols-5"
+              className="grid gap-2 rounded-lg border border-[var(--border)] bg-[var(--surface)] p-3 transition-shadow duration-200 sm:grid-cols-5"
             >
               <input
                 placeholder="Description détaillée *"
                 required
                 value={l.description}
-                onChange={(e) => updateLigne(i, "description", e.target.value)}
-                className="ui-input sm:col-span-2 !mt-0"
+                onChange={(e) => {
+                  updateLigne(i, "description", e.target.value);
+                  clearField(`ligne-${i}-desc`);
+                }}
+                className={`${fieldClass(`ligne-${i}-desc`, "sm:col-span-2 !mt-0")}`}
+                aria-invalid={fieldErrors.has(`ligne-${i}-desc`) || undefined}
               />
               <input
                 type="number"
@@ -501,8 +550,12 @@ export function DevisForm({
                 step="0.01"
                 placeholder="Qté *"
                 value={l.quantite}
-                onChange={(e) => updateLigne(i, "quantite", parseFloat(e.target.value) || 0)}
-                className="ui-input !mt-0"
+                onChange={(e) => {
+                  updateLigne(i, "quantite", parseFloat(e.target.value) || 0);
+                  clearField(`ligne-${i}-qty`);
+                }}
+                className={fieldClass(`ligne-${i}-qty`, "!mt-0")}
+                aria-invalid={fieldErrors.has(`ligne-${i}-qty`) || undefined}
               />
               <input
                 type="number"
@@ -510,8 +563,12 @@ export function DevisForm({
                 step="0.01"
                 placeholder="P.U. HT € *"
                 value={l.prixUnitaireHT || ""}
-                onChange={(e) => updateLigne(i, "prixUnitaireHT", parseFloat(e.target.value) || 0)}
-                className="ui-input !mt-0"
+                onChange={(e) => {
+                  updateLigne(i, "prixUnitaireHT", parseFloat(e.target.value) || 0);
+                  clearField(`ligne-${i}-price`);
+                }}
+                className={fieldClass(`ligne-${i}-price`, "!mt-0")}
+                aria-invalid={fieldErrors.has(`ligne-${i}-price`) || undefined}
               />
               {effectiveTvaApplicable ? (
                 <select
@@ -569,6 +626,7 @@ export function DevisForm({
             onChange={handleValidUntilChange}
             defaultValue={defaultValidUntilInputValue()}
             required
+            invalid={fieldErrors.has("validUntil")}
             hint="Mention légale — 30 jours est la pratique courante en BTP."
           />
           <div>

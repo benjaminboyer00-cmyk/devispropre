@@ -4,12 +4,19 @@ import posthog from "posthog-js";
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
-import { ANALYTICS } from "@/lib/analytics";
+import { ANALYTICS, primaryAnalyticsProvider } from "@/lib/analytics";
 
-if (typeof window !== "undefined" && ANALYTICS.posthogKey && !posthog.__loaded) {
-  posthog.init(ANALYTICS.posthogKey, {
+const posthogIsPrimary =
+  typeof window !== "undefined" &&
+  primaryAnalyticsProvider() === "posthog" &&
+  ANALYTICS.posthogKey;
+
+if (posthogIsPrimary && !posthog.__loaded) {
+  posthog.init(ANALYTICS.posthogKey!, {
     api_host: ANALYTICS.posthogHost,
-    ui_host: ANALYTICS.posthogHost.includes("eu.") ? "https://eu.posthog.com" : "https://app.posthog.com",
+    ui_host: ANALYTICS.posthogHost.includes("eu.")
+      ? "https://eu.posthog.com"
+      : "https://app.posthog.com",
     person_profiles: "identified_only",
     capture_pageview: false,
     capture_pageleave: true,
@@ -37,9 +44,11 @@ function PostHogPageViewInner() {
   return null;
 }
 
-/** PostHog — replays session, heatmaps, funnels UX/design. */
+/** PostHog — actif uniquement si c'est le fournisseur principal (pas de Plausible en parallèle). */
 export function PostHogProvider({ children }: { children: React.ReactNode }) {
-  if (!ANALYTICS.posthogKey) return <>{children}</>;
+  if (primaryAnalyticsProvider() !== "posthog" || !ANALYTICS.posthogKey) {
+    return <>{children}</>;
+  }
 
   return (
     <PHProvider client={posthog}>

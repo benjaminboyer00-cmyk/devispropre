@@ -334,6 +334,14 @@ model RateLimitBucket {
   updatedAt DateTime @updatedAt
 }
 
+/** Idempotence webhooks Stripe — évite le double traitement d'un même event.id. */
+model StripeWebhookEvent {
+  id        String   @id @default(cuid())
+  eventId   String   @unique
+  type      String
+  createdAt DateTime @default(now())
+}
+
 model DocumentCounter {
   id        String   @id @default(cuid())
   userId    String

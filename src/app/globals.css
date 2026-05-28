@@ -304,6 +304,15 @@ body {
     --tw-ring-color: color-mix(in srgb, var(--blue) 25%, transparent);
   }
 
+  .ui-input-invalid {
+    border-color: var(--alert-error-text);
+    --tw-ring-color: color-mix(in srgb, var(--alert-error-text) 20%, transparent);
+  }
+
+  .ui-input-invalid:focus {
+    border-color: var(--alert-error-text);
+  }
+
   /* Calendrier natif — clic indicateur + color-scheme cohérent */
   .ui-input-date {
     min-height: 2.75rem;
