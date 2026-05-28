@@ -20,6 +20,11 @@ export function Footer() {
             <p className="heading text-sm font-semibold">Guides</p>
             <ul className="text-body mt-3 space-y-2 text-sm">
               <li>
+                <Link href={ROUTES.blog} className="link-underline">
+                  Tous les guides
+                </Link>
+              </li>
+              <li>
                 <Link href={ROUTES.guideDevisConforme} className="link-underline">
                   Devis artisan conforme
                 </Link>

@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
+import { useToast } from "@/components/ui/ToastProvider";
 
 interface SettingsData {
   profile: { name: string; email: string; phone: string | null; plan: string };
@@ -25,7 +27,8 @@ interface SettingsData {
 export function SettingsForm() {
   const [data, setData] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [message, setMessage] = useState("");
+  const [saving, setSaving] = useState("");
+  const { toast } = useToast();
 
   useEffect(() => {
     fetch("/api/settings")
@@ -36,7 +39,7 @@ export function SettingsForm() {
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setMessage("");
+    setSaving("profile");
     const fd = new FormData(e.currentTarget);
     const res = await fetch("/api/settings", {
       method: "PATCH",
@@ -49,12 +52,14 @@ export function SettingsForm() {
       }),
     });
     const json = await res.json();
-    setMessage(res.ok ? "Profil mis à jour" : json.error ?? "Erreur profil");
+    setSaving("");
+    if (res.ok) toast("Profil mis à jour");
+    else toast(json.error ?? "Erreur profil", "error");
   }
 
   async function saveCompany(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setMessage("");
+    setSaving("company");
     const fd = new FormData(e.currentTarget);
     const res = await fetch("/api/settings", {
       method: "PATCH",
@@ -76,19 +81,20 @@ export function SettingsForm() {
       }),
     });
     const json = await res.json();
+    setSaving("");
     if (res.ok) {
-      setMessage("Entreprise mise à jour");
+      toast("Entreprise mise à jour");
       if (json.company) {
         setData((d) => (d ? { ...d, company: json.company } : d));
       }
     } else {
-      setMessage(json.error ?? "Erreur entreprise");
+      toast(json.error ?? "Erreur entreprise", "error");
     }
   }
 
   async function uploadLogo(file: File) {
     if (file.size > 500_000) {
-      setMessage("Logo max 500 Ko");
+      toast("Logo max 500 Ko", "error");
       return;
     }
     const reader = new FileReader();
@@ -99,12 +105,12 @@ export function SettingsForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ section: "company", logoUrl }),
       });
-      setMessage(res.ok ? "Logo mis à jour" : "Erreur logo");
       if (res.ok) {
+        toast("Logo mis à jour");
         const json = await res.json();
-        setData((d) =>
-          d ? { ...d, company: json.company ?? d.company } : d
-        );
+        setData((d) => (d ? { ...d, company: json.company ?? d.company } : d));
+      } else {
+        toast("Erreur logo", "error");
       }
     };
     reader.readAsDataURL(file);
@@ -118,18 +124,6 @@ export function SettingsForm() {
 
   return (
     <div className="space-y-10">
-      {message && (
-        <p
-          className={
-            message.includes("Erreur") || message.includes("invalide") || message.includes("Impossible")
-              ? "ui-alert-error"
-              : "ui-alert-success"
-          }
-        >
-          {message}
-        </p>
-      )}
-
       <form onSubmit={saveProfile} className="ui-card-padded space-y-4" id="profil">
         <h2 className="heading font-semibold">Profil</h2>
         <div>
@@ -144,8 +138,8 @@ export function SettingsForm() {
           <label className="ui-label">Téléphone</label>
           <input name="phone" defaultValue={data.profile.phone ?? ""} className={inputClass} />
         </div>
-        <button type="submit" className="ui-btn-primary">
-          Enregistrer le profil
+        <button type="submit" className="ui-btn-primary" disabled={saving === "profile"} aria-busy={saving === "profile"}>
+          {saving === "profile" ? "Enregistrement…" : "Enregistrer le profil"}
         </button>
       </form>
 
@@ -225,16 +219,23 @@ export function SettingsForm() {
               className="mt-1 text-sm"
             />
             {company?.logoUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
+              <Image
                 src={company.logoUrl}
                 alt={company.raisonSociale ? `Logo de ${company.raisonSociale}` : "Logo entreprise"}
-                className="mt-2 h-16 object-contain"
+                width={120}
+                height={64}
+                unoptimized
+                className="mt-2 h-16 w-auto object-contain"
               />
             )}
           </div>
-          <button type="submit" className="ui-btn-primary">
-            Enregistrer l&apos;entreprise
+          <button
+            type="submit"
+            className="ui-btn-primary"
+            disabled={saving === "company"}
+            aria-busy={saving === "company"}
+          >
+            {saving === "company" ? "Enregistrement…" : "Enregistrer l'entreprise"}
           </button>
         </form>
       )}

@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/ToastProvider";
 import { DocumentAuditTrail } from "@/components/audit/DocumentAuditTrail";
 import { FactureSharePanel } from "@/components/facture/FactureSharePanel";
 import { formatEuro } from "@/lib/format";
@@ -29,6 +30,7 @@ interface FactureDetailProps {
 export function FactureActions({ facture, plan }: FactureDetailProps) {
   const starterPlus = plan === "STARTER" || plan === "PRO";
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState("");
   const [verifyResult, setVerifyResult] = useState<boolean | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -40,8 +42,14 @@ export function FactureActions({ facture, plan }: FactureDetailProps) {
 
   async function issue() {
     setLoading("issue");
-    await fetch(`/api/factures/${facture.id}`, { method: "POST" });
+    const res = await fetch(`/api/factures/${facture.id}`, { method: "POST" });
     setLoading("");
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      toast((data as { error?: string }).error ?? "Émission impossible", "error");
+      return;
+    }
+    toast("Facture émise — document définitif");
     router.refresh();
   }
 

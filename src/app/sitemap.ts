@@ -14,6 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/guide/tva-artisan-travaux": 0.75,
     "/guide/mentions-obligatoires-devis": 0.75,
     "/guide/partager-devis-whatsapp": 0.75,
+    "/blog": 0.78,
     "/inscription": 0.8,
   };
 

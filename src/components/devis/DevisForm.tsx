@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DateInput } from "@/components/ui/DateInput";
+import { useToast } from "@/components/ui/ToastProvider";
 import { enqueueDevis, isBrowserOnline } from "@/lib/offline-queue";
 import {
   createDevisSchema,
@@ -49,6 +50,7 @@ export function DevisForm({
   mode?: "authenticated" | "guest";
 }) {
   const router = useRouter();
+  const { toast } = useToast();
   const [simpleMode, setSimpleMode] = useState(true);
   const [pickExisting, setPickExisting] = useState(clients.length > 0);
   const [clientId, setClientId] = useState(clients[0]?.id ?? "");
@@ -245,6 +247,7 @@ export function DevisForm({
         return;
       }
       enqueueDevis(offlinePayload.data);
+      toast("Devis sauvegardé — synchronisation au retour du réseau.", "info");
       setInfo("Devis sauvegardé — sync automatique au retour du réseau.");
       setLoading(false);
       router.push("/dashboard");
@@ -265,6 +268,7 @@ export function DevisForm({
         }),
       });
       if (!cr.ok) {
+        toast("Impossible de créer le client.", "error");
         setError("Impossible de créer le client.");
         setLoading(false);
         return;
@@ -294,11 +298,14 @@ export function DevisForm({
     setLoading(false);
     if (!res.ok) {
       const data = await res.json();
-      setError(data.error ?? "Erreur");
+      const msg = data.error ?? "Erreur";
+      toast(msg, "error");
+      setError(msg);
       return;
     }
 
     const devis = await res.json();
+    toast("Devis créé avec succès");
     router.push(`/dashboard/devis/${devis.id}`);
     router.refresh();
   }
@@ -604,7 +611,12 @@ export function DevisForm({
         </div>
       )}
 
-      <button type="submit" disabled={loading} className="ui-btn-primary w-full py-4 text-base font-semibold">
+      <button
+        type="submit"
+        disabled={loading}
+        aria-busy={loading}
+        className="ui-btn-primary w-full py-4 text-base font-semibold"
+      >
         {loading ? "Enregistrement…" : mode === "guest" ? "Voir l'aperçu →" : "Créer le devis →"}
       </button>
 

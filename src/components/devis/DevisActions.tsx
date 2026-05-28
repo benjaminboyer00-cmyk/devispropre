@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/ToastProvider";
 import { DocumentAuditTrail } from "@/components/audit/DocumentAuditTrail";
 import { DevisSharePanel } from "@/components/devis/DevisSharePanel";
 import { formatEuro } from "@/lib/format";
@@ -34,6 +35,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDetailProps) {
   const router = useRouter();
+  const { toast } = useToast();
   const [loading, setLoading] = useState("");
   const [verifyResult, setVerifyResult] = useState<boolean | null>(null);
   const [origin, setOrigin] = useState("");
@@ -52,9 +54,12 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
     setConfirmSend(false);
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setActionError((data as { error?: string }).error ?? "Envoi impossible.");
+      const msg = (data as { error?: string }).error ?? "Envoi impossible.";
+      toast(msg, "error");
+      setActionError(msg);
       return;
     }
+    toast("Devis envoyé et verrouillé");
     router.refresh();
   }
 
@@ -69,9 +74,12 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
     setLoading("");
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      setActionError((data as { error?: string }).error ?? "Action impossible.");
+      const msg = (data as { error?: string }).error ?? "Action impossible.";
+      toast(msg, "error");
+      setActionError(msg);
       return;
     }
+    toast(status === "ACCEPTE" ? "Devis marqué accepté" : "Devis marqué refusé");
     router.refresh();
   }
 
@@ -86,6 +94,7 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
     const facture = await res.json();
     if (!res.ok) {
       setLoading("");
+      toast(facture.error ?? "Impossible de créer la facture.", "error");
       setActionError(facture.error ?? "Impossible de créer la facture.");
       return;
     }
@@ -94,14 +103,17 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
       const issueRes = await fetch(`/api/factures/${facture.id}`, { method: "POST" });
       setLoading("");
       if (!issueRes.ok) {
+        toast("Facture créée — émission à finaliser", "info");
         router.push(`/dashboard/factures/${facture.id}`);
         return;
       }
+      toast("Facture émise avec succès");
       router.push(`/dashboard/factures/${facture.id}?issued=1`);
       return;
     }
 
     setLoading("");
+    toast("Brouillon facture créé");
     router.push(`/dashboard/factures/${facture.id}`);
   }
 

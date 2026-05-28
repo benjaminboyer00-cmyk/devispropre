@@ -1,3 +1,4 @@
+// Next.js 16 : proxy.ts remplace middleware.ts — protection /dashboard, CSP, cache SEO.
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { jwtVerify } from "jose";

@@ -6,6 +6,8 @@ import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
+import { SkipLink } from "@/components/ui/SkipLink";
+import { UiProviders } from "@/components/ui/UiProviders";
 import { getRequestNonce } from "@/lib/nonce";
 import { defaultMetadata, jsonLdSiteGraph } from "@/lib/seo";
 import "./globals.css";
@@ -66,12 +68,17 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body className="min-h-full flex flex-col bg-background font-sans antialiased text-foreground">
-        <SiteAnalytics>
-          <RegisterServiceWorker />
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </SiteAnalytics>
+        <UiProviders>
+          <SiteAnalytics>
+            <SkipLink />
+            <RegisterServiceWorker />
+            <Header />
+            <main id="main-content" className="flex-1">
+              {children}
+            </main>
+            <Footer />
+          </SiteAnalytics>
+        </UiProviders>
       </body>
     </html>
   );

@@ -1,20 +1,13 @@
 import Link from "next/link";
+import { GUIDE_ARTICLES } from "@/lib/guides";
 import { ROUTES } from "@/lib/routes";
-
-const GUIDES = [
-  { href: ROUTES.guideDevisConforme, title: "Devis artisan conforme", desc: "Mentions obligatoires et checklist" },
-  { href: ROUTES.guideMentionsDevis, title: "Mentions obligatoires", desc: "SIRET, TVA, validité, signature" },
-  { href: ROUTES.guideFacturationAe, title: "Facturation auto-entrepreneur", desc: "Devis → facture — franchise ou assujetti TVA" },
-  { href: ROUTES.guideTvaArtisan, title: "TVA artisan travaux", desc: "10 %, 20 %, franchise en base" },
-  { href: ROUTES.guideDevisWhatsapp, title: "Devis par WhatsApp", desc: "PDF pro, lien client, relance J+3" },
-] as const;
 
 interface GuideRelatedLinksProps {
   current: string;
 }
 
 export function GuideRelatedLinks({ current }: GuideRelatedLinksProps) {
-  const others = GUIDES.filter((g) => g.href !== current).slice(0, 4);
+  const others = GUIDE_ARTICLES.filter((g) => g.href !== current).slice(0, 4);
 
   return (
     <section className="not-prose mt-16 border-t border-[var(--border)] pt-10">
@@ -24,7 +17,7 @@ export function GuideRelatedLinks({ current }: GuideRelatedLinksProps) {
           <li key={g.href}>
             <Link href={g.href} className="ui-card-padded block hover:no-underline">
               <p className="heading text-base font-semibold">{g.title}</p>
-              <p className="text-body mt-1 text-sm">{g.desc}</p>
+              <p className="text-body mt-1 text-sm">{g.description}</p>
             </Link>
           </li>
         ))}
@@ -35,6 +28,11 @@ export function GuideRelatedLinks({ current }: GuideRelatedLinksProps) {
           </Link>
         </li>
       </ul>
+      <p className="text-body mt-6 text-sm">
+        <Link href="/blog" className="link-underline font-medium">
+          Voir tous les guides
+        </Link>
+      </p>
     </section>
   );
 }
