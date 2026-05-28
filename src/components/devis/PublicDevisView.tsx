@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { formatEuro } from "@/lib/format";
 
 interface PublicDevis {
@@ -19,6 +19,13 @@ export function PublicDevisView({ token }: { token: string }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
+  const idempotencyRef = useRef<string | null>(null);
+
+  function nextIdempotencyKey(): string {
+    const key = crypto.randomUUID();
+    idempotencyRef.current = key;
+    return key;
+  }
 
   useEffect(() => {
     fetch(`/api/public/devis/${token}`)
@@ -39,7 +46,10 @@ export function PublicDevisView({ token }: { token: string }) {
     try {
       const res = await fetch(`/api/public/devis/${token}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyRef.current ?? nextIdempotencyKey(),
+        },
         body: JSON.stringify({ status }),
       });
       if (!res.ok) {

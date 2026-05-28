@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { PdfDownloadButton } from "@/components/ui/PdfDownloadButton";
 import { useToast } from "@/components/ui/ToastProvider";
 import { DocumentAuditTrail } from "@/components/audit/DocumentAuditTrail";
 import { DevisSharePanel } from "@/components/devis/DevisSharePanel";
@@ -68,7 +69,10 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
     setActionError("");
     const res = await fetch(`/api/devis/${devis.id}/status`, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": crypto.randomUUID(),
+      },
       body: JSON.stringify({ status }),
     });
     setLoading("");
@@ -88,7 +92,10 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
     setActionError("");
     const res = await fetch("/api/factures", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Idempotency-Key": crypto.randomUUID(),
+      },
       body: JSON.stringify({ devisId: devis.id }),
     });
     const facture = await res.json();
@@ -176,14 +183,12 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
       <div className="space-y-3">
         {devis.status === "BROUILLON" && subscriptionActive && (
           <>
-            <a
+            <PdfDownloadButton
               href={`/api/devis/${devis.id}/pdf`}
-              target="_blank"
-              rel="noopener noreferrer"
+              filename={`devis-${devis.numero}.pdf`}
               className="ui-btn-outline block w-full py-3 text-center text-base"
-            >
-              Aperçu PDF
-            </a>
+              label="📄 Aperçu / télécharger le PDF"
+            />
             <button
               onClick={() => setConfirmSend(true)}
               disabled={!!loading}
@@ -237,9 +242,12 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
 
       <div className="flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
         {subscriptionActive && devis.status !== "BROUILLON" && (
-          <a href={`/api/devis/${devis.id}/pdf`} target="_blank" rel="noopener noreferrer" className="ui-btn-outline text-sm">
-            PDF
-          </a>
+          <PdfDownloadButton
+            href={`/api/devis/${devis.id}/pdf`}
+            filename={`devis-${devis.numero}.pdf`}
+            className="ui-btn-outline text-sm"
+            label="PDF"
+          />
         )}
 
         {devis.status === "ENVOYE" && (

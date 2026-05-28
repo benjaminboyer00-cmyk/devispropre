@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GuideRelatedLinks } from "@/components/seo/GuideRelatedLinks";
+import { BlogArticleJsonLd, blogArticleMeta } from "@/components/seo/BlogArticleJsonLd";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ROUTES } from "@/lib/routes";
 import { jsonLdBreadcrumbList, pageMetadata } from "@/lib/seo";
@@ -24,10 +25,13 @@ const BREADCRUMBS = [
   { name: "Facture auto-entrepreneur 2026", path: "/blog/facture-auto-entrepreneur-2026" },
 ];
 
+const ARTICLE = blogArticleMeta(ROUTES.blogFactureAe2026)!;
+
 export default function BlogFactureAe2026Page() {
   return (
     <>
       <JsonLd data={jsonLdBreadcrumbList(BREADCRUMBS)} />
+      <BlogArticleJsonLd article={ARTICLE} />
 
       <article className="prose-legal mx-auto max-w-3xl px-4 py-16 sm:py-20">
         <nav aria-label="Fil d'Ariane" className="text-sm text-subtle not-prose">

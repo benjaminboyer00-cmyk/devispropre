@@ -22,7 +22,8 @@
     "deploy": "bash scripts/deploy.sh",
     "backup:db": "bash scripts/backup-db.sh",
     "postinstall": "prisma generate",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:integration": "vitest run src/lib/__tests__/prisma"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1054.0",

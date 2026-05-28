@@ -1,6 +1,7 @@
 import {
   clearGuestDraft,
   loadGuestDraft,
+  refreshGuestDraftSignature,
   saveClaimError,
   savePendingDevisId,
 } from "@/lib/guest-devis-draft";
@@ -24,10 +25,24 @@ export async function claimGuestDraftIfPresent(): Promise<ClaimGuestDraftResult>
     return { id: null, error: "Brouillon de devis invalide — recréez votre devis." };
   }
 
+  let stored = raw;
+  if (!stored.draftId || !stored.claimSignature) {
+    stored = (await refreshGuestDraftSignature()) ?? stored;
+  }
+
+  if (!stored.draftId || !stored.claimSignature) {
+    return { id: null, error: "Impossible de sécuriser le brouillon — réessayez." };
+  }
+
   const res = await fetch("/api/devis/claim-draft", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(parsed.data),
+    body: JSON.stringify({
+      ...parsed.data,
+      draftId: stored.draftId,
+      claimSignature: stored.claimSignature,
+      signedAt: stored.signedAt,
+    }),
   });
 
   if (!res.ok) {

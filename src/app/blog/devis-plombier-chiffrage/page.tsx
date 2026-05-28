@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GuideRelatedLinks } from "@/components/seo/GuideRelatedLinks";
+import { BlogArticleJsonLd, blogArticleMeta } from "@/components/seo/BlogArticleJsonLd";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ROUTES } from "@/lib/routes";
 import { jsonLdBreadcrumbList, pageMetadata } from "@/lib/seo";
@@ -24,10 +25,13 @@ const BREADCRUMBS = [
   { name: "Chiffrage plomberie", path: "/blog/devis-plombier-chiffrage" },
 ];
 
+const ARTICLE = blogArticleMeta(ROUTES.blogDevisPlombier)!;
+
 export default function BlogDevisPlombierPage() {
   return (
     <>
       <JsonLd data={jsonLdBreadcrumbList(BREADCRUMBS)} />
+      <BlogArticleJsonLd article={ARTICLE} />
 
       <article className="prose-legal mx-auto max-w-3xl px-4 py-16 sm:py-20">
         <nav aria-label="Fil d'Ariane" className="text-sm text-subtle not-prose">

@@ -13,6 +13,7 @@ import {
   validateSiret,
 } from "@/lib/validation";
 import { useToast } from "@/components/ui/ToastProvider";
+import { TurnstileWidget, isTurnstileConfigured } from "@/components/auth/TurnstileWidget";
 
 export function RegisterForm() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export function RegisterForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
   const { toast } = useToast();
 
   function update(field: string, value: string) {
@@ -64,12 +66,22 @@ export function RegisterForm() {
       return;
     }
 
+    if (isTurnstileConfigured() && !turnstileToken) {
+      toast("Veuillez compléter la vérification anti-robot.", "error");
+      setError("Veuillez compléter la vérification anti-robot.");
+      return;
+    }
+
     setLoading(true);
 
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "register", ...parsed.data }),
+      body: JSON.stringify({
+        action: "register",
+        ...parsed.data,
+        turnstileToken: turnstileToken || undefined,
+      }),
     });
 
     const data = await res.json();
@@ -176,6 +188,8 @@ export function RegisterForm() {
           Ajouter un mot de passe (facultatif)
         </button>
       )}
+
+      <TurnstileWidget onToken={setTurnstileToken} onExpire={() => setTurnstileToken("")} className="flex justify-center" />
 
       <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-4 text-base">
         {loading ? "Création…" : "Créer mon compte → essai gratuit 15 jours"}

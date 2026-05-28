@@ -7,6 +7,7 @@ import { claimGuestDraftIfPresent } from "@/lib/claim-guest-draft-client";
 import { ROUTES } from "@/lib/routes";
 import { loginSchema, magicLinkSchema, formatZodError } from "@/lib/schemas/forms";
 import { useToast } from "@/components/ui/ToastProvider";
+import { TurnstileWidget, isTurnstileConfigured } from "@/components/auth/TurnstileWidget";
 
 export function LoginForm() {
   const router = useRouter();
@@ -19,6 +20,7 @@ export function LoginForm() {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState("");
   const { toast } = useToast();
 
   const linkError =
@@ -43,11 +45,22 @@ export function LoginForm() {
       return;
     }
 
+    if (isTurnstileConfigured() && !turnstileToken) {
+      const msg = "Veuillez compléter la vérification anti-robot.";
+      toast(msg, "error");
+      setError(msg);
+      return;
+    }
+
     setLoading(true);
     const res = await fetch("/api/auth", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "login", ...parsed.data }),
+      body: JSON.stringify({
+        action: "login",
+        ...parsed.data,
+        turnstileToken: turnstileToken || undefined,
+      }),
     });
     const data = await res.json();
     setLoading(false);
@@ -88,11 +101,18 @@ export function LoginForm() {
       return;
     }
 
+    if (isTurnstileConfigured() && !turnstileToken) {
+      const msg = "Veuillez compléter la vérification anti-robot.";
+      toast(msg, "error");
+      setError(msg);
+      return;
+    }
+
     setLoading(true);
     const res = await fetch("/api/auth/magic-link", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(parsed.data),
+      body: JSON.stringify({ ...parsed.data, turnstileToken: turnstileToken || undefined }),
     });
     const data = await res.json();
     setLoading(false);
@@ -139,6 +159,7 @@ export function LoginForm() {
               className="ui-input mt-1 text-base"
             />
           </div>
+          <TurnstileWidget onToken={setTurnstileToken} onExpire={() => setTurnstileToken("")} className="flex justify-center" />
           <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-4 text-base">
             {loading ? "Envoi…" : "Recevoir mon lien de connexion"}
           </button>
@@ -172,6 +193,7 @@ export function LoginForm() {
               className="ui-input mt-1"
             />
           </div>
+          <TurnstileWidget onToken={setTurnstileToken} onExpire={() => setTurnstileToken("")} className="flex justify-center" />
           <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-3">
             {loading ? "Connexion…" : "Se connecter"}
           </button>

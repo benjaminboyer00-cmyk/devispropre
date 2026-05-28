@@ -66,6 +66,10 @@ export function authPasswordLoginIpKey(ip: string): string {
   return `auth:password:ip:${ip}`;
 }
 
+export function authPasswordChangeIpKey(ip: string): string {
+  return `auth:password-change:ip:${ip}`;
+}
+
 export function devisCreateKey(userId: string): string {
   return `devis:create:${userId}`;
 }

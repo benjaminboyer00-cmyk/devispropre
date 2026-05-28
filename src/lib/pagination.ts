@@ -1,9 +1,10 @@
 export const LIST_PAGE_SIZE = 20;
+export const MAX_PAGE = 500;
 
 export function parsePageParam(raw?: string | null): number {
   const n = parseInt(raw ?? "1", 10);
   if (!Number.isFinite(n) || n < 1) return 1;
-  return n;
+  return Math.min(n, MAX_PAGE);
 }
 
 export function paginationBounds(page: number, pageSize = LIST_PAGE_SIZE) {

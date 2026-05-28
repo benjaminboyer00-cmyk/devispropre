@@ -30,8 +30,8 @@ Ce document liste **ce que vous devez faire vous-même** après le déploiement.
 | `STRIPE_SECRET_KEY` | Clé **live** Stripe |
 | `STRIPE_WEBHOOK_SECRET` | Secret du webhook prod (voir §3) |
 | `STRIPE_PRICE_STARTER` / `STRIPE_PRICE_PRO` | IDs `price_...` des abonnements live |
-| `R2_*` | Bucket Cloudflare R2 + clés API + `R2_PUBLIC_URL` (recommandé prod) |
-| `SITE_SAME_AS` | URLs LinkedIn/X réelles, séparées par des virgules |
+| `R2_*` | Bucket Cloudflare R2 **privé** + clés API (`R2_BUCKET`, pas d'URL publique — PDF servis via `/api/archives/*`) |
+| `SITE_SAME_AS` | URLs LinkedIn/X réelles, séparées par des virgules (**obligatoire** au boot prod) |
 | `SLACK_WEBHOOK_URL` ou `ALERT_WEBHOOK_URL` | Optionnel — alertes orphelins R2 / erreurs critiques |
 
 ---
@@ -67,7 +67,7 @@ Sans `RESEND_API_KEY`, les relances et magic links ne partent pas (le reste de l
 
 1. Créer le bucket `devispropre-pdfs`
 2. Générer clés API R2 → remplir `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`
-3. Configurer un domaine public ou worker pour `R2_PUBLIC_URL`
+3. **Bucket strictement privé** — les PDF sont servis via `/api/archives/*` après auth JWT (pas d'URL R2 directe)
 4. **Volume Docker `pdfs`** : fallback local déjà monté dans `docker-compose.prod.yml` si R2 est indisponible
 
 ---
@@ -86,17 +86,19 @@ chmod +x scripts/*.sh
 
 ---
 
-## 7. Cron (relances J+3 + sauvegardes)
+## 7. Cron (relances J+3, sync R2, sauvegardes)
 
 Installer le crontab depuis `deploy/cron/crontab.example` :
 
 ```bash
 0 8 * * * /opt/devispropre/scripts/cron-reminders.sh
+30 8 * * * /opt/devispropre/scripts/cron-r2-sync.sh
 0 3 * * * /opt/devispropre/scripts/backup-db.sh
 ```
 
-- [ ] `CRON_SECRET` identique entre `.env.production` et le script cron
+- [ ] `CRON_SECRET` identique entre `.env.production` et les scripts cron
 - [ ] Vérifier qu’un backup apparaît dans `backups/` après la première nuit
+- [ ] Vérifier les logs R2 sync (queue vide ou uploads OK)
 
 ---
 

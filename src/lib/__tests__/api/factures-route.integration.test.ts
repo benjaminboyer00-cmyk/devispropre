@@ -11,7 +11,7 @@ const getSession = vi.fn();
 const getAccountContext = vi.fn();
 const userNeedsSubscriptionSetup = vi.fn();
 const checkRateLimit = vi.fn();
-const createFactureFromDevis = vi.fn();
+const createFactureFromDevisMock = vi.fn();
 const factureFindMany = vi.fn();
 const factureCount = vi.fn();
 
@@ -37,8 +37,25 @@ vi.mock("@/lib/rate-limit", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/idempotency", () => ({
+  readIdempotencyKey: () => null,
+  withIdempotency: async (
+    _userId: string,
+    _key: string | null,
+    handler: () => Promise<{ status: number; body: unknown }>
+  ) => {
+    try {
+      const { status, body } = await handler();
+      return Response.json(body, { status });
+    } catch (e) {
+      const { handleServiceError } = await import("@/lib/api-helpers");
+      return handleServiceError(e);
+    }
+  },
+}));
+
 vi.mock("@/lib/services/facture", () => ({
-  createFactureFromDevis: (...args: unknown[]) => createFactureFromDevis(...args),
+  createFactureFromDevis: (...args: unknown[]) => createFactureFromDevisMock(...args),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -58,7 +75,7 @@ describe("API /api/factures (intégration route handler)", () => {
     getAccountContext.mockReset();
     userNeedsSubscriptionSetup.mockReset();
     checkRateLimit.mockReset();
-    createFactureFromDevis.mockReset();
+    createFactureFromDevisMock.mockReset();
     factureFindMany.mockReset();
     factureCount.mockReset();
 
@@ -70,7 +87,7 @@ describe("API /api/factures (intégration route handler)", () => {
 
   it("POST convertit un devis accepté en facture", async () => {
     const facture = { id: "fac_1", numero: "FAC-2026-001", totalTTC: 600 };
-    createFactureFromDevis.mockResolvedValue(facture);
+    createFactureFromDevisMock.mockResolvedValue(facture);
 
     const request = buildApiRequest("/api/factures", {
       method: "POST",
@@ -82,7 +99,7 @@ describe("API /api/factures (intégration route handler)", () => {
 
     expect(response.status).toBe(201);
     expect(body.numero).toBe("FAC-2026-001");
-    expect(createFactureFromDevis).toHaveBeenCalledWith(
+    expect(createFactureFromDevisMock).toHaveBeenCalledWith(
       expect.objectContaining({ userId: TEST_ACCOUNT.workspaceUserId }),
       "devis_1"
     );
@@ -102,7 +119,7 @@ describe("API /api/factures (intégration route handler)", () => {
   });
 
   it("POST propage une erreur métier (devis non accepté)", async () => {
-    createFactureFromDevis.mockRejectedValue(new Error("Seul un devis accepté peut être converti en facture."));
+    createFactureFromDevisMock.mockRejectedValue(new Error("Seul un devis accepté peut être converti en facture."));
 
     const request = buildApiRequest("/api/factures", {
       method: "POST",
@@ -117,7 +134,7 @@ describe("API /api/factures (intégration route handler)", () => {
   });
 
   it("POST renvoie 403 sur IDOR (ForbiddenError)", async () => {
-    createFactureFromDevis.mockRejectedValue(new ForbiddenError("Devis introuvable ou non autorisé."));
+    createFactureFromDevisMock.mockRejectedValue(new ForbiddenError("Devis introuvable ou non autorisé."));
 
     const request = buildApiRequest("/api/factures", {
       method: "POST",

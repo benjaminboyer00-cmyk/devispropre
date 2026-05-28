@@ -3,16 +3,23 @@ import { JsonLd } from "@/components/seo/JsonLd";
 import type { CityMeta, TradeMeta } from "@/lib/local-seo";
 import {
   CITIES,
+  LOCAL_SEO_LAST_MODIFIED,
   TRADES,
   getLocalBreadcrumbs,
   getLocalSeeAlsoLinks,
   getLocalTestimonial,
   getLocalUniqueInsight,
+  localPageDescription,
+  localPageTitle,
   localSeoPath,
 } from "@/lib/local-seo";
 import { getLocalPageSections, getTradeOnlySections } from "@/lib/local-seo-body";
 import { ROUTES } from "@/lib/routes";
-import { jsonLdBreadcrumbList, jsonLdLocalBusiness } from "@/lib/seo";
+import {
+  jsonLdBreadcrumbList,
+  jsonLdFaqFromItems,
+  jsonLdLocalSeoWebPage,
+} from "@/lib/seo";
 
 interface LocalSeoContentProps {
   trade: TradeMeta;
@@ -28,15 +35,23 @@ export function LocalSeoContent({ trade, city }: LocalSeoContentProps) {
   const testimonial = city ? getLocalTestimonial(trade, city) : null;
   const seeAlso = getLocalSeeAlsoLinks(trade, city);
   const sections = city ? getLocalPageSections(trade, city) : getTradeOnlySections(trade);
+  const pagePath = localSeoPath(trade.slug, city?.slug);
+  const pageTitle = localPageTitle(trade, city);
+  const pageDescription = localPageDescription(trade, city);
+  const lastModified = LOCAL_SEO_LAST_MODIFIED.toISOString();
 
   return (
     <>
       <JsonLd data={jsonLdBreadcrumbList(breadcrumbs)} />
-      {city && (
-        <JsonLd
-          data={jsonLdLocalBusiness(trade.label, city.label, city.region)}
-        />
-      )}
+      <JsonLd
+        data={jsonLdLocalSeoWebPage({
+          name: pageTitle,
+          description: pageDescription,
+          path: pagePath,
+          dateModified: lastModified,
+        })}
+      />
+      {city && <JsonLd data={jsonLdFaqFromItems(sections.faq)} />}
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-20">
         <nav aria-label="Fil d'Ariane" className="text-sm text-subtle">

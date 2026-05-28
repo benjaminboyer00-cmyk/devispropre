@@ -7,7 +7,7 @@ export class TurnstileError extends Error {
   }
 }
 
-/** Cloudflare Turnstile — optionnel si TURNSTILE_SECRET_KEY est défini. */
+/** Cloudflare Turnstile — obligatoire en production (validateEnv). */
 export async function verifyTurnstileToken(
   token: string | undefined,
   remoteIp: string

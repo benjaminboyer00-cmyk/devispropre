@@ -277,8 +277,8 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
   }
 
   try {
-    const updated = await prisma.devis.update({
-      where: { id: devisId },
+    const result = await prisma.devis.updateMany({
+      where: { id: devisId, userId: ctx.userId, status: "BROUILLON", deletedAt: null },
       data: {
         status: "ENVOYE",
         lockedAt: now,
@@ -290,6 +290,15 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
         pdfArchivedAt: now,
         issuerSnapshot: issuerSnapshot ?? undefined,
       },
+    });
+
+    if (result.count === 0) {
+      await deleteArchivedPdf(pdfKey);
+      throw new ImmutabilityError("Envoi impossible — devis déjà envoyé ou introuvable.");
+    }
+
+    const updated = await prisma.devis.findFirstOrThrow({
+      where: { id: devisId },
       include: { lignes: true, client: true },
     });
 

@@ -14,6 +14,7 @@ describe("pagination", () => {
     expect(parsePageParam("-2")).toBe(1);
     expect(parsePageParam("abc")).toBe(1);
     expect(parsePageParam("3")).toBe(3);
+    expect(parsePageParam("99999")).toBe(500);
   });
 
   it("calcule skip/take", () => {

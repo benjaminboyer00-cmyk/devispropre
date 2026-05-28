@@ -79,6 +79,14 @@ export const queuedDevisPayloadSchema = z.object({
 
 export type QueuedDevisPayload = z.infer<typeof queuedDevisPayloadSchema>;
 
+export const claimGuestDraftSchema = guestDevisDraftSchema.extend({
+  draftId: z.string().uuid("Identifiant brouillon invalide."),
+  claimSignature: z.string().min(64, "Jeton de réclamation manquant."),
+  signedAt: z.string().datetime().optional(),
+});
+
+export type ClaimGuestDraftInput = z.infer<typeof claimGuestDraftSchema>;
+
 export const profileUpdateSchema = z.object({
   name: z.string().min(2, "Nom : 2 caractères minimum.").optional(),
   email: z.string().email("Adresse email invalide.").optional(),

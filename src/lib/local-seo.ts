@@ -100,6 +100,17 @@ export function localSeoPath(metier: string, ville?: string): string {
   return ville ? `/devis-artisan/${metier}/${ville}` : `/devis-artisan/${metier}`;
 }
 
+/** Villes pré-générées au build (top villes — le reste en ISR à la demande). */
+export function getStaticCitySlugs(): string[] {
+  return Object.keys(CITIES);
+}
+
+export function getStaticLocalSeoParams(): { metier: string; ville: string }[] {
+  return Object.keys(TRADES).flatMap((metier) =>
+    getStaticCitySlugs().map((ville) => ({ metier, ville }))
+  );
+}
+
 /** Toutes les URLs SEO local pour sitemap. */
 export function getAllLocalSeoPaths(): string[] {
   const paths: string[] = [];

@@ -25,6 +25,19 @@ export function validateEnv(): void {
   requireEnv("DATABASE_URL");
   requireEnv("NEXT_PUBLIC_APP_URL");
   requireEnv("ALLOWED_ORIGINS");
+  requireEnv("TURNSTILE_SECRET_KEY");
+  requireEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY");
+  requireEnv("CRON_SECRET");
+  requireEnv("RESEND_API_KEY");
+  requireEnv("STRIPE_SECRET_KEY");
+  requireEnv("STRIPE_WEBHOOK_SECRET");
+  requireEnv("STRIPE_PRICE_STARTER");
+  requireEnv("STRIPE_PRICE_PRO");
+  requireEnv("R2_ACCOUNT_ID");
+  requireEnv("R2_ACCESS_KEY_ID");
+  requireEnv("R2_SECRET_ACCESS_KEY");
+  requireEnv("R2_BUCKET");
+  requireEnv("SITE_SAME_AS");
 
   if (!process.env.DATABASE_URL?.startsWith("postgresql://")) {
     throw new Error("Production : DATABASE_URL doit être PostgreSQL.");
@@ -51,6 +64,7 @@ export const env = {
   slackWebhookUrl: process.env.SLACK_WEBHOOK_URL?.trim() ?? "",
   alertWebhookUrl: process.env.ALERT_WEBHOOK_URL?.trim() ?? "",
   turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY?.trim() ?? "",
+  turnstileSiteKey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? "",
   siteSameAs: (process.env.SITE_SAME_AS?.trim() ?? "")
     .split(",")
     .map((s) => s.trim())

@@ -37,6 +37,18 @@ vi.mock("@/lib/rate-limit", async (importOriginal) => {
   };
 });
 
+vi.mock("@/lib/idempotency", () => ({
+  readIdempotencyKey: () => null,
+  withIdempotency: async (
+    _userId: string,
+    _key: string | null,
+    handler: () => Promise<{ status: number; body: unknown }>
+  ) => {
+    const { status, body } = await handler();
+    return Response.json(body, { status });
+  },
+}));
+
 vi.mock("@/lib/services/devis", () => ({
   createDevis: (...args: unknown[]) => createDevis(...args),
 }));

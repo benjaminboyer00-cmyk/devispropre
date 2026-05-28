@@ -149,7 +149,7 @@ async function uploadToR2Once(key: string, buffer: Buffer): Promise<void> {
       Key: key,
       Body: buffer,
       ContentType: "application/pdf",
-      CacheControl: "public, max-age=31536000, immutable",
+      CacheControl: "private, max-age=31536000, immutable",
     })
   );
 }

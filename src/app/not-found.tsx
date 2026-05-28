@@ -1,6 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { localSeoPath } from "@/lib/local-seo";
 import { ROUTES } from "@/lib/routes";
+
+export const metadata: Metadata = {
+  title: "Page introuvable",
+  robots: { index: false, follow: false },
+};
 
 export default function NotFound() {
   return (

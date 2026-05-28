@@ -20,6 +20,7 @@ import { formatEuro } from "@/lib/format";
 import {
   formatDraftSavedAt,
   loadGuestDraft,
+  refreshGuestDraftSignature,
   saveGuestDraft,
 } from "@/lib/guest-devis-draft";
 import { ROUTES } from "@/lib/routes";
@@ -282,6 +283,7 @@ export function DevisForm({
       if (!draft) return;
       const savedAt = saveGuestDraft(draft);
       setLastSavedAt(savedAt);
+      void refreshGuestDraftSignature();
     }, 900);
     return () => clearTimeout(timer);
   }, [hydrated, mode, buildAutosaveDraft]);

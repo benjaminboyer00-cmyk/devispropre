@@ -3,7 +3,7 @@ import { TrackLink } from "@/components/analytics/TrackLink";
 import { IconDocument, IconEdit, IconShare, IconShield } from "@/components/icons/Icons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ROUTES } from "@/lib/routes";
-import { pageMetadata, jsonLdFaq, jsonLdHowToCreateDevis, jsonLdProductReviews, jsonLdSoftwareApplication, HOME_FAQ, SITE } from "@/lib/seo";
+import { pageMetadata, jsonLdFaq, jsonLdSoftwareApplication, HOME_FAQ, SITE } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Devis artisans en 2 min — conforme TVA 2018",
@@ -48,9 +48,7 @@ export default function HomePage() {
   return (
     <>
       <JsonLd data={jsonLdSoftwareApplication()} />
-      <JsonLd data={jsonLdProductReviews()} />
       <JsonLd data={jsonLdFaq()} />
-      <JsonLd data={jsonLdHowToCreateDevis()} />
 
       <section className="hero-section">
         <div className="relative mx-auto max-w-4xl text-center">

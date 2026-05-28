@@ -20,6 +20,7 @@ services:
   app:
     build: .
     restart: unless-stopped
+    stop_grace_period: 30s
     depends_on:
       postgres:
         condition: service_healthy
@@ -29,8 +30,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER:-devispropre}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-devispropre}?schema=public&connection_limit=5
       NODE_ENV: production
     volumes:
-      - logos:/app/storage/logos
-      - pdfs:/app/storage/pdfs
+      - storage:/app/storage
     ports:
       - "127.0.0.1:3000:3000"
     healthcheck:
@@ -44,8 +44,7 @@ services:
 
 volumes:
   pgdata:
-  logos:
-  pdfs:
+  storage:
 
 networks:
   internal:

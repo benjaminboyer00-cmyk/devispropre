@@ -106,8 +106,7 @@ export async function PATCH(request: NextRequest) {
     if (body.section === "profile") {
       const data = profileSchema.parse(body);
       if (data.email && data.email !== auth.user.email) {
-        const taken = await prisma.user.findUnique({ where: { email: data.email } });
-        if (taken) return apiError("Cet email est déjà utilisé", 409);
+        return apiError("Le changement d'email n'est pas autorisé depuis les paramètres.", 403);
       }
 
       const updated = await prisma.user.update({
@@ -115,7 +114,6 @@ export async function PATCH(request: NextRequest) {
         data: {
           ...(data.name && { name: data.name }),
           ...(data.phone !== undefined && { phone: data.phone }),
-          ...(data.email && { email: data.email }),
         },
         select: { id: true, email: true, name: true, phone: true, plan: true },
       });

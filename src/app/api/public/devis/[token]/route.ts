@@ -1,9 +1,9 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
 import { apiError, assertMutationSecurity, getRequestMeta, handleServiceError } from "@/lib/api-helpers";
-import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { verifyDocumentIntegrity, buildDevisPayload } from "@/lib/document-hash";
+import { readIdempotencyKey, withIdempotency } from "@/lib/idempotency";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { transitionDevisStatusFromPublic } from "@/lib/services/devis";
 import { publicJsonResponse } from "@/lib/public-api-response";
@@ -54,38 +54,37 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 }
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  assertMutationSecurity(request);
-
-  const ip =
-    request.headers.get("x-real-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown";
-
   try {
+    assertMutationSecurity(request);
+
+    const ip =
+      request.headers.get("x-real-ip") ??
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      "unknown";
+
     await checkRateLimit(`public-devis:${ip}`, { maxAttempts: 20, windowMs: 60 * 60 * 1000 });
-  } catch {
-    return publicJsonResponse({ error: "Trop de tentatives." }, { status: 429 });
-  }
 
-  const { token } = await params;
+    const { token } = await params;
 
-  const devis = await prisma.devis.findFirst({
-    where: { shareToken: token, deletedAt: null, status: "ENVOYE" },
-  });
+    const devis = await prisma.devis.findFirst({
+      where: { shareToken: token, deletedAt: null, status: "ENVOYE" },
+    });
 
-  if (!devis) {
-    return publicJsonResponse({ error: "Devis introuvable ou déjà traité" }, { status: 404 });
-  }
+    if (!devis) {
+      return publicJsonResponse({ error: "Devis introuvable ou déjà traité" }, { status: 404 });
+    }
 
-  try {
     const { status } = statusSchema.parse(await request.json());
     const ctx = {
       userId: devis.userId,
       ...getRequestMeta(request),
     };
+    const idempotencyKey = readIdempotencyKey(request);
 
-    const updated = await transitionDevisStatusFromPublic(ctx, devis.id, token, status);
-    return publicJsonResponse({ ok: true, status: updated.status });
+    return withIdempotency(devis.userId, idempotencyKey, async () => {
+      const updated = await transitionDevisStatusFromPublic(ctx, devis.id, token, status);
+      return { status: 200, body: { ok: true, status: updated.status } };
+    });
   } catch (e) {
     if (e instanceof z.ZodError) return apiError(e.message);
     return handleServiceError(e);

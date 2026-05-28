@@ -1,4 +1,5 @@
 import { env } from "./env";
+import { escapeHtml } from "./html-escape";
 
 interface SendEmailParams {
   to: string;
@@ -50,11 +51,11 @@ export async function sendDevisReminderToClient(opts: {
 }): Promise<{ sent: boolean; reason?: string }> {
   return sendEmail({
     to: opts.clientEmail,
-    subject: `Rappel — Devis ${opts.devisNumero} de ${opts.companyName}`,
+    subject: `Rappel — Devis ${escapeHtml(opts.devisNumero)} de ${escapeHtml(opts.companyName)}`,
     html: `
-      <p>Bonjour ${opts.clientNom},</p>
-      <p>Nous n'avons pas encore reçu votre réponse concernant le devis <strong>${opts.devisNumero}</strong> transmis par <strong>${opts.companyName}</strong>.</p>
-      <p><a href="${opts.shareUrl}">Consulter et répondre au devis en ligne</a></p>
+      <p>Bonjour ${escapeHtml(opts.clientNom)},</p>
+      <p>Nous n'avons pas encore reçu votre réponse concernant le devis <strong>${escapeHtml(opts.devisNumero)}</strong> transmis par <strong>${escapeHtml(opts.companyName)}</strong>.</p>
+      <p><a href="${escapeHtml(opts.shareUrl)}">Consulter et répondre au devis en ligne</a></p>
       <p style="color:#64748b;font-size:12px">Message automatique DevisPropre — relance J+3</p>
     `,
   });
@@ -73,14 +74,14 @@ export async function sendDevisReminderEmail(opts: {
 
   return sendEmail({
     to: opts.artisanEmail,
-    subject: `Relance J+3 envoyée — Devis ${opts.devisNumero} (${opts.clientNom})`,
+    subject: `Relance J+3 envoyée — Devis ${escapeHtml(opts.devisNumero)} (${escapeHtml(opts.clientNom)})`,
     html: `
-      <p>Bonjour ${opts.artisanName},</p>
-      <p>Relance automatique J+3 pour le devis <strong>${opts.devisNumero}</strong> (${opts.clientNom}).</p>
+      <p>Bonjour ${escapeHtml(opts.artisanName)},</p>
+      <p>Relance automatique J+3 pour le devis <strong>${escapeHtml(opts.devisNumero)}</strong> (${escapeHtml(opts.clientNom)}).</p>
       ${
         waLink
-          ? `<p><a href="${waLink}">Ouvrir WhatsApp pour relancer le client</a></p>`
-          : `<p><a href="${opts.shareUrl}">Lien du devis à partager</a></p>`
+          ? `<p><a href="${escapeHtml(waLink)}">Ouvrir WhatsApp pour relancer le client</a></p>`
+          : `<p><a href="${escapeHtml(opts.shareUrl)}">Lien du devis à partager</a></p>`
       }
       <p style="color:#64748b;font-size:12px">DevisPropre — relance automatique Starter+</p>
     `,
@@ -99,12 +100,12 @@ export async function sendSupportTicketEmail(opts: {
   const prefix = opts.priority ? "[PRO PRIORITAIRE]" : "[Support]";
   return sendEmail({
     to: env.supportEmail,
-    subject: `${prefix} ${opts.subject} — ${opts.userName}`,
+    subject: `${prefix} ${escapeHtml(opts.subject)} — ${escapeHtml(opts.userName)}`,
     html: `
-      <p><strong>Ticket #${opts.ticketId}</strong></p>
-      <p>De : ${opts.userName} &lt;${opts.userEmail}&gt; — Plan ${opts.plan}</p>
-      <p><strong>${opts.subject}</strong></p>
-      <p>${opts.message.replace(/\n/g, "<br>")}</p>
+      <p><strong>Ticket #${escapeHtml(opts.ticketId)}</strong></p>
+      <p>De : ${escapeHtml(opts.userName)} &lt;${escapeHtml(opts.userEmail)}&gt; — Plan ${escapeHtml(opts.plan)}</p>
+      <p><strong>${escapeHtml(opts.subject)}</strong></p>
+      <p>${escapeHtml(opts.message).replace(/\n/g, "<br>")}</p>
     `,
   });
 }
@@ -119,7 +120,7 @@ export async function sendTeamInviteEmail(opts: {
     subject: `Invitation équipe DevisPropre — ${opts.companyName}`,
     html: `
       <p>Bonjour,</p>
-      <p><strong>${opts.ownerName}</strong> vous invite à rejoindre l'équipe <strong>${opts.companyName}</strong> sur DevisPropre.</p>
+      <p><strong>${escapeHtml(opts.ownerName)}</strong> vous invite à rejoindre l'équipe <strong>${escapeHtml(opts.companyName)}</strong> sur DevisPropre.</p>
       <p><a href="${env.appUrl}/inscription">Créer un compte</a> ou <a href="${env.appUrl}/connexion">vous connecter</a> avec cette adresse email pour accéder à l'espace partagé.</p>
     `,
   });
@@ -134,9 +135,9 @@ export async function sendMagicLinkEmail(opts: {
     to: opts.to,
     subject: "Votre lien de connexion DevisPropre",
     html: `
-      <p>Bonjour ${opts.name},</p>
+      <p>Bonjour ${escapeHtml(opts.name)},</p>
       <p>Cliquez sur le bouton ci-dessous pour vous connecter sans mot de passe. Ce lien expire dans 15 minutes.</p>
-      <p><a href="${opts.verifyUrl}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Se connecter</a></p>
+      <p><a href="${escapeHtml(opts.verifyUrl)}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Se connecter</a></p>
       <p style="color:#64748b;font-size:12px">Si vous n'avez pas demandé ce lien, ignorez cet email.</p>
     `,
   });

@@ -3,6 +3,7 @@ import { z } from "zod";
 import { apiError, assertMutationSecurity, getRequestMeta, requireAuth } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
+import { paginationBounds, parsePageParam, totalPages } from "@/lib/pagination";
 
 const schema = z.object({
   nom: z.string().min(1),
@@ -11,16 +12,28 @@ const schema = z.object({
   adresse: z.string().optional(),
 });
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const auth = await requireAuth();
   if (auth.error) return auth.error;
 
-  const clients = await prisma.client.findMany({
-    where: { userId: auth.workspaceUserId, deletedAt: null },
-    orderBy: { nom: "asc" },
-  });
+  const page = parsePageParam(request.nextUrl.searchParams.get("page"));
+  const { skip, take } = paginationBounds(page);
+  const where = { userId: auth.workspaceUserId, deletedAt: null };
 
-  return Response.json(clients);
+  const [clients, total] = await Promise.all([
+    prisma.client.findMany({
+      where,
+      orderBy: { nom: "asc" },
+      skip,
+      take,
+    }),
+    prisma.client.count({ where }),
+  ]);
+
+  return Response.json({
+    data: clients,
+    pagination: { page, pageSize: take, total, totalPages: totalPages(total) },
+  });
 }
 
 export async function POST(request: NextRequest) {

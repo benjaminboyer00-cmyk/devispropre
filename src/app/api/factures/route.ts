@@ -4,6 +4,7 @@ import { createFactureFromDevis } from "@/lib/services/facture";
 import { prisma } from "@/lib/db";
 import { factureApiListSelect } from "@/lib/prisma-selects";
 import { paginationBounds, parsePageParam, totalPages } from "@/lib/pagination";
+import { readIdempotencyKey, withIdempotency } from "@/lib/idempotency";
 import { checkRateLimit, factureCreateKey } from "@/lib/rate-limit";
 
 export async function GET(request: NextRequest) {
@@ -49,8 +50,12 @@ export async function POST(request: NextRequest) {
     if (!body.devisId) {
       return Response.json({ error: "devisId requis" }, { status: 400 });
     }
-    const facture = await createFactureFromDevis(ctx, body.devisId);
-    return Response.json(facture, { status: 201 });
+
+    const idempotencyKey = readIdempotencyKey(request);
+    return withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
+      const facture = await createFactureFromDevis(ctx, body.devisId);
+      return { status: 201, body: facture };
+    });
   } catch (e) {
     return handleServiceError(e);
   }

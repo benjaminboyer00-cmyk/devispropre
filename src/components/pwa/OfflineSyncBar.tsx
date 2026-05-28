@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/ui/ToastProvider";
 import {
   flushOfflineQueue,
   isBrowserOnline,
@@ -10,6 +11,7 @@ import {
 
 export function OfflineSyncBar() {
   const router = useRouter();
+  const { toast } = useToast();
   const [online, setOnline] = useState(true);
   const [pending, setPending] = useState(0);
   const [syncing, setSyncing] = useState(false);
@@ -26,10 +28,17 @@ export function OfflineSyncBar() {
       setPending(queuedDevisCount());
       setSyncing(false);
       if (synced > 0) {
-        setMessage(`${synced} devis synchronisé${synced > 1 ? "s" : ""}.`);
+        const msg =
+          synced === 1
+            ? "Votre devis en attente a été synchronisé avec succès !"
+            : `Vos ${synced} devis en attente ont été synchronisés avec succès !`;
+        toast(msg);
+        setMessage(msg);
         router.refresh();
       } else if (failed > 0) {
-        setMessage("Synchronisation partielle — réessayez.");
+        const msg = "Synchronisation partielle — réessayez.";
+        toast(msg, "error");
+        setMessage(msg);
       }
     }
 

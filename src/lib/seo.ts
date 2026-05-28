@@ -248,8 +248,8 @@ export function jsonLdTarifs() {
   };
 }
 
-/** Product + avis affichés sur la home — rich snippets SERP. */
-export function jsonLdProductReviews() {
+/** Product + offre tarifaire — sans avis fictifs (conformité rich snippets Google). */
+export function jsonLdProductOffer() {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -261,34 +261,16 @@ export function jsonLdProductReviews() {
       "@type": "Offer",
       price: "19",
       priceCurrency: "EUR",
-      priceValidUntil: "2027-12-31",
+      priceValidUntil: `${new Date().getFullYear() + 1}-12-31`,
       availability: "https://schema.org/InStock",
       url: `${SITE.url}/tarifs`,
     },
-    review: [
-      {
-        "@type": "Review",
-        author: { "@type": "Person", name: "Karim L., plombier Paris" },
-        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
-        reviewBody:
-          "Mes clients parisiens veulent un PDF, pas un SMS. DevisPropre me fait gagner un créneau par jour.",
-      },
-      {
-        "@type": "Review",
-        author: { "@type": "Person", name: "Thomas B., chauffagiste Lyon" },
-        reviewRating: { "@type": "Rating", ratingValue: "5", bestRating: "5" },
-        reviewBody:
-          "Pendant la saison de chauffe, je n'ai pas le temps d'Excel. Client, prix, envoi — c'est tout.",
-      },
-      {
-        "@type": "Review",
-        author: { "@type": "Person", name: "Antoine R., électricien Marseille" },
-        reviewRating: { "@type": "Rating", ratingValue: "4", bestRating: "5" },
-        reviewBody:
-          "Entre deux chantiers, je fais le devis dans la camionnette. Le client reçoit le lien avant que je reparte.",
-      },
-    ],
   };
+}
+
+/** @deprecated Utiliser jsonLdProductOffer — conservé pour compatibilité interne. */
+export function jsonLdProductReviews() {
+  return jsonLdProductOffer();
 }
 
 export interface BreadcrumbItem {
@@ -390,6 +372,73 @@ export function jsonLdCreerDevisWebPage() {
       { "@type": "Thing", name: "Devis artisan BTP" },
       { "@type": "Thing", name: "Facture conforme TVA 2018" },
     ],
+  };
+}
+
+/** Article éditorial / landing SEO local — rich result BlogPosting. */
+export function jsonLdBlogPosting(opts: {
+  headline: string;
+  description: string;
+  path: string;
+  datePublished: string;
+  dateModified?: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: opts.headline,
+    description: opts.description,
+    url: `${SITE.url}${opts.path}`,
+    datePublished: opts.datePublished,
+    dateModified: opts.dateModified ?? opts.datePublished,
+    author: { "@type": "Person", name: SITE.owner },
+    publisher: {
+      "@type": "Organization",
+      name: SITE.name,
+      url: SITE.url,
+      logo: { "@type": "ImageObject", url: `${SITE.url}${OG_IMAGE.url}` },
+    },
+    inLanguage: "fr-FR",
+    mainEntityOfPage: { "@type": "WebPage", "@id": `${SITE.url}${opts.path}` },
+  };
+}
+
+export function jsonLdConformiteWebPage() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: "Conformité loi anti-fraude TVA 2018 — DevisPropre",
+    description:
+      "Inaltérabilité, sécurisation SHA-256, chaînage cryptographique et attestation PDF conforme à la loi anti-fraude TVA 2018.",
+    url: `${SITE.url}/conformite`,
+    inLanguage: "fr-FR",
+    isPartOf: { "@type": "WebSite", name: SITE.name, url: SITE.url },
+    about: { "@type": "Thing", name: "Loi anti-fraude TVA 2018" },
+  };
+}
+
+/** Landing SEO local — WebPage (pas LocalBusiness ni BlogPosting). */
+export function jsonLdLocalSeoWebPage(opts: {
+  name: string;
+  description: string;
+  path: string;
+  dateModified: string;
+}) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "WebPage",
+    name: opts.name,
+    description: opts.description,
+    url: `${SITE.url}${opts.path}`,
+    dateModified: opts.dateModified,
+    inLanguage: "fr-FR",
+    isPartOf: { "@type": "WebSite", name: SITE.name, url: SITE.url },
+    about: {
+      "@type": "SoftwareApplication",
+      name: SITE.name,
+      applicationCategory: "FinanceApplication",
+      operatingSystem: "Web",
+    },
   };
 }
 

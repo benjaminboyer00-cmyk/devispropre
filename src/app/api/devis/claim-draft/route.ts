@@ -1,32 +1,50 @@
 import { NextRequest } from "next/server";
+import { z } from "zod";
 import {
   assertMutationSecurity,
   buildServiceContext,
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
+import {
+  isGuestDraftSignatureFresh,
+  verifyGuestDraftClaim,
+} from "@/lib/guest-draft-claim";
 import { checkRateLimit, devisClaimDraftKey } from "@/lib/rate-limit";
-import { guestDevisDraftSchema } from "@/lib/schemas/forms";
+import { claimGuestDraftSchema } from "@/lib/schemas/forms";
 import { claimGuestDraftAsDevis } from "@/lib/services/devis";
 
 /** Rattache un brouillon invité au compte — sans exiger l'abonnement Stripe. */
 export async function POST(request: NextRequest) {
-  assertMutationSecurity(request);
-
-  const auth = await requireAuth({ skipSubscriptionCheck: true });
-  if (auth.error) return auth.error;
-
   try {
+    assertMutationSecurity(request);
+
+    const auth = await requireAuth({ skipSubscriptionCheck: true });
+    if (auth.error) return auth.error;
+
     await checkRateLimit(devisClaimDraftKey(auth.workspaceUserId!), {
       maxAttempts: 10,
       windowMs: 60_000,
     });
 
-    const body = guestDevisDraftSchema.parse(await request.json());
+    const body = claimGuestDraftSchema.parse(await request.json());
+    const { draftId, claimSignature, signedAt, ...draft } = body;
+
+    if (!verifyGuestDraftClaim(draftId, draft, claimSignature)) {
+      return Response.json({ error: "Brouillon invité non autorisé." }, { status: 403 });
+    }
+
+    if (!isGuestDraftSignatureFresh(signedAt)) {
+      return Response.json({ error: "Signature expirée — rouvrez l'aperçu du devis." }, { status: 403 });
+    }
+
     const ctx = buildServiceContext(auth.workspaceUserId!, auth.user!.id, request);
-    const devis = await claimGuestDraftAsDevis(ctx, body);
+    const devis = await claimGuestDraftAsDevis(ctx, draft);
     return Response.json({ id: devis.id, numero: devis.numero });
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return Response.json({ error: "Brouillon invalide." }, { status: 400 });
+    }
     return handleServiceError(error);
   }
 }

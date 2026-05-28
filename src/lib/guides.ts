@@ -5,6 +5,8 @@ export interface GuideArticle {
   title: string;
   description: string;
   keywords: string[];
+  datePublished?: string;
+  dateModified?: string;
 }
 
 export const GUIDE_ARTICLES: GuideArticle[] = [
@@ -48,6 +50,8 @@ export const BLOG_EDITORIAL_ARTICLES: GuideArticle[] = [
     description:
       "Méthode terrain : diagnostic, fournitures, main-d'œuvre, déplacement et marge — avec exemple chiffré pour Paris et province.",
     keywords: ["devis plombier", "chiffrage plomberie", "prix plombier chantier"],
+    datePublished: "2026-05-20T00:00:00.000Z",
+    dateModified: "2026-05-28T00:00:00.000Z",
   },
   {
     href: ROUTES.blogFactureAe2026,
@@ -55,6 +59,26 @@ export const BLOG_EDITORIAL_ARTICLES: GuideArticle[] = [
     description:
       "Différence devis/facture, mentions obligatoires, franchise TVA vs assujetti, numérotation et conformité anti-fraude.",
     keywords: ["facture auto entrepreneur 2026", "devis facture auto-entrepreneur", "mentions obligatoires facture"],
+    datePublished: "2026-05-22T00:00:00.000Z",
+    dateModified: "2026-05-28T00:00:00.000Z",
+  },
+  {
+    href: ROUTES.blogDevisElectricien,
+    title: "Devis électricien : chiffrer une mise aux normes NF C 15-100",
+    description:
+      "Postes obligatoires, tableau, différentiel 30 mA, GTL, TVA 10 % rénovation et exemple chiffré pour un T2 en copropriété.",
+    keywords: ["devis électricien", "mise aux normes électricité", "NF C 15-100 devis", "prix électricien rénovation"],
+    datePublished: "2026-05-25T00:00:00.000Z",
+    dateModified: "2026-05-28T00:00:00.000Z",
+  },
+  {
+    href: ROUTES.blogRelancerDevis,
+    title: "Relancer un devis artisan sans être lourd (WhatsApp, email, J+3)",
+    description:
+      "Timing, formulation, relance automatique J+3 et suivi des devis en attente — méthode terrain pour artisans BTP.",
+    keywords: ["relancer devis artisan", "devis sans réponse", "relance devis WhatsApp", "suivi devis BTP"],
+    datePublished: "2026-05-27T00:00:00.000Z",
+    dateModified: "2026-05-28T00:00:00.000Z",
   },
 ];
 

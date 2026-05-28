@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { pageMetadata } from "@/lib/seo";
+import { JsonLd } from "@/components/seo/JsonLd";
+import { jsonLdConformiteWebPage, pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Conformité loi anti-fraude TVA 2018 — Inaltérabilité garantie",
@@ -17,7 +18,9 @@ export const metadata = pageMetadata({
 
 export default function ConformitePage() {
   return (
-    <article className="prose-legal mx-auto max-w-3xl px-4 py-16">
+    <>
+      <JsonLd data={jsonLdConformiteWebPage()} />
+      <article className="prose-legal mx-auto max-w-3xl px-4 py-16">
       <h1>Conformité loi anti-fraude TVA 2018</h1>
       <p className="mt-4 text-lg">
         DevisPropre est conçu <strong>secure by design</strong>. L&apos;inaltérabilité des
@@ -71,5 +74,6 @@ export default function ConformitePage() {
         </Link>
       </div>
     </article>
+    </>
   );
 }

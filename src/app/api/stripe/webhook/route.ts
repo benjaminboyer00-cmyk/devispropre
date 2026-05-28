@@ -1,7 +1,10 @@
 import { NextRequest } from "next/server";
 import type Stripe from "stripe";
 import { getStripe } from "@/lib/stripe";
-import { claimStripeWebhookEvent } from "@/lib/stripe-webhook-idempotency";
+import {
+  claimStripeWebhookEvent,
+  markStripeWebhookEventProcessed,
+} from "@/lib/stripe-webhook-idempotency";
 import { processStripeWebhookEvent } from "@/lib/stripe-webhook-handler";
 import { env } from "@/lib/env";
 
@@ -29,12 +32,14 @@ export async function POST(request: NextRequest) {
 
   try {
     await processStripeWebhookEvent(event, stripe);
+    await markStripeWebhookEventProcessed(event.id);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Erreur webhook";
     if (message === "Référence client incohérente") {
       return Response.json({ error: message }, { status: 400 });
     }
-    throw err;
+    console.error("[stripe-webhook]", err);
+    return Response.json({ error: "Échec traitement webhook" }, { status: 500 });
   }
 
   return Response.json({ received: true });

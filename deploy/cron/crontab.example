@@ -1,7 +1,8 @@
 # Crontab VPS — crontab -e
-# Relances J+3 à 8h, backup à 3h
+# Relances J+3 à 8h, sync R2 à 8h30, backup à 3h
 #
 # 0 8 * * * CRON_SECRET=xxx /opt/devispropre/scripts/cron-reminders.sh >> /var/log/devispropre-cron.log 2>&1
+# 30 8 * * * CRON_SECRET=xxx /opt/devispropre/scripts/cron-r2-sync.sh >> /var/log/devispropre-cron.log 2>&1
 # 0 3 * * * /opt/devispropre/scripts/backup-db.sh >> /var/log/devispropre-backup.log 2>&1
 
 SHELL=/bin/bash

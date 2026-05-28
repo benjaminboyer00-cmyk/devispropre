@@ -1,10 +1,16 @@
 import type { GuestDevisDraft } from "@/lib/schemas/forms";
+import { createGuestDraftId } from "@/lib/guest-draft-claim";
 
 export const GUEST_DRAFT_KEY = "devispropre_guest_draft";
 export const PENDING_DEVIS_ID_KEY = "devispropre_pending_devis_id";
 export const CLAIM_ERROR_KEY = "devispropre_claim_error";
 
-export type StoredGuestDraft = GuestDevisDraft & { savedAt?: string };
+export type StoredGuestDraft = GuestDevisDraft & {
+  savedAt?: string;
+  draftId?: string;
+  claimSignature?: string;
+  signedAt?: string;
+};
 
 export function saveGuestDraft(draft: GuestDevisDraft): string {
   if (typeof window === "undefined") return new Date().toISOString();
@@ -69,4 +75,37 @@ export function loadClaimError(): string | null {
 export function clearClaimError(): void {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem(CLAIM_ERROR_KEY);
+}
+
+function draftWithoutMeta(stored: StoredGuestDraft): GuestDevisDraft {
+  const { savedAt: _s, draftId: _d, claimSignature: _c, signedAt: _t, ...draft } = stored;
+  return draft;
+}
+
+/** Demande une signature HMAC serveur pour sécuriser la réclamation du brouillon. */
+export async function refreshGuestDraftSignature(): Promise<StoredGuestDraft | null> {
+  if (typeof window === "undefined") return null;
+  const stored = loadGuestDraft();
+  if (!stored) return null;
+
+  const draft = draftWithoutMeta(stored);
+  const draftId = stored.draftId ?? createGuestDraftId();
+
+  const res = await fetch("/api/devis/guest-draft/sign", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ draftId, draft }),
+  });
+
+  if (!res.ok) return stored;
+
+  const data = (await res.json()) as { draftId: string; claimSignature: string; signedAt: string };
+  const next: StoredGuestDraft = {
+    ...stored,
+    draftId: data.draftId,
+    claimSignature: data.claimSignature,
+    signedAt: data.signedAt,
+  };
+  localStorage.setItem(GUEST_DRAFT_KEY, JSON.stringify(next));
+  return next;
 }

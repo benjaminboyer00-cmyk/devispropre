@@ -2,7 +2,7 @@ import Link from "next/link";
 import { DevisForm } from "@/components/devis/DevisForm";
 import { WorkflowDevisFacture } from "@/components/devis/WorkflowDevisFacture";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { pageMetadata, CREER_DEVIS_FAQ, jsonLdBreadcrumbList, jsonLdCreerDevisFaq, jsonLdCreerDevisWebPage, jsonLdHowToCreateDevis } from "@/lib/seo";
+import { pageMetadata, CREER_DEVIS_FAQ, jsonLdBreadcrumbList, jsonLdCreerDevisFaq, jsonLdCreerDevisWebPage } from "@/lib/seo";
 import { ROUTES } from "@/lib/routes";
 
 export const metadata = pageMetadata({
@@ -24,7 +24,6 @@ export default function CreerDevisPage() {
   return (
     <>
       <JsonLd data={jsonLdCreerDevisWebPage()} id="json-ld-creer-devis-page" />
-      <JsonLd data={jsonLdHowToCreateDevis()} id="json-ld-creer-devis-howto" />
       <JsonLd data={jsonLdCreerDevisFaq()} id="json-ld-creer-devis-faq" />
       <JsonLd
         id="json-ld-creer-devis-breadcrumb"

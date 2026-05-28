@@ -32,10 +32,9 @@ import { ROUTES } from "../routes";
 async function assertFacturationAllowed(userId: string) {
   const owner = await prisma.user.findFirst({
     where: { id: userId, deletedAt: null },
-    select: { plan: true, stripeCustomerId: true },
+    select: { plan: true },
   });
   if (!owner) throw new Error("Utilisateur introuvable");
-  if (owner.stripeCustomerId) return;
   assertStarterFeature(owner.plan, "Facturation conforme TVA 2018");
 }
 
@@ -138,21 +137,30 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
   const issuerForPdf = resolveIssuerCompany(issuerSnapshot, company);
   const payload = buildFacturePayload(facture, company);
   const contentHash = computeContentHash(payload);
-  const now = new Date();
 
-  const lastIssued = await prisma.facture.findFirst({
-    where: {
-      userId: ctx.userId,
-      status: { in: ["EMISE", "PAYEE"] },
-      contentHash: { not: null },
-    },
-    orderBy: { issuedAt: "desc" },
-    select: { contentHash: true },
+  const { previousHash, chainHash, shareToken, now } = await prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe(
+      `SELECT pg_advisory_xact_lock(hashtext($1))`,
+      `facture-chain:${ctx.userId}`
+    );
+
+    const lastIssued = await tx.facture.findFirst({
+      where: {
+        userId: ctx.userId,
+        status: { in: ["EMISE", "PAYEE"] },
+        contentHash: { not: null },
+      },
+      orderBy: { issuedAt: "desc" },
+      select: { contentHash: true },
+    });
+
+    const previousHash = lastIssued?.contentHash ?? null;
+    const chainHash = computeChainHash(contentHash, previousHash);
+    const shareToken = generateShareToken();
+    const now = new Date();
+
+    return { previousHash, chainHash, shareToken, now };
   });
-
-  const previousHash = lastIssued?.contentHash ?? null;
-  const chainHash = computeChainHash(contentHash, previousHash);
-  const shareToken = generateShareToken();
 
   const lockedForPdf = {
     ...facture,

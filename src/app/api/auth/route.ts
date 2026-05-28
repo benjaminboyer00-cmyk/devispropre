@@ -5,10 +5,12 @@ import {
   assertMutationSecurity,
   getRequestMeta,
   handleServiceError,
+  requireAuth,
 } from "@/lib/api-helpers";
 import {
   authIpRateLimitKey,
   authPasswordLoginIpKey,
+  authPasswordChangeIpKey,
   authRateLimitKey,
   checkRateLimit,
 } from "@/lib/rate-limit";
@@ -23,6 +25,7 @@ import { acceptTeamInvites } from "@/lib/account-context";
 import { logAudit } from "@/lib/audit";
 import { generateShareToken } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
+import { verifyTurnstileToken } from "@/lib/turnstile";
 import { bumpUserSessionVersion } from "@/lib/user-session";
 import {
   formatZodError,
@@ -43,9 +46,11 @@ export async function POST(request: NextRequest) {
       await checkRateLimit(authIpRateLimitKey(ip), { maxAttempts: 20, windowMs: 60 * 60 * 1000 });
       await checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 5, windowMs: 60 * 60 * 1000 });
 
+      await verifyTurnstileToken(body.turnstileToken, ip);
+
       const data = registerSchema.parse(body);
       const existing = await prisma.user.findUnique({ where: { email: data.email } });
-      if (existing) return apiError("Cet email est déjà utilisé", 409);
+      if (existing) return apiError("Impossible de créer le compte avec cet email.", 409);
 
       const passwordHash = await hashPassword(
         data.password?.trim() || generateShareToken()
@@ -91,6 +96,8 @@ export async function POST(request: NextRequest) {
       await checkRateLimit(authPasswordLoginIpKey(ip), { maxAttempts: 5, windowMs: 60 * 1000 });
       await checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 5, windowMs: 60 * 1000 });
 
+      await verifyTurnstileToken(body.turnstileToken, ip);
+
       const data = loginSchema.parse(body);
       const user = await prisma.user.findFirst({
         where: { email: data.email, deletedAt: null },
@@ -117,19 +124,23 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "change-password") {
-      const authUser = await prisma.user.findFirst({
-        where: { email: body.email, deletedAt: null },
-        select: { id: true, email: true, name: true, plan: true, passwordHash: true },
-      });
-      if (!authUser) return apiError("Email ou mot de passe incorrect", 401);
+      const auth = await requireAuth({ skipSubscriptionCheck: true });
+      if (auth.error) return auth.error;
+
+      await checkRateLimit(authPasswordChangeIpKey(ip), { maxAttempts: 5, windowMs: 15 * 60 * 1000 });
 
       const parsed = z
         .object({
-          email: z.string().email(),
           currentPassword: z.string().min(1),
           newPassword: z.string().min(8),
         })
         .parse(body);
+
+      const authUser = await prisma.user.findFirst({
+        where: { id: auth.user.id, deletedAt: null },
+        select: { id: true, email: true, name: true, plan: true, passwordHash: true },
+      });
+      if (!authUser) return apiError("Session invalide", 401);
 
       if (!(await verifyPassword(parsed.currentPassword, authUser.passwordHash))) {
         return apiError("Mot de passe actuel incorrect", 401);

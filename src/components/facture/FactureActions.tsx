@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { PdfDownloadButton } from "@/components/ui/PdfDownloadButton";
 import { useToast } from "@/components/ui/ToastProvider";
 import { DocumentAuditTrail } from "@/components/audit/DocumentAuditTrail";
 import { FactureSharePanel } from "@/components/facture/FactureSharePanel";
@@ -141,9 +142,12 @@ export function FactureActions({ facture, plan }: FactureDetailProps) {
             Partage complet — Starter
           </Link>
         )}
-        <a href={`/api/factures/${facture.id}/pdf`} target="_blank" className="ui-btn-outline text-sm">
-          PDF
-        </a>
+        <PdfDownloadButton
+          href={`/api/factures/${facture.id}/pdf`}
+          filename={`facture-${facture.numero}.pdf`}
+          className="ui-btn-outline text-sm"
+          label="PDF"
+        />
         {facture.contentHash && (
           <button onClick={verify} className="ui-btn-outline text-sm">
             Vérifier

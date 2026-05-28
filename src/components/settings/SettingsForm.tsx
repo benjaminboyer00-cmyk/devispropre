@@ -132,7 +132,7 @@ export function SettingsForm() {
         </div>
         <div>
           <label className="ui-label">Email</label>
-          <input name="email" type="email" defaultValue={data.profile.email} className={inputClass} required />
+          <input name="email" type="email" defaultValue={data.profile.email} className={inputClass} required readOnly aria-readonly="true" title="Contactez le support pour changer d'email" />
         </div>
         <div>
           <label className="ui-label">Téléphone</label>
