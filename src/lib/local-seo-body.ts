@@ -181,7 +181,7 @@ export function getLocalPageSections(trade: TradeMeta, city: CityMeta): LocalPag
       `Les ${trade.plural.toLowerCase()} de ${city.label} qui professionnalisent leurs devis réduisent les impayés et les négociations de dernière minute. DevisPropre remplace Excel, Word et le papier sans devenir une usine à gaz.`,
     ],
     pricingTitle: `Tarifs pour les artisans à ${city.label}`,
-    pricingParagraph: `Essai gratuit 15 jours sur le plan Starter (carte requise), puis 19€/mois : devis illimités, WhatsApp, factures TVA 2018, relances J+3. Idéal pour un ${trade.label.toLowerCase()} solo ou une petite équipe en ${city.region}. Plan Gratuit : 3 devis/mois après essai.`,
+    pricingParagraph: `Essai gratuit 15 jours sur le plan Starter, puis 19€/mois : devis illimités, WhatsApp, factures TVA 2018, relances J+3. Idéal pour un ${trade.label.toLowerCase()} solo ou une petite équipe en ${city.region}. Plan Gratuit : 3 devis/mois après essai.`,
     faqTitle: `Questions fréquentes — ${trade.label} à ${city.label}`,
     faq: [
       {
@@ -216,7 +216,7 @@ export function getTradeOnlySections(trade: TradeMeta): Omit<LocalPageSections, 
       `${trade.description} DevisPropre couvre toutes les régions avec le même outil mobile-first.`,
     ],
     pricingTitle: "Tarifs",
-    pricingParagraph: "Essai 15 jours Starter gratuit (carte requise), puis 19€/mois. Voir la page tarifs pour comparer Gratuit, Starter et Pro.",
+    pricingParagraph: "Essai 15 jours Starter gratuit, puis 19€/mois. Voir la page tarifs pour comparer Gratuit, Starter et Pro.",
     faqTitle: `FAQ ${trade.plural}`,
     faq: [
       {

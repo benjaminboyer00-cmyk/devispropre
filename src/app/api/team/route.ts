@@ -19,7 +19,7 @@ const inviteSchema = z.object({
 });
 
 export async function GET() {
-  const auth = await requireAuth();
+  const auth = await requireAuth({ skipSubscriptionCheck: true });
   if (auth.error) return auth.error;
 
   if (!hasPro(auth.plan)) {

@@ -10,8 +10,8 @@ export const PLAN_CATALOG = {
     features: [
       "3 devis PDF par mois",
       "Mentions légales automatiques (SIRET, adresse)",
-      "Verrouillage & empreinte SHA-256 à l'envoi",
-      "Vérification d'intégrité des documents",
+      "Devis sécurisé à l'envoi — confidentialité garantie",
+      "Preuve que le document n'a pas été modifié",
     ],
     excluded: [
       "Partage WhatsApp",
@@ -24,7 +24,7 @@ export const PLAN_CATALOG = {
     name: "Starter",
     price: "19€",
     period: "/mois",
-    desc: "15 jours gratuits puis 19€/mois — carte requise",
+    desc: "15 jours gratuits puis 19€/mois",
     highlight: true,
     features: [
       "Devis illimités + PDF professionnel",
@@ -32,7 +32,7 @@ export const PLAN_CATALOG = {
       "Relance J+3 : email auto au client + lien WhatsApp pour vous",
       "Factures conformes loi anti-fraude TVA 2018",
       "Attestation individuelle PDF téléchargeable",
-      "Chaînage SHA-256 & journal d'audit par document",
+      "Factures protégées & historique complet par document",
     ],
     excluded: [] as string[],
   },
@@ -57,7 +57,7 @@ export const PLAN_CATALOG = {
 export const TARIFS_FAQ = [
   {
     q: "Comment fonctionne l'essai gratuit ?",
-    a: "À l'inscription, vous enregistrez votre carte bancaire via Stripe. Vous profitez de 15 jours gratuits sur le plan Starter (devis illimités, WhatsApp, factures). Si vous ne résiliez pas avant la fin, l'abonnement à 19€/mois démarre automatiquement.",
+    a: "À l'inscription, vous choisissez le plan Starter et profitez de 15 jours gratuits (devis illimités, WhatsApp, factures). Si vous ne résiliez pas avant la fin, l'abonnement à 19€/mois démarre automatiquement.",
   },
   {
     q: "Comment fonctionnent les relances J+3 ?",

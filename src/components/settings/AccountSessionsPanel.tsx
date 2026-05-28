@@ -39,8 +39,16 @@ export function AccountSessionsPanel() {
 
   function load() {
     fetch("/api/auth/sessions")
-      .then((r) => r.json())
-      .then((data) => setSessions(data.sessions ?? []))
+      .then(async (r) => {
+        if (!r.ok) return [];
+        try {
+          const data = (await r.json()) as { sessions?: SessionRow[] };
+          return data.sessions ?? [];
+        } catch {
+          return [];
+        }
+      })
+      .then((sessions) => setSessions(sessions))
       .finally(() => setLoading(false));
   }
 
@@ -56,7 +64,7 @@ export function AccountSessionsPanel() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "revoke", sessionId }),
     });
-    const json = await res.json();
+    const json = await res.json().catch(() => ({} as { loggedOut?: boolean }));
     setActionLoading("");
     if (json.loggedOut) {
       window.location.href = "/connexion";

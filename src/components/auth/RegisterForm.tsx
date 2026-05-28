@@ -98,7 +98,7 @@ export function RegisterForm() {
       }),
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => ({} as { error?: string }));
     setLoading(false);
 
     if (!res.ok) {
@@ -121,7 +121,7 @@ export function RegisterForm() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ plan: "STARTER", trial: true }),
     });
-    const checkout = await checkoutRes.json();
+    const checkout = await checkoutRes.json().catch(() => ({} as { url?: string }));
 
     if (checkout.url) {
       window.location.href = checkout.url;
@@ -214,7 +214,7 @@ export function RegisterForm() {
       </button>
 
       <p className="text-subtle text-center text-xs">
-        Essai Starter {TRIAL_PERIOD_DAYS} jours · Carte requise · Puis 19€/mois sans résiliation ·{" "}
+        Essai Starter {TRIAL_PERIOD_DAYS} jours · Puis 19€/mois sans résiliation ·{" "}
         <Link href="/connexion" className="link-underline font-medium">Déjà inscrit ?</Link>
       </p>
     </form>

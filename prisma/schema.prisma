@@ -253,6 +253,7 @@ model DevisSignatureOtp {
   devisId   String
   devis     Devis     @relation(fields: [devisId], references: [id], onDelete: Cascade)
   codeHash  String
+  attempts  Int       @default(0)
   expiresAt DateTime
   usedAt    DateTime?
   createdAt DateTime  @default(now())

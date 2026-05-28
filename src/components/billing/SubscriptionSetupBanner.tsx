@@ -5,7 +5,7 @@ import { billingUserId, userNeedsSubscriptionSetup } from "@/lib/billing";
 import { TRIAL_PERIOD_DAYS } from "@/lib/billing-constants";
 import { ROUTES } from "@/lib/routes";
 
-/** Bandeau discret — essai non activé (carte Stripe requise). */
+/** Bandeau discret — essai non activé. */
 export async function SubscriptionSetupBanner() {
   const user = await getSession();
   if (!user) return null;
@@ -23,8 +23,8 @@ export async function SubscriptionSetupBanner() {
           {" — "}
           activez votre compte pour envoyer vos devis, générer les PDF et accéder aux factures.
         </p>
-        <Link href={ROUTES.dashboardActiver} className="ui-btn-primary shrink-0 px-4 py-2 text-sm">
-          Activer mon essai →
+        <Link href={`${ROUTES.dashboardSettings}#abonnement`} className="ui-btn-primary shrink-0 px-4 py-2 text-sm">
+          Choisir Starter →
         </Link>
       </div>
     </div>

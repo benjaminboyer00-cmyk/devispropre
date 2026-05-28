@@ -7,7 +7,10 @@ interface SignaturePadProps {
   className?: string;
 }
 
-/** Zone de signature tactile (client final). */
+const PEN_COLOR = "#000000";
+const PAPER_BG = "#ffffff";
+
+/** Zone de signature tactile — trait noir sur fond blanc (WYSIWYG PDF). */
 export function SignaturePad({ onChange, className = "" }: SignaturePadProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef(false);
@@ -27,9 +30,11 @@ export function SignaturePad({ onChange, className = "" }: SignaturePadProps) {
     canvas.width = rect.width * ratio;
     canvas.height = rect.height * ratio;
     ctx.scale(ratio, ratio);
+    ctx.fillStyle = PAPER_BG;
+    ctx.fillRect(0, 0, rect.width, rect.height);
     ctx.lineWidth = 2;
     ctx.lineCap = "round";
-    ctx.strokeStyle = "#1c1917";
+    ctx.strokeStyle = PEN_COLOR;
 
     function pos(e: MouseEvent | TouchEvent) {
       const r = canvas!.getBoundingClientRect();
@@ -87,7 +92,10 @@ export function SignaturePad({ onChange, className = "" }: SignaturePadProps) {
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    const rect = canvas.getBoundingClientRect();
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = PAPER_BG;
+    ctx.fillRect(0, 0, rect.width, rect.height);
     hasStrokeRef.current = false;
     onChangeRef.current(null);
   }
@@ -96,10 +104,14 @@ export function SignaturePad({ onChange, className = "" }: SignaturePadProps) {
     <div className={className}>
       <canvas
         ref={canvasRef}
-        className="h-32 w-full cursor-crosshair rounded-lg border border-[var(--border)] bg-white touch-none"
+        className="h-32 w-full cursor-crosshair touch-none rounded-lg border border-gray-300 bg-white"
         aria-label="Zone de signature"
       />
-      <button type="button" onClick={clear} className="text-subtle mt-2 text-xs underline-offset-2 hover:underline">
+      <button
+        type="button"
+        onClick={clear}
+        className="mt-2 text-xs text-gray-500 underline-offset-2 hover:underline"
+      >
         Effacer la signature
       </button>
     </div>

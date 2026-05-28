@@ -2,6 +2,9 @@
 /**
  * Upload un dump SQL.gz vers R2 (bucket backups séparé des PDF).
  * Usage: node scripts/upload-backup-r2.mjs backups/devispropre-2026-05-28.sql.gz
+ *
+ * Rétention : configurer une règle Lifecycle sur le bucket R2 Cloudflare
+ * (suppression automatique des objets db/*.sql.gz de plus de 30 jours).
  */
 import { readFileSync } from "fs";
 import { basename } from "path";

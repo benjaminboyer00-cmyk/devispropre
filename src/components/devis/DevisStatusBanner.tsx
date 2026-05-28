@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { clearClaimError, loadClaimError } from "@/lib/guest-devis-draft";
+import { clearClaimError, loadClaimError } from "@/lib/guest-draft-claim-error";
 import { ROUTES } from "@/lib/routes";
 
 export function DevisStatusBanner() {

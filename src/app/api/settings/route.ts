@@ -12,6 +12,7 @@ import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { ForbiddenError } from "@/lib/errors";
 import { logoApiPath, parseLogoDataUri, saveLogoFile } from "@/lib/logo-storage";
+import { loadSettingsPayload } from "@/lib/settings-data";
 import { softDeleteAccount } from "@/lib/services/account";
 import { clearSessionCookie, logoutSession } from "@/lib/auth";
 
@@ -53,54 +54,12 @@ export async function GET() {
   const auth = await requireAuth({ skipSubscriptionCheck: true });
   if (auth.error) return auth.error;
 
-  const [profile, company, billingOwner] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: auth.user.id },
-      select: { id: true, email: true, name: true, phone: true, plan: true },
-    }),
-    prisma.company.findUnique({
-      where: { userId: auth.workspaceUserId },
-      select: {
-        id: true,
-        raisonSociale: true,
-        siret: true,
-        adresse: true,
-        codePostal: true,
-        ville: true,
-        tvaIntracom: true,
-        telephone: true,
-        email: true,
-        capitalSocial: true,
-        rcs: true,
-        assurances: true,
-        assuranceDecennaleAssureur: true,
-        assuranceDecennaleContrat: true,
-        assuranceDecennaleCouverture: true,
-        activiteBtp: true,
-        tvaApplicable: true,
-        updatedAt: true,
-        logoUrl: true,
-      },
-    }),
-    prisma.user.findUnique({
-      where: { id: auth.workspaceUserId },
-      select: { stripeCustomerId: true },
-    }),
-  ]);
-
-  return Response.json({
-    profile: profile ? { ...profile, plan: auth.plan } : null,
-    company: company
-      ? {
-          ...company,
-          logoUrl: company.logoUrl?.startsWith("data:image")
-            ? logoApiPath(auth.workspaceUserId)
-            : company.logoUrl,
-        }
-      : null,
-    isTeamMember: auth.isTeamMember,
-    hasStripeCustomer: !!billingOwner?.stripeCustomerId,
-  });
+  try {
+    const payload = await loadSettingsPayload(auth.user.id, auth);
+    return Response.json(payload);
+  } catch (e) {
+    return handleServiceError(e);
+  }
 }
 
 export async function PATCH(request: NextRequest) {

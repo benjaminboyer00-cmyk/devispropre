@@ -32,7 +32,7 @@ export function ActivateTrialCheckout() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ plan: "STARTER", trial: true }),
         });
-        const json = await res.json();
+        const json = await res.json().catch(() => ({} as { url?: string; error?: string; devBypass?: boolean }));
 
         if (cancelled) return;
 
@@ -74,7 +74,7 @@ export function ActivateTrialCheckout() {
 
     try {
       const res = await fetch("/api/stripe/dev-activate", { method: "POST" });
-      const json = await res.json();
+      const json = await res.json().catch(() => ({} as { error?: string; redirect?: string }));
 
       if (!res.ok) {
         const msg = json.error ?? "Activation impossible.";
@@ -101,7 +101,7 @@ export function ActivateTrialCheckout() {
     <div className="ui-card-padded mx-auto max-w-lg text-center">
       <h1 className="heading-section">Activez votre essai gratuit</h1>
       <p className="text-lead mt-4 font-light">
-        {TRIAL_PERIOD_DAYS} jours gratuits sur le plan Starter — carte bancaire requise.
+        {TRIAL_PERIOD_DAYS} jours gratuits sur le plan Starter.
         Sans résiliation avant la fin de l&apos;essai, l&apos;abonnement passe à{" "}
         <strong>19€/mois</strong> automatiquement.
       </p>

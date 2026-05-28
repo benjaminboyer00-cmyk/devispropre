@@ -1,11 +1,12 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
+import { getAccountContext } from "@/lib/account-context";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
+import { loadSettingsPayload } from "@/lib/settings-data";
 import { SettingsForm } from "@/components/settings/SettingsForm";
 import { SubscriptionPanel } from "@/components/settings/SubscriptionPanel";
 import { AccountSessionsPanel } from "@/components/settings/AccountSessionsPanel";
 import { TeamPanel } from "@/components/settings/TeamPanel";
-import { prisma } from "@/lib/db";
 
 const SECTIONS = [
   { id: "abonnement", label: "Abonnement" },
@@ -21,15 +22,8 @@ export default async function SettingsPage() {
   const user = await getSession();
   if (!user) redirect("/connexion");
 
-  const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { plan: true, stripeCustomerId: true },
-  });
-
-  const membership = await prisma.teamMember.findFirst({
-    where: { userId: user.id, status: "ACTIVE" },
-    select: { id: true },
-  });
+  const account = await getAccountContext(user.id);
+  const settingsData = await loadSettingsPayload(user.id, account);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
@@ -52,11 +46,11 @@ export default async function SettingsPage() {
 
       <div className="mt-8 space-y-8">
         <SubscriptionPanel
-          plan={dbUser?.plan ?? user.plan}
-          hasStripeCustomer={!!dbUser?.stripeCustomerId}
-          isTeamMember={!!membership}
+          plan={account.plan}
+          hasStripeCustomer={settingsData.hasStripeCustomer}
+          isTeamMember={account.isTeamMember}
         />
-        <SettingsForm />
+        <SettingsForm initialData={settingsData} />
         <AccountSessionsPanel />
         <div id="equipe">
           <TeamPanel />

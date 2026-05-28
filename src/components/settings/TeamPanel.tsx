@@ -18,12 +18,22 @@ export function TeamPanel() {
 
   function load() {
     fetch("/api/team")
-      .then((r) => r.json())
-      .then((data) => {
-        setMembers(data.members ?? []);
-        setMaxMembers(data.maxMembers ?? 5);
-        setCanManage(data.canManage ?? false);
-      });
+      .then(async (r) => {
+        if (!r.ok) return;
+        try {
+          const data = (await r.json()) as {
+            members?: Member[];
+            maxMembers?: number;
+            canManage?: boolean;
+          };
+          setMembers(data.members ?? []);
+          setMaxMembers(data.maxMembers ?? 5);
+          setCanManage(data.canManage ?? false);
+        } catch {
+          /* réponse vide pendant HMR / rechargement */
+        }
+      })
+      .catch(() => {});
   }
 
   useEffect(() => {
@@ -38,7 +48,7 @@ export function TeamPanel() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({} as { error?: string }));
     setMessage(res.ok ? "Invitation envoyée." : data.error ?? "Erreur");
     if (res.ok) {
       setEmail("");

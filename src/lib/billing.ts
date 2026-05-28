@@ -5,7 +5,7 @@ export { TRIAL_PERIOD_DAYS, isEligibleForTrial } from "./billing-constants";
 
 export const TRIAL_CHECKOUT_PLAN = Plan.STARTER;
 
-/** Nouvel inscrit sans abonnement Stripe — doit activer l'essai avec carte. */
+/** Nouvel inscrit sans abonnement Stripe — doit activer l'essai Starter. */
 export async function userNeedsSubscriptionSetup(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },

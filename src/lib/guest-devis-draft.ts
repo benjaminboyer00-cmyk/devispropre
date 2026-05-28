@@ -1,11 +1,9 @@
 import type { GuestDevisDraft } from "@/lib/schemas/forms";
-import { formatDraftSavedAt } from "@/lib/format-draft-saved-at";
-
-export { formatDraftSavedAt };
 
 export const GUEST_DRAFT_KEY = "devispropre_guest_draft";
 export const PENDING_DEVIS_ID_KEY = "devispropre_pending_devis_id";
-export const CLAIM_ERROR_KEY = "devispropre_claim_error";
+
+export { saveClaimError } from "@/lib/guest-draft-claim-error";
 
 export type StoredGuestDraft = GuestDevisDraft & {
   savedAt?: string;
@@ -53,21 +51,6 @@ export function clearPendingDevisId(): void {
   if (typeof window === "undefined") return;
   sessionStorage.removeItem(PENDING_DEVIS_ID_KEY);
   localStorage.removeItem(PENDING_DEVIS_ID_KEY);
-}
-
-export function saveClaimError(message: string): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.setItem(CLAIM_ERROR_KEY, message);
-}
-
-export function loadClaimError(): string | null {
-  if (typeof window === "undefined") return null;
-  return sessionStorage.getItem(CLAIM_ERROR_KEY);
-}
-
-export function clearClaimError(): void {
-  if (typeof window === "undefined") return;
-  sessionStorage.removeItem(CLAIM_ERROR_KEY);
 }
 
 function draftWithoutMeta(stored: StoredGuestDraft): GuestDevisDraft {

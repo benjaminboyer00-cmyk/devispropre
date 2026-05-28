@@ -2,9 +2,9 @@ import {
   clearGuestDraft,
   loadGuestDraft,
   refreshGuestDraftSignature,
-  saveClaimError,
   savePendingDevisId,
 } from "@/lib/guest-devis-draft";
+import { saveClaimError } from "@/lib/guest-draft-claim-error";
 import { guestDevisDraftSchema } from "@/lib/schemas/forms";
 import { draftSummary, lineDisplayTotal } from "@/lib/guest-devis-summary";
 

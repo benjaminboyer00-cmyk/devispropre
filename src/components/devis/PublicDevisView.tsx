@@ -89,7 +89,7 @@ export function PublicDevisView({ token }: { token: string }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
       {devis.integrityOk && (
         <p className="ui-alert-success mb-6 text-center text-sm">
           ✓ Document authentique — aucune altération détectée

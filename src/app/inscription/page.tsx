@@ -4,7 +4,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata = pageMetadata({
   title: "Inscription — Essai gratuit 15 jours",
   description:
-    "Créez votre compte DevisPropre. Essai Starter 15 jours gratuit avec carte bancaire, puis 19€/mois sans résiliation.",
+    "Créez votre compte DevisPropre. Essai Starter 15 jours gratuit, puis 19€/mois sans résiliation.",
   path: "/inscription",
 });
 

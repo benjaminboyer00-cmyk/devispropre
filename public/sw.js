@@ -1,7 +1,13 @@
-const CACHE = "devispropre-shell-v5";
+const CACHE = "devispropre-shell-v6";
 
-self.addEventListener("install", (event) => {
-  self.skipWaiting();
+self.addEventListener("install", () => {
+  // Attend SKIP_WAITING depuis l'UI (RegisterServiceWorker) avant activation.
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });
 
 self.addEventListener("activate", (event) => {
@@ -20,12 +26,10 @@ self.addEventListener("fetch", (event) => {
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
   if (url.pathname.startsWith("/api/")) return;
+  if (url.pathname.startsWith("/_next/")) return;
 
-  // Pages HTML : toujours le réseau (nonce CSP change à chaque requête).
   if (request.mode === "navigate") {
-    event.respondWith(
-      fetch(request).catch(() => caches.match("/offline"))
-    );
+    event.respondWith(fetch(request).catch(() => caches.match("/offline")));
     return;
   }
 

@@ -8,6 +8,11 @@ import { isShareLinkExpired } from "./share-token";
 const OTP_TTL_MS = 10 * 60 * 1000;
 const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
 
+/** Nombre max de tentatives avant invalidation du code (anti-bruteforce). */
+export const OTP_MAX_VERIFY_ATTEMPTS = 3;
+
+export type OtpVerifyResult = "ok" | "invalid" | "locked" | "expired";
+
 export function maskClientEmail(email: string): string {
   const normalized = email.trim().toLowerCase();
   const at = normalized.indexOf("@");
@@ -78,6 +83,7 @@ export async function requestDevisSignatureOtp(params: {
       devisId: params.devisId,
       codeHash,
       expiresAt,
+      attempts: 0,
     },
   });
 
@@ -94,23 +100,54 @@ export async function requestDevisSignatureOtp(params: {
   return { sent: true, emailHint };
 }
 
-/** Consommation atomique du code OTP (single-use). */
-export async function consumeDevisSignatureOtp(devisId: string, rawCode: string): Promise<boolean> {
+/** Vérifie et consomme le OTP — compteur attempts, verrouillage après 3 échecs. */
+export async function verifyDevisSignatureOtp(
+  devisId: string,
+  rawCode: string
+): Promise<OtpVerifyResult> {
   const normalized = rawCode.trim().replace(/\s/g, "");
-  if (!/^\d{6}$/.test(normalized)) return false;
+  if (!/^\d{6}$/.test(normalized)) return "invalid";
 
   const codeHash = sha256(normalized);
   const now = new Date();
 
-  const consumed = await prisma.devisSignatureOtp.updateMany({
-    where: {
-      devisId,
-      codeHash,
-      usedAt: null,
-      expiresAt: { gt: now },
-    },
-    data: { usedAt: now },
-  });
+  return prisma.$transaction(async (tx) => {
+    const active = await tx.devisSignatureOtp.findFirst({
+      where: { devisId, usedAt: null, expiresAt: { gt: now } },
+      orderBy: { createdAt: "desc" },
+    });
 
-  return consumed.count === 1;
+    if (!active) return "expired";
+
+    if (active.attempts >= OTP_MAX_VERIFY_ATTEMPTS) {
+      await tx.devisSignatureOtp.update({
+        where: { id: active.id },
+        data: { usedAt: now },
+      });
+      return "locked";
+    }
+
+    if (active.codeHash !== codeHash) {
+      const attempts = active.attempts + 1;
+      await tx.devisSignatureOtp.update({
+        where: { id: active.id },
+        data: {
+          attempts,
+          ...(attempts >= OTP_MAX_VERIFY_ATTEMPTS ? { usedAt: now } : {}),
+        },
+      });
+      return attempts >= OTP_MAX_VERIFY_ATTEMPTS ? "locked" : "invalid";
+    }
+
+    await tx.devisSignatureOtp.update({
+      where: { id: active.id },
+      data: { usedAt: now },
+    });
+    return "ok";
+  });
+}
+
+/** @deprecated Utiliser verifyDevisSignatureOtp */
+export async function consumeDevisSignatureOtp(devisId: string, rawCode: string): Promise<boolean> {
+  return (await verifyDevisSignatureOtp(devisId, rawCode)) === "ok";
 }

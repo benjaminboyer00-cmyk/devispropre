@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { clientRequiresSignatureOtp, maskClientEmail } from "../devis-signature-otp";
+import {
+  OTP_MAX_VERIFY_ATTEMPTS,
+  clientRequiresSignatureOtp,
+  maskClientEmail,
+} from "../devis-signature-otp";
 
 describe("devis-signature-otp helpers", () => {
   it("masque l'email client", () => {
@@ -11,5 +15,9 @@ describe("devis-signature-otp helpers", () => {
     expect(clientRequiresSignatureOtp("client@example.com")).toBe(true);
     expect(clientRequiresSignatureOtp("  ")).toBe(false);
     expect(clientRequiresSignatureOtp(null)).toBe(false);
+  });
+
+  it("limite le bruteforce à 3 tentatives", () => {
+    expect(OTP_MAX_VERIFY_ATTEMPTS).toBe(3);
   });
 });

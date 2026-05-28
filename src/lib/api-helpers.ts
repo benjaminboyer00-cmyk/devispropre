@@ -17,16 +17,29 @@ import { ObjectStorageError } from "./object-storage";
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
 export function getRequestMeta(request: NextRequest) {
-  // IP enregistrée à titre indicatif uniquement — ne pas utiliser pour rate limit / geo
-  const ipAddress =
-    request.headers.get("x-real-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    null;
-
   return {
-    ipAddress,
+    ipAddress: getTrustedClientIp(request),
     userAgent: request.headers.get("user-agent"),
   };
+}
+
+/** IP client — en prod, ne fait confiance qu'à X-Real-IP posé par Nginx (anti-spoofing). */
+export function getTrustedClientIp(request: NextRequest): string | null {
+  const realIp = request.headers.get("x-real-ip")?.trim();
+  if (realIp) return realIp.slice(0, 45);
+
+  if (process.env.NODE_ENV === "production") {
+    return null;
+  }
+
+  return (
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()?.slice(0, 45) ?? null
+  );
+}
+
+/** Alias pour rate limiting (jamais null en pratique). */
+export function getTrustedClientIpOrUnknown(request: NextRequest): string {
+  return getTrustedClientIp(request) ?? "unknown";
 }
 
 export function assertMutationSecurity(request: Request): void {

@@ -1,5 +1,5 @@
 import { NextRequest } from "next/server";
-import { assertMutationSecurity, handleServiceError } from "@/lib/api-helpers";
+import { assertMutationSecurity, getTrustedClientIpOrUnknown, handleServiceError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
 import {
   clientRequiresSignatureOtp,
@@ -11,20 +11,12 @@ import { isShareLinkExpired, isValidShareTokenFormat } from "@/lib/share-token";
 
 type RouteParams = { params: Promise<{ token: string }> };
 
-function clientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-real-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown"
-  );
-}
-
 /** Demande un code OTP envoyé à l'email client enregistré sur le devis. */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     assertMutationSecurity(request);
 
-    const ip = clientIp(request);
+    const ip = getTrustedClientIpOrUnknown(request);
     await checkRateLimit(`public-devis-otp:${ip}`, { maxAttempts: 10, windowMs: 60 * 60 * 1000 });
 
     const { token } = await params;

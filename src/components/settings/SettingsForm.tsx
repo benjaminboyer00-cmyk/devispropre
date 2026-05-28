@@ -1,49 +1,27 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useToast } from "@/components/ui/ToastProvider";
+import type { SettingsPayload } from "@/lib/settings-data";
 
-interface SettingsData {
-  profile: { name: string; email: string; phone: string | null; plan: string };
-  company: {
-    raisonSociale: string;
-    siret: string;
-    adresse: string;
-    codePostal: string;
-    ville: string;
-    tvaApplicable: boolean;
-    tvaIntracom: string | null;
-    telephone: string | null;
-    email: string | null;
-    capitalSocial: string | null;
-    rcs: string | null;
-    assurances: string | null;
-    assuranceDecennaleAssureur: string | null;
-    assuranceDecennaleContrat: string | null;
-    assuranceDecennaleCouverture: string | null;
-    activiteBtp: boolean;
-    logoUrl: string | null;
-  } | null;
-  isTeamMember?: boolean;
+interface SettingsFormProps {
+  initialData: SettingsPayload;
 }
 
-export function SettingsForm() {
-  const [data, setData] = useState<SettingsData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState("");
-  const [activiteBtp, setActiviteBtp] = useState(false);
-  const { toast } = useToast();
+async function readJson<T>(res: Response): Promise<T | null> {
+  try {
+    return (await res.json()) as T;
+  } catch {
+    return null;
+  }
+}
 
-  useEffect(() => {
-    fetch("/api/settings")
-      .then((r) => r.json())
-      .then((payload) => {
-        setData(payload);
-        setActiviteBtp(Boolean(payload.company?.activiteBtp));
-      })
-      .finally(() => setLoading(false));
-  }, []);
+export function SettingsForm({ initialData }: SettingsFormProps) {
+  const [data, setData] = useState(initialData);
+  const [saving, setSaving] = useState("");
+  const [activiteBtp, setActiviteBtp] = useState(Boolean(initialData.company?.activiteBtp));
+  const { toast } = useToast();
 
   async function saveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -59,10 +37,10 @@ export function SettingsForm() {
         phone: (fd.get("phone") as string) || null,
       }),
     });
-    const json = await res.json();
+    const json = await readJson<{ error?: string }>(res);
     setSaving("");
     if (res.ok) toast("Profil mis à jour");
-    else toast(json.error ?? "Erreur profil", "error");
+    else toast(json?.error ?? "Erreur profil", "error");
   }
 
   async function saveCompany(e: React.FormEvent<HTMLFormElement>) {
@@ -92,16 +70,16 @@ export function SettingsForm() {
         activiteBtp: fd.get("activiteBtp") === "on",
       }),
     });
-    const json = await res.json();
+    const json = await readJson<{ error?: string; company?: SettingsPayload["company"] }>(res);
     setSaving("");
     if (res.ok) {
       toast("Entreprise mise à jour");
-      if (json.company) {
-        setData((d) => (d ? { ...d, company: json.company } : d));
+      if (json?.company) {
+        setData((d) => ({ ...d, company: json.company! }));
         setActiviteBtp(Boolean(json.company.activiteBtp));
       }
     } else {
-      toast(json.error ?? "Erreur entreprise", "error");
+      toast(json?.error ?? "Erreur entreprise", "error");
     }
   }
 
@@ -120,8 +98,10 @@ export function SettingsForm() {
       });
       if (res.ok) {
         toast("Logo mis à jour");
-        const json = await res.json();
-        setData((d) => (d ? { ...d, company: json.company ?? d.company } : d));
+        const json = await readJson<{ company?: SettingsPayload["company"] }>(res);
+        if (json?.company) {
+          setData((d) => ({ ...d, company: json.company! }));
+        }
       } else {
         toast("Erreur logo", "error");
       }
@@ -129,8 +109,9 @@ export function SettingsForm() {
     reader.readAsDataURL(file);
   }
 
-  if (loading) return <p className="text-subtle">Chargement…</p>;
-  if (!data?.profile) return <p className="ui-alert-error">Impossible de charger vos paramètres.</p>;
+  if (!data.profile) {
+    return <p className="ui-alert-error">Impossible de charger vos paramètres.</p>;
+  }
 
   const inputClass = "ui-input mt-1";
   const company = data.company;
@@ -336,8 +317,8 @@ export function SettingsForm() {
               });
               setSaving("");
               if (!res.ok) {
-                const err = await res.json();
-                toast(err.error ?? "Erreur", "error");
+                const err = await readJson<{ error?: string }>(res);
+                toast(err?.error ?? "Erreur", "error");
                 return;
               }
               toast("Compte supprimé");

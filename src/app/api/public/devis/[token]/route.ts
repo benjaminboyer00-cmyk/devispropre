@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiError, assertMutationSecurity, getRequestMeta, handleServiceError } from "@/lib/api-helpers";
+import { apiError, assertMutationSecurity, getRequestMeta, getTrustedClientIpOrUnknown, handleServiceError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
 import { verifyDocumentIntegrity, buildDevisPayload } from "@/lib/document-hash";
 import { readIdempotencyKey, withIdempotency } from "@/lib/idempotency";
@@ -14,15 +14,16 @@ import {
 } from "@/lib/share-token";
 import {
   clientRequiresSignatureOtp,
-  consumeDevisSignatureOtp,
   maskClientEmail,
+  verifyDevisSignatureOtp,
 } from "@/lib/devis-signature-otp";
+import { validateClientSignatureDataUri } from "@/lib/signature-payload";
 
 const statusSchema = z
   .object({
     status: z.enum(["ACCEPTE", "REFUSE"]),
     acceptanceText: z.string().min(1).max(200).optional(),
-    signatureData: z.string().max(200_000).optional(),
+    signatureData: z.string().max(102_400).optional(),
     otpCode: z.string().max(12).optional(),
   })
   .superRefine((data, ctx) => {
@@ -34,24 +35,16 @@ const statusSchema = z
         path: ["acceptanceText"],
       });
     }
-    if (!data.signatureData?.startsWith("data:image/png")) {
+    if (!data.signatureData || !validateClientSignatureDataUri(data.signatureData)) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: "Signature requise.",
+        message: "Signature PNG requise (max 100 Ko).",
         path: ["signatureData"],
       });
     }
   });
 
 type RouteParams = { params: Promise<{ token: string }> };
-
-function clientIp(request: NextRequest): string {
-  return (
-    request.headers.get("x-real-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown"
-  );
-}
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { token } = await params;
@@ -60,7 +53,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return publicJsonResponse({ error: "Devis introuvable" }, { status: 404 });
   }
 
-  await checkRateLimit(`public-devis-read:${clientIp(request)}`, {
+  await checkRateLimit(`public-devis-read:${getTrustedClientIpOrUnknown(request)}`, {
     maxAttempts: 60,
     windowMs: 60 * 60 * 1000,
   });
@@ -155,7 +148,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     assertMutationSecurity(request);
 
-    const ip = clientIp(request);
+    const ip = getTrustedClientIpOrUnknown(request);
 
     await checkRateLimit(`public-devis:${ip}`, { maxAttempts: 20, windowMs: 60 * 60 * 1000 });
 
@@ -197,8 +190,23 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           { status: 401 }
         );
       }
-      const otpOk = await consumeDevisSignatureOtp(devis.id, otpCode);
-      if (!otpOk) {
+
+      await checkRateLimit(`public-devis-otp-verify:${devis.id}`, {
+        maxAttempts: 10,
+        windowMs: 60 * 60 * 1000,
+      });
+
+      const otpResult = await verifyDevisSignatureOtp(devis.id, otpCode);
+      if (otpResult === "locked") {
+        return publicJsonResponse(
+          {
+            error:
+              "Trop de tentatives incorrectes. Demandez un nouveau code par email avant de signer.",
+          },
+          { status: 429 }
+        );
+      }
+      if (otpResult !== "ok") {
         return publicJsonResponse(
           { error: "Code invalide ou expiré. Demandez un nouveau code." },
           { status: 401 }

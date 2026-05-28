@@ -24,12 +24,18 @@ export function SubscriptionPanel({ plan, hasStripeCustomer, isTeamMember }: Sub
     setLoading(checkoutPlan);
     setMessage("");
     try {
+      const withTrial = plan === "FREE" && checkoutPlan === "STARTER";
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: checkoutPlan }),
+        body: JSON.stringify({ plan: checkoutPlan, trial: withTrial }),
       });
-      const json = await res.json();
+      let json: { url?: string; error?: string } = {};
+      try {
+        json = (await res.json()) as { url?: string; error?: string };
+      } catch {
+        json = {};
+      }
       setLoading("");
       if (json.url) {
         window.location.href = json.url;
@@ -51,7 +57,12 @@ export function SubscriptionPanel({ plan, hasStripeCustomer, isTeamMember }: Sub
     setMessage("");
     try {
       const res = await fetch("/api/stripe/portal", { method: "POST" });
-      const json = await res.json();
+      let json: { url?: string; error?: string } = {};
+      try {
+        json = (await res.json()) as { url?: string; error?: string };
+      } catch {
+        json = {};
+      }
       setLoading("");
       if (json.url) {
         window.location.href = json.url;
@@ -100,15 +111,6 @@ export function SubscriptionPanel({ plan, hasStripeCustomer, isTeamMember }: Sub
         ))}
       </ul>
 
-      {plan === "FREE" && !hasStripeCustomer && (
-        <p className="ui-alert-error text-sm">
-          Essai Starter non activé —{" "}
-          <Link href={ROUTES.dashboardActiver} className="link-underline font-medium">
-            enregistrer votre carte ({TRIAL_PERIOD_DAYS} jours gratuits)
-          </Link>
-        </p>
-      )}
-
       {message && (
         <p className={message.includes("Erreur") || message.includes("indisponible") || message.includes("configuré") ? "ui-alert-error" : "ui-alert-success"}>
           {message}
@@ -133,7 +135,11 @@ export function SubscriptionPanel({ plan, hasStripeCustomer, isTeamMember }: Sub
             onClick={() => checkout("STARTER")}
             className="ui-btn-primary text-sm"
           >
-            {loading === "STARTER" ? "Redirection…" : "Starter — 19€/mois"}
+            {loading === "STARTER"
+              ? "Redirection…"
+              : plan === "FREE"
+                ? `Essai Starter ${TRIAL_PERIOD_DAYS} jours — 19€/mois`
+                : "Starter — 19€/mois"}
           </button>
         )}
         {plan !== "PRO" && (
