@@ -2,6 +2,7 @@ import { getCity, getTrade } from "@/lib/local-seo";
 import { OG_IMAGE_CONTENT_TYPE, OG_IMAGE_SIZE, renderLocalOgImage } from "@/lib/og-local-image";
 
 export const runtime = "edge";
+export const revalidate = 31536000;
 export const alt = "DevisPropre — Devis artisan local";
 export const size = OG_IMAGE_SIZE;
 export const contentType = OG_IMAGE_CONTENT_TYPE;

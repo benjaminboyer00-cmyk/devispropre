@@ -239,6 +239,46 @@ export function SettingsForm() {
           </button>
         </form>
       )}
+
+      {!data.isTeamMember && (
+        <section className="mt-12 rounded-xl border border-red-200 bg-red-50/50 p-6 dark:border-red-900 dark:bg-red-950/20">
+          <h2 className="heading-card text-red-900 dark:text-red-200">Supprimer mon compte</h2>
+          <p className="text-body mt-2 text-sm leading-relaxed">
+            Votre compte sera désactivé et vos données personnelles anonymisées. Les factures émises
+            restent archivées conformément à la loi (conservation 10 ans).
+          </p>
+          <button
+            type="button"
+            className="mt-4 rounded-lg border border-red-300 bg-white px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 dark:border-red-800 dark:bg-transparent dark:text-red-300"
+            disabled={saving === "delete"}
+            onClick={async () => {
+              if (
+                !window.confirm(
+                  "Supprimer définitivement votre accès à DevisPropre ? Cette action est irréversible."
+                )
+              ) {
+                return;
+              }
+              setSaving("delete");
+              const res = await fetch("/api/settings", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ section: "delete-account", confirm: true }),
+              });
+              setSaving("");
+              if (!res.ok) {
+                const err = await res.json();
+                toast(err.error ?? "Erreur", "error");
+                return;
+              }
+              toast("Compte supprimé");
+              window.location.href = "/connexion";
+            }}
+          >
+            {saving === "delete" ? "Suppression…" : "Supprimer mon compte"}
+          </button>
+        </section>
+      )}
     </div>
   );
 }

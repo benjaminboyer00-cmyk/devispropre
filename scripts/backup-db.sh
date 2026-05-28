@@ -39,4 +39,15 @@ fi
 
 echo "✓ $(du -h "$FILE" | cut -f1)"
 find "$BACKUP_DIR" -name "devispropre-*.sql.gz" -mtime +"$RETENTION_DAYS" -delete 2>/dev/null || true
-echo "→ Rétention ${RETENTION_DAYS}j appliquée"
+echo "→ Rétention locale ${RETENTION_DAYS}j appliquée"
+
+if command -v node >/dev/null 2>&1; then
+  if node "$ROOT/scripts/upload-backup-r2.mjs" "$FILE"; then
+    echo "→ Copie offsite R2 OK"
+  else
+    echo "⚠ Upload R2 échoué — backup local conservé dans $FILE" >&2
+    exit 1
+  fi
+else
+  echo "⚠ node absent — backup offsite R2 ignoré" >&2
+fi

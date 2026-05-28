@@ -12,6 +12,8 @@ import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { ForbiddenError } from "@/lib/errors";
 import { logoApiPath, parseLogoDataUri, saveLogoFile } from "@/lib/logo-storage";
+import { softDeleteAccount } from "@/lib/services/account";
+import { clearSessionCookie, logoutSession } from "@/lib/auth";
 
 const companySchema = z.object({
   raisonSociale: z.string().min(2).optional(),
@@ -191,7 +193,22 @@ export async function PATCH(request: NextRequest) {
       });
     }
 
-    return apiError("Section invalide (profile | company)");
+    if (body.section === "delete-account") {
+      if (auth.isTeamMember) {
+        throw new ForbiddenError("Seul le propriétaire peut supprimer le compte.");
+      }
+      z.object({ confirm: z.literal(true) }).parse(body);
+      await softDeleteAccount({
+        userId: auth.workspaceUserId,
+        actorUserId: auth.user.id,
+        ...meta,
+      });
+      await logoutSession();
+      await clearSessionCookie();
+      return Response.json({ ok: true });
+    }
+
+    return apiError("Section invalide (profile | company | delete-account)");
   } catch (e) {
     if (e instanceof z.ZodError) return apiError(e.message);
     return handleServiceError(e);

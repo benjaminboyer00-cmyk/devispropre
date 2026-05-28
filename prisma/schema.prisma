@@ -244,7 +244,7 @@ model DevisLigne {
 model Facture {
   id           String        @id @default(cuid())
   userId       String
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Restrict)
   clientId     String
   client       Client        @relation(fields: [clientId], references: [id], onDelete: Restrict)
   devisId      String?       @unique
@@ -296,7 +296,7 @@ model FactureLigne {
 model AuditLog {
   id          String      @id @default(cuid())
   userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Restrict)
   action      AuditAction
   entityType  String
   entityId    String
@@ -317,7 +317,7 @@ model AuditLog {
 model Attestation {
   id          String   @id @default(cuid())
   userId      String
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user        User     @relation(fields: [userId], references: [id], onDelete: Restrict)
   factureId   String   @unique
   facture     Facture  @relation(fields: [factureId], references: [id], onDelete: Restrict)
   numero      String   @unique

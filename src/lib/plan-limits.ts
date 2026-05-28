@@ -37,7 +37,7 @@ export async function assertCanCreateDevis(userId: string, plan: Plan): Promise<
 
 /**
  * Verrou advisory PostgreSQL + comptage dans la même transaction que le INSERT.
- * Empêche le bypass TOCTOU (Turbo Intruder / requêtes parallèles).
+ * Anti TOCTOU : appelé dans prisma.$transaction avant createDevis (voir createDevis).
  */
 export async function enforceFreeDevisQuotaInTransaction(
   tx: Prisma.TransactionClient,

@@ -68,7 +68,8 @@ Sans `RESEND_API_KEY`, les relances et magic links ne partent pas (le reste de l
 1. Créer le bucket `devispropre-pdfs`
 2. Générer clés API R2 → remplir `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`
 3. **Bucket strictement privé** — les PDF sont servis via `/api/archives/*` après auth JWT (pas d'URL R2 directe)
-4. **Volume Docker `pdfs`** : fallback local déjà monté dans `docker-compose.prod.yml` si R2 est indisponible
+4. **Bucket backups SQL** (recommandé) : créer `devispropre-backups` → `R2_BACKUP_BUCKET=devispropre-backups` (sinon préfixe `db/` dans `R2_BUCKET`)
+5. **Volume Docker `storage`** : PDFs, queue R2 et logos persistés au redeploy
 
 ---
 
@@ -93,12 +94,15 @@ Installer le crontab depuis `deploy/cron/crontab.example` :
 ```bash
 0 8 * * * /opt/devispropre/scripts/cron-reminders.sh
 30 8 * * * /opt/devispropre/scripts/cron-r2-sync.sh
+0 4 * * 0 /opt/devispropre/scripts/cron-cleanup.sh
 0 3 * * * /opt/devispropre/scripts/backup-db.sh
 ```
 
 - [ ] `CRON_SECRET` identique entre `.env.production` et les scripts cron
 - [ ] Vérifier qu’un backup apparaît dans `backups/` après la première nuit
+- [ ] Vérifier qu’un backup offsite apparaît dans R2 (`db/devispropre-*.sql.gz`) — bucket `R2_BACKUP_BUCKET` ou `R2_BUCKET`
 - [ ] Vérifier les logs R2 sync (queue vide ou uploads OK)
+- [ ] Cleanup idempotence : log cron dimanche 4h sans erreur
 
 ---
 

@@ -59,18 +59,31 @@ export function OfflineSyncBar() {
       window.removeEventListener("online", onOnline);
       window.removeEventListener("offline", onOffline);
     };
-  }, [router]);
+  }, [router, toast]);
 
   if (online && pending === 0 && !message) return null;
+
+  const criticalPending = pending > 0;
 
   return (
     <div
       className={`border-b px-4 py-2 text-center text-sm ${
-        online ? "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200" : "border-slate-300 bg-slate-100 text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+        !online
+          ? "border-slate-300 bg-slate-100 text-slate-800 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200"
+          : criticalPending
+            ? "border-red-300 bg-red-50 text-red-900 dark:border-red-800 dark:bg-red-950/50 dark:text-red-100"
+            : "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
       }`}
+      role="status"
     >
       {!online && "📡 Mode hors-ligne — vos brouillons seront synchronisés au retour du réseau."}
-      {online && pending > 0 && (syncing ? "Synchronisation des devis en cours…" : `${pending} devis en attente de sync…`)}
+      {online && criticalPending && (
+        <>
+          <strong>⚠️ {pending} document{pending > 1 ? "s" : ""} en attente de réseau.</strong>{" "}
+          Ne fermez pas l&apos;onglet et ne videz pas l&apos;historique du navigateur avant sync.
+          {syncing ? " Synchronisation en cours…" : ""}
+        </>
+      )}
       {message && online && pending === 0 && message}
     </div>
   );

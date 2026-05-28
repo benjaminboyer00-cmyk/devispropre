@@ -41,6 +41,8 @@ const nextConfig: NextConfig = {
       { source: "/manifest.webmanifest", headers: [CACHE_DAY] },
       { source: "/robots.txt", headers: [CACHE_DAY] },
       { source: "/sitemap.xml", headers: [CACHE_DAY] },
+      { source: "/opengraph-image", headers: [CACHE_IMMUTABLE] },
+      { source: "/devis-artisan/:path*/opengraph-image", headers: [CACHE_IMMUTABLE] },
     ];
   },
 };
