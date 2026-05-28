@@ -1,5 +1,6 @@
 import type { Client, Company, Devis, DevisLigne, Facture, FactureLigne } from "@/generated/prisma/client";
 import { canonicalize, sha256 } from "./crypto";
+import { resolveIssuerCompany } from "./issuer-snapshot";
 
 type DevisWithRelations = Devis & {
   lignes: DevisLigne[];
@@ -28,6 +29,7 @@ export function buildDevisPayload(
   devis: DevisWithRelations,
   company: Company | null
 ) {
+  const issuer = resolveIssuerCompany(devis.issuerSnapshot, company);
   return {
     type: "devis" as const,
     numero: devis.numero,
@@ -44,7 +46,7 @@ export function buildDevisPayload(
       telephone: devis.client.telephone,
       adresse: devis.client.adresse,
     },
-    company: buildCompanyPayload(company),
+    company: buildCompanyPayload(issuer),
     lignes: devis.lignes
       .sort((a, b) => a.ordre - b.ordre)
       .map((l) => ({
@@ -62,6 +64,7 @@ export function buildFacturePayload(
   facture: FactureWithRelations,
   company: Company | null
 ) {
+  const issuer = resolveIssuerCompany(facture.issuerSnapshot, company);
   return {
     type: "facture" as const,
     numero: facture.numero,
@@ -78,7 +81,7 @@ export function buildFacturePayload(
       telephone: facture.client.telephone,
       adresse: facture.client.adresse,
     },
-    company: buildCompanyPayload(company),
+    company: buildCompanyPayload(issuer),
     lignes: facture.lignes
       .sort((a, b) => a.ordre - b.ordre)
       .map((l) => ({

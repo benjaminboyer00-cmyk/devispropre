@@ -1,6 +1,10 @@
 import type Stripe from "stripe";
 import { Plan } from "@/generated/prisma/client";
 import { ensureProTeam } from "./account-context";
+import {
+  clearCustomerPastDue,
+  markCustomerPastDue,
+} from "./billing-status";
 import { prisma } from "./db";
 import { env } from "./env";
 
@@ -20,10 +24,16 @@ function customerIdFromSubscription(subscription: Stripe.Subscription): string {
     : subscription.customer.id;
 }
 
+function customerIdFromInvoice(invoice: Stripe.Invoice): string | null {
+  const customer = invoice.customer;
+  if (!customer) return null;
+  return typeof customer === "string" ? customer : customer.id;
+}
+
 export async function downgradeCustomerToFree(customerId: string): Promise<void> {
   await prisma.user.updateMany({
     where: { stripeCustomerId: customerId },
-    data: { plan: Plan.FREE },
+    data: { plan: Plan.FREE, subscriptionPastDue: false },
   });
 }
 
@@ -37,9 +47,16 @@ export async function syncUserPlanFromSubscription(
     return;
   }
 
+  if (subscription.status === "past_due") {
+    await markCustomerPastDue(customerId);
+    return;
+  }
+
   if (subscription.status !== "active" && subscription.status !== "trialing") {
     return;
   }
+
+  await clearCustomerPastDue(customerId);
 
   const priceId = subscription.items.data[0]?.price?.id;
   if (!priceId) return;
@@ -61,4 +78,14 @@ export async function syncUserPlanFromSubscription(
       await ensureProTeam(u.id);
     }
   }
+}
+
+export async function handleInvoicePaymentFailed(invoice: Stripe.Invoice): Promise<void> {
+  const customerId = customerIdFromInvoice(invoice);
+  if (customerId) await markCustomerPastDue(customerId);
+}
+
+export async function handleInvoicePaid(invoice: Stripe.Invoice): Promise<void> {
+  const customerId = customerIdFromInvoice(invoice);
+  if (customerId) await clearCustomerPastDue(customerId);
 }

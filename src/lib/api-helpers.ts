@@ -5,6 +5,7 @@ import { billingUserId, userNeedsSubscriptionSetup } from "./billing";
 import { getSession, type SessionUser } from "./auth";
 import { assertSameOrigin, CsrfError } from "./csrf";
 import { PlanFeatureError } from "./plan-features";
+import { BillingPastDueError } from "./billing-status";
 import { PlanLimitError } from "./plan-limits";
 import { TurnstileError } from "./turnstile";
 import { ClientArchiveError } from "./client-guard";
@@ -108,6 +109,7 @@ export function handleServiceError(error: unknown) {
   if (error instanceof CsrfError) return apiError(error.message, 403);
   if (error instanceof RateLimitError) return apiError(error.message, 429);
   if (error instanceof PlanLimitError) return apiError(error.message, 402);
+  if (error instanceof BillingPastDueError) return apiError(error.message, 402);
   if (error instanceof PlanFeatureError) return apiError(error.message, 402);
   if (error instanceof ForbiddenError) return apiError(error.message, 403);
   if (error instanceof ImmutabilityError) return apiError(error.message, 403);

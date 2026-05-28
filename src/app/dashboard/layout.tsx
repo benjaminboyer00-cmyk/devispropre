@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PendingDevisRedirect } from "@/components/billing/PendingDevisRedirect";
+import { BillingPastDueBanner } from "@/components/billing/BillingPastDueBanner";
 import { ClaimGuestDraftOnMount } from "@/components/devis/ClaimGuestDraftOnMount";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { OfflineSyncBar } from "@/components/pwa/OfflineSyncBar";
@@ -16,6 +17,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <PendingDevisRedirect />
       </Suspense>
       <DashboardNav />
+      <BillingPastDueBanner />
       <OfflineSyncBar />
       {children}
     </>

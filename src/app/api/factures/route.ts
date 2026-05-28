@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { assertMutationSecurity, getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
 import { createFactureFromDevis } from "@/lib/services/facture";
 import { prisma } from "@/lib/db";
+import { factureApiListSelect } from "@/lib/prisma-selects";
 import { checkRateLimit, factureCreateKey } from "@/lib/rate-limit";
 
 export async function GET() {
@@ -10,8 +11,9 @@ export async function GET() {
 
   const factures = await prisma.facture.findMany({
     where: { userId: auth.workspaceUserId, deletedAt: null },
-    include: { client: true, attestation: true },
+    select: factureApiListSelect,
     orderBy: { createdAt: "desc" },
+    take: 100,
   });
 
   return Response.json(factures);

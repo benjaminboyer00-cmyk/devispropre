@@ -25,6 +25,8 @@ import {
   ObjectStorageError,
 } from "../object-storage";
 import { generateAttestationPdf, generateFacturePdf } from "../pdf-document";
+import { assertBillingNotPastDue } from "../billing-status";
+import { snapshotFromCompany, resolveIssuerCompany } from "../issuer-snapshot";
 import { ROUTES } from "../routes";
 
 async function assertFacturationAllowed(userId: string) {
@@ -38,6 +40,7 @@ async function assertFacturationAllowed(userId: string) {
 }
 
 export async function createFactureFromDevis(ctx: AuditContext, devisId: string) {
+  await assertBillingNotPastDue(ctx.userId);
   await assertFacturationAllowed(ctx.userId);
   const devis = await prisma.devis.findFirst({
     where: { id: devisId, userId: ctx.userId, deletedAt: null },
@@ -116,6 +119,7 @@ export async function createFactureFromDevis(ctx: AuditContext, devisId: string)
 
 /** Émission = verrouillage définitif + chaînage hash (conformité TVA 2018). */
 export async function issueFacture(ctx: AuditContext, factureId: string) {
+  await assertBillingNotPastDue(ctx.userId);
   await assertFacturationAllowed(ctx.userId);
   const facture = await prisma.facture.findFirst({
     where: { id: factureId, userId: ctx.userId, deletedAt: null },
@@ -128,6 +132,8 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
   }
 
   const company = await prisma.company.findUnique({ where: { userId: ctx.userId } });
+  const issuerSnapshot = snapshotFromCompany(company);
+  const issuerForPdf = resolveIssuerCompany(issuerSnapshot, company);
   const payload = buildFacturePayload(facture, company);
   const contentHash = computeContentHash(payload);
   const now = new Date();
@@ -165,10 +171,10 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
   const pdfKey = facturePdfKey(ctx.userId, factureId);
 
   try {
-    const pdfBuffer = await generateFacturePdf(lockedForPdf, company);
+    const pdfBuffer = await generateFacturePdf(lockedForPdf, issuerForPdf);
     pdfUrl = await archivePdf(pdfKey, pdfBuffer, ROUTES.apiArchiveFacture(factureId));
 
-    const attestationBuffer = await generateAttestationPdf(attestationDraft, lockedForPdf, company);
+    const attestationBuffer = await generateAttestationPdf(attestationDraft, lockedForPdf, issuerForPdf);
     attestationPdfUrl = await archivePdf(
       attestationKey,
       attestationBuffer,
@@ -196,6 +202,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
           shareToken,
           pdfUrl,
           pdfArchivedAt: now,
+          issuerSnapshot: issuerSnapshot ?? undefined,
         },
       });
 

@@ -23,6 +23,7 @@ import { acceptTeamInvites } from "@/lib/account-context";
 import { logAudit } from "@/lib/audit";
 import { generateShareToken } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
+import { bumpUserSessionVersion } from "@/lib/user-session";
 import {
   formatZodError,
   loginSchema,
@@ -113,6 +114,45 @@ export async function POST(request: NextRequest) {
       await setSessionCookie(token);
 
       return Response.json({ ok: true, user: { id: user.id, email: user.email, name: user.name } });
+    }
+
+    if (action === "change-password") {
+      const authUser = await prisma.user.findFirst({
+        where: { email: body.email, deletedAt: null },
+        select: { id: true, email: true, name: true, plan: true, passwordHash: true },
+      });
+      if (!authUser) return apiError("Email ou mot de passe incorrect", 401);
+
+      const parsed = z
+        .object({
+          email: z.string().email(),
+          currentPassword: z.string().min(1),
+          newPassword: z.string().min(8),
+        })
+        .parse(body);
+
+      if (!(await verifyPassword(parsed.currentPassword, authUser.passwordHash))) {
+        return apiError("Mot de passe actuel incorrect", 401);
+      }
+
+      await bumpUserSessionVersion(authUser.id);
+      await prisma.user.update({
+        where: { id: authUser.id },
+        data: { passwordHash: await hashPassword(parsed.newPassword) },
+      });
+
+      const token = await createSession(
+        {
+          id: authUser.id,
+          email: authUser.email,
+          name: authUser.name,
+          plan: authUser.plan,
+        },
+        sessionMetaFromRequest(request)
+      );
+      await setSessionCookie(token);
+
+      return Response.json({ ok: true });
     }
 
     return apiError("Action invalide");

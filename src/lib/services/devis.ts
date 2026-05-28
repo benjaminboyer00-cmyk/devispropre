@@ -20,9 +20,11 @@ import {
   ObjectStorageError,
 } from "../object-storage";
 import { generateDevisPdf } from "../pdf-document";
-import { ROUTES } from "../routes";
+import { assertBillingNotPastDue } from "../billing-status";
 import { defaultValidUntilDate, parseValidUntilInput } from "../devis-defaults";
+import { snapshotFromCompany, resolveIssuerCompany } from "../issuer-snapshot";
 import { resolveLineTva, ensureFranchiseNotes } from "../tva";
+import { ROUTES } from "../routes";
 
 export interface LigneInput {
   description: string;
@@ -47,6 +49,7 @@ export async function createDevis(
   });
   if (!user) throw new Error("Utilisateur introuvable");
 
+  await assertBillingNotPastDue(ctx.userId);
   if (!options?.skipQuotaCheck) {
     await assertCanCreateDevis(ctx.userId, user.plan);
   }
@@ -232,6 +235,8 @@ export async function updateDevis(
 
 /** Verrouille le devis à l'envoi — hash + token de partage. */
 export async function sendDevis(ctx: AuditContext, devisId: string) {
+  await assertBillingNotPastDue(ctx.userId);
+
   const devis = await prisma.devis.findFirst({
     where: { id: devisId, userId: ctx.userId, deletedAt: null },
     include: { lignes: true, client: true },
@@ -243,11 +248,13 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
   }
 
   const company = await prisma.company.findUnique({ where: { userId: ctx.userId } });
+  const issuerSnapshot = snapshotFromCompany(company);
   const payload = buildDevisPayload(devis, company);
   const contentHash = computeContentHash(payload);
   const chainHash = computeChainHash(contentHash, null);
   const shareToken = generateShareToken();
   const now = new Date();
+  const issuerForPdf = resolveIssuerCompany(issuerSnapshot, company);
 
   const lockedForPdf = {
     ...devis,
@@ -262,7 +269,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
   let pdfUrl: string;
   const pdfKey = devisPdfKey(ctx.userId, devisId);
   try {
-    const pdfBuffer = await generateDevisPdf(lockedForPdf, company);
+    const pdfBuffer = await generateDevisPdf(lockedForPdf, issuerForPdf);
     pdfUrl = await archivePdf(pdfKey, pdfBuffer, ROUTES.apiArchiveDevis(devisId));
   } catch (err) {
     if (err instanceof ObjectStorageError) throw err;
@@ -281,6 +288,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
         shareToken,
         pdfUrl,
         pdfArchivedAt: now,
+        issuerSnapshot: issuerSnapshot ?? undefined,
       },
       include: { lignes: true, client: true },
     });

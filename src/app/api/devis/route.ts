@@ -8,6 +8,7 @@ import {
   requireAuth,
 } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
+import { devisApiListSelect } from "@/lib/prisma-selects";
 import { createDevisSchema, formatZodError } from "@/lib/schemas/forms";
 import { checkRateLimit, devisCreateKey } from "@/lib/rate-limit";
 import { createDevis } from "@/lib/services/devis";
@@ -18,8 +19,12 @@ export async function GET() {
 
   const devis = await prisma.devis.findMany({
     where: { userId: auth.workspaceUserId, deletedAt: null },
-    include: { client: true, lignes: true },
+    select: {
+      ...devisApiListSelect,
+      lignes: { ...devisApiListSelect.lignes, orderBy: { ordre: "asc" } },
+    },
     orderBy: { createdAt: "desc" },
+    take: 100,
   });
 
   return Response.json(devis);

@@ -5,10 +5,8 @@ import { pageMetadata } from "@/lib/seo";
 
 type PageProps = { params: Promise<{ metier: string }> };
 
-export async function generateStaticParams() {
-  const { TRADES } = await import("@/lib/local-seo");
-  return Object.keys(TRADES).map((metier) => ({ metier }));
-}
+export const revalidate = 604800;
+export const dynamicParams = true;
 
 export async function generateMetadata({ params }: PageProps) {
   const { metier } = await params;

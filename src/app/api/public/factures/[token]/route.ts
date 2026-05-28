@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
 import { prisma } from "@/lib/db";
 import { verifyDocumentIntegrity, buildFacturePayload } from "@/lib/document-hash";
+import { resolveIssuerCompany } from "@/lib/issuer-snapshot";
 import { publicJsonResponse } from "@/lib/public-api-response";
 
 type RouteParams = { params: Promise<{ token: string }> };
@@ -25,7 +26,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     return publicJsonResponse({ error: "Facture introuvable" }, { status: 404 });
   }
 
-  const company = facture.user.company;
+  const company = resolveIssuerCompany(facture.issuerSnapshot, facture.user.company);
   const payload = buildFacturePayload(facture, company);
   const integrityOk = facture.contentHash
     ? verifyDocumentIntegrity(facture.contentHash, payload)

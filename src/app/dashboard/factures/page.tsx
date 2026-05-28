@@ -4,6 +4,7 @@ import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
+import { factureListSelect } from "@/lib/prisma-selects";
 import { formatEuro } from "@/lib/format";
 import { hasStarter } from "@/lib/plan-features";
 import { getFactureStatusLabel } from "@/lib/services/facture";
@@ -49,8 +50,9 @@ export default async function FacturesListPage({ searchParams }: PageProps) {
       deletedAt: null,
       ...(VIEWS[activeView].filter ? { status: { in: VIEWS[activeView].filter } } : {}),
     },
-    include: { client: true, attestation: { select: { numero: true } } },
+    select: factureListSelect,
     orderBy: [{ issuedAt: "desc" }, { createdAt: "desc" }],
+    take: 100,
   });
 
   const definitiveCount = await prisma.facture.count({

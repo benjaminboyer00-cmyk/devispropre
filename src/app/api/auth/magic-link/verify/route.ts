@@ -3,6 +3,7 @@ import { acceptTeamInvites } from "@/lib/account-context";
 import { createSession, sessionMetaFromRequest, setSessionCookie } from "@/lib/auth";
 import { env } from "@/lib/env";
 import { consumeMagicLink } from "@/lib/magic-link";
+import { bumpUserSessionVersion } from "@/lib/user-session";
 
 export async function GET(request: NextRequest) {
   const token = request.nextUrl.searchParams.get("token");
@@ -20,6 +21,7 @@ export async function GET(request: NextRequest) {
   }
 
   await acceptTeamInvites(user.email, user.id);
+  await bumpUserSessionVersion(user.id);
   const sessionToken = await createSession(user, sessionMetaFromRequest(request));
   await setSessionCookie(sessionToken);
 

@@ -1,8 +1,6 @@
 import { notFound } from "next/navigation";
 import { LocalSeoContent } from "@/components/seo/LocalSeoContent";
 import {
-  CITIES,
-  TRADES,
   getCity,
   getTrade,
   localKeywords,
@@ -13,15 +11,9 @@ import { pageMetadata } from "@/lib/seo";
 
 type PageProps = { params: Promise<{ metier: string; ville: string }> };
 
-export async function generateStaticParams() {
-  const params: { metier: string; ville: string }[] = [];
-  for (const metier of Object.keys(TRADES)) {
-    for (const ville of Object.keys(CITIES)) {
-      params.push({ metier, ville });
-    }
-  }
-  return params;
-}
+/** ISR : génération à la demande, cache 7 jours — évite un build de centaines de milliers de pages. */
+export const revalidate = 604800;
+export const dynamicParams = true;
 
 export async function generateMetadata({ params }: PageProps) {
   const { metier, ville } = await params;

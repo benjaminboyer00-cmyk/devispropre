@@ -17,6 +17,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       factureId: id,
       userId: auth.workspaceUserId,
       pdfArchivedAt: { not: null },
+      facture: { userId: auth.workspaceUserId, deletedAt: null },
     },
     include: { facture: { select: { numero: true } } },
   });

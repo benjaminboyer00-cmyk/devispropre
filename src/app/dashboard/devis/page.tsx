@@ -4,6 +4,7 @@ import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
+import { devisListSelect } from "@/lib/prisma-selects";
 import { formatEuro } from "@/lib/format";
 import { getDevisCountThisMonth } from "@/lib/plan-limits";
 import { getDevisStatusEmoji, getDevisStatusLabel } from "@/lib/services/devis";
@@ -21,8 +22,9 @@ export default async function DevisListPage() {
   const [devis, devisThisMonth] = await Promise.all([
     prisma.devis.findMany({
       where: { userId: wsId, deletedAt: null },
-      include: { client: true },
+      select: devisListSelect,
       orderBy: { createdAt: "desc" },
+      take: 100,
     }),
     getDevisCountThisMonth(wsId),
   ]);

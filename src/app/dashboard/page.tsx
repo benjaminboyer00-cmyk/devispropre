@@ -4,6 +4,7 @@ import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
+import { devisListSelect, factureListSelect } from "@/lib/prisma-selects";
 import { formatEuro } from "@/lib/format";
 import { hasPro } from "@/lib/plan-features";
 import { getDevisCountThisMonth } from "@/lib/plan-limits";
@@ -24,13 +25,13 @@ export default async function DashboardPage() {
   const [devis, factures, devisThisMonth, accepted, pending, caMois] = await Promise.all([
     prisma.devis.findMany({
       where: { userId: wsId, deletedAt: null },
-      include: { client: true },
+      select: devisListSelect,
       orderBy: { createdAt: "desc" },
       take: 10,
     }),
     prisma.facture.findMany({
       where: { userId: wsId, deletedAt: null },
-      include: { client: true },
+      select: factureListSelect,
       orderBy: { createdAt: "desc" },
       take: 5,
     }),

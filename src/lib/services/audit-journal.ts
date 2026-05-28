@@ -1,4 +1,5 @@
 import { assertProFeature } from "../plan-features";
+import { sanitizeAuditEntry } from "../audit";
 import type { Plan } from "@/generated/prisma/client";
 import { prisma } from "../db";
 
@@ -42,23 +43,31 @@ export async function getWorkspaceAuditJournal(
   });
 
   return logs.map((log) => {
-    let meta: Record<string, unknown> = {};
-    try {
-      meta = JSON.parse(log.metadata) as Record<string, unknown>;
-    } catch {
-      /* ignore */
-    }
-    return {
+    const sanitized = sanitizeAuditEntry({
       id: log.id,
       action: log.action,
-      actionLabel: ACTION_LABELS[log.action] ?? log.action,
       entityType: log.entityType,
       entityId: log.entityId,
-      contentHash: log.contentHash?.slice(0, 16) ?? null,
+      createdAt: log.createdAt,
+      metadata: log.metadata,
+      contentHash: log.contentHash,
       ipAddress: log.ipAddress,
-      createdAt: log.createdAt.toISOString(),
-      actorUserId: typeof meta.actorUserId === "string" ? meta.actorUserId : null,
-      detail: meta,
+      userAgent: null,
+    });
+    return {
+      id: sanitized.id,
+      action: sanitized.action,
+      actionLabel: ACTION_LABELS[sanitized.action] ?? sanitized.action,
+      entityType: sanitized.entityType,
+      entityId: sanitized.entityId,
+      contentHash: sanitized.contentHash?.slice(0, 16) ?? null,
+      ipAddress: sanitized.ipAddress,
+      createdAt: sanitized.createdAt,
+      actorUserId:
+        typeof sanitized.metadata.actorUserId === "string"
+          ? sanitized.metadata.actorUserId
+          : null,
+      detail: sanitized.metadata,
     };
   });
 }

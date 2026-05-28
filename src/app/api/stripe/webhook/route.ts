@@ -4,6 +4,8 @@ import { ensureProTeam } from "@/lib/account-context";
 import { getStripe } from "@/lib/stripe";
 import {
   downgradeCustomerToFree,
+  handleInvoicePaid,
+  handleInvoicePaymentFailed,
   syncUserPlanFromSubscription,
 } from "@/lib/stripe-subscription";
 import { env } from "@/lib/env";
@@ -74,6 +76,14 @@ export async function POST(request: NextRequest) {
   if (event.type === "customer.subscription.updated") {
     const subscription = event.data.object as Stripe.Subscription;
     await syncUserPlanFromSubscription(subscription);
+  }
+
+  if (event.type === "invoice.payment_failed") {
+    await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+  }
+
+  if (event.type === "invoice.paid") {
+    await handleInvoicePaid(event.data.object as Stripe.Invoice);
   }
 
   return Response.json({ received: true });

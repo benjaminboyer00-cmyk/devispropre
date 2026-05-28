@@ -52,6 +52,7 @@ model User {
   phone        String?
   plan         Plan      @default(FREE)
   stripeCustomerId String? @unique
+  subscriptionPastDue Boolean @default(false)
   sessionVersion   Int       @default(0)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -210,6 +211,7 @@ model Devis {
   reminderSentAt DateTime?
   pdfUrl         String?
   pdfArchivedAt  DateTime?
+  issuerSnapshot Json?
   notes          String?
   validUntil     DateTime?
   createdAt      DateTime    @default(now())
@@ -260,6 +262,7 @@ model Facture {
   paidAt       DateTime?
   pdfUrl       String?
   pdfArchivedAt DateTime?
+  issuerSnapshot Json?
   notes        String?
   dateEcheance DateTime?
   createdAt    DateTime      @default(now())
