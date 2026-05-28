@@ -65,8 +65,13 @@ export function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/inscription" className="link-underline">
+                <Link href={ROUTES.inscription} className="link-underline">
                   Inscription
+                </Link>
+              </li>
+              <li>
+                <Link href={ROUTES.connexion} className="link-underline">
+                  Connexion
                 </Link>
               </li>
             </ul>

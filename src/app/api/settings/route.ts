@@ -27,6 +27,10 @@ const companySchema = z.object({
   capitalSocial: z.string().optional().nullable(),
   rcs: z.string().optional().nullable(),
   assurances: z.string().optional().nullable(),
+  assuranceDecennaleAssureur: z.string().optional().nullable(),
+  assuranceDecennaleContrat: z.string().optional().nullable(),
+  assuranceDecennaleCouverture: z.string().optional().nullable(),
+  activiteBtp: z.boolean().optional(),
   tvaApplicable: z.boolean().optional(),
   logoUrl: z.string().optional().nullable(),
 }).superRefine((data, ctx) => {
@@ -69,6 +73,10 @@ export async function GET() {
         capitalSocial: true,
         rcs: true,
         assurances: true,
+        assuranceDecennaleAssureur: true,
+        assuranceDecennaleContrat: true,
+        assuranceDecennaleCouverture: true,
+        activiteBtp: true,
         tvaApplicable: true,
         updatedAt: true,
         logoUrl: true,
@@ -159,6 +167,16 @@ export async function PATCH(request: NextRequest) {
           ...(data.capitalSocial !== undefined && { capitalSocial: data.capitalSocial }),
           ...(data.rcs !== undefined && { rcs: data.rcs }),
           ...(data.assurances !== undefined && { assurances: data.assurances }),
+          ...(data.assuranceDecennaleAssureur !== undefined && {
+            assuranceDecennaleAssureur: data.assuranceDecennaleAssureur,
+          }),
+          ...(data.assuranceDecennaleContrat !== undefined && {
+            assuranceDecennaleContrat: data.assuranceDecennaleContrat,
+          }),
+          ...(data.assuranceDecennaleCouverture !== undefined && {
+            assuranceDecennaleCouverture: data.assuranceDecennaleCouverture,
+          }),
+          ...(data.activiteBtp !== undefined && { activiteBtp: data.activiteBtp }),
           ...(data.tvaApplicable !== undefined && { tvaApplicable: data.tvaApplicable }),
           ...(logoPath !== undefined && { logoUrl: logoPath }),
         },
@@ -174,6 +192,16 @@ export async function PATCH(request: NextRequest) {
           ...(data.capitalSocial !== undefined && { capitalSocial: data.capitalSocial }),
           ...(data.rcs !== undefined && { rcs: data.rcs }),
           ...(data.assurances !== undefined && { assurances: data.assurances }),
+          ...(data.assuranceDecennaleAssureur !== undefined && {
+            assuranceDecennaleAssureur: data.assuranceDecennaleAssureur,
+          }),
+          ...(data.assuranceDecennaleContrat !== undefined && {
+            assuranceDecennaleContrat: data.assuranceDecennaleContrat,
+          }),
+          ...(data.assuranceDecennaleCouverture !== undefined && {
+            assuranceDecennaleCouverture: data.assuranceDecennaleCouverture,
+          }),
+          ...(data.activiteBtp !== undefined && { activiteBtp: data.activiteBtp }),
           ...(data.tvaApplicable !== undefined && { tvaApplicable: data.tvaApplicable }),
           ...(logoPath !== undefined && { logoUrl: logoPath }),
         },

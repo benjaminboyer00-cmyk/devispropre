@@ -7,12 +7,17 @@ export class TurnstileError extends Error {
   }
 }
 
-/** Cloudflare Turnstile — obligatoire en production (validateEnv). */
+/** Turnstile actif uniquement si clé secrète ET clé site publique sont configurées. */
+export function isTurnstileEnforced(): boolean {
+  return Boolean(env.turnstileSecretKey && env.turnstileSiteKey);
+}
+
+/** Cloudflare Turnstile — obligatoire en production si les deux clés sont présentes. */
 export async function verifyTurnstileToken(
   token: string | undefined,
   remoteIp: string
 ): Promise<void> {
-  if (!env.turnstileSecretKey) return;
+  if (!isTurnstileEnforced()) return;
   if (!token?.trim()) throw new TurnstileError();
 
   const body = new URLSearchParams({

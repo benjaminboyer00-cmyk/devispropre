@@ -1,6 +1,11 @@
-import { draftSummary, lineDisplayTotal } from "@/lib/claim-guest-draft-client";
+import { draftSummary, lineDisplayTotal } from "@/lib/guest-devis-summary";
 import { formatEuro } from "@/lib/format";
-import { FRANCHISE_MENTION } from "@/lib/tva";
+import {
+  DevisAssuranceDecennale,
+  DevisBonPourAccord,
+  DevisIssuerHeader,
+  DevisLegalFooter,
+} from "@/components/devis/DevisLegalBlocks";
 import type { GuestDevisDraft } from "@/lib/schemas/forms";
 
 /** Aperçu visuel du devis invité — rendu type document PDF. */
@@ -33,10 +38,7 @@ export function GuestDevisDocument({ draft }: { draft: GuestDevisDraft }) {
       </header>
 
       <div className="grid gap-6 px-6 py-5 sm:grid-cols-2">
-        <div>
-          <p className="text-subtle text-xs font-semibold uppercase tracking-wide">Émetteur</p>
-          <p className="text-body mt-2 text-sm">Votre entreprise (renseignée à l&apos;inscription)</p>
-        </div>
+        <DevisIssuerHeader company={null} guestPlaceholder />
         <div>
           <p className="text-subtle text-xs font-semibold uppercase tracking-wide">Client</p>
           <p className="heading mt-2 font-medium">{summary.clientNom}</p>
@@ -77,26 +79,32 @@ export function GuestDevisDocument({ draft }: { draft: GuestDevisDraft }) {
         </table>
       </div>
 
-      <footer className="border-t border-[var(--border)] bg-[var(--surface-muted)] px-6 py-4">
-        {summary.tvaApplicable && (
-          <div className="text-body mb-2 space-y-1 text-right text-sm">
-            <p>Total HT : {formatEuro(summary.totalHT)}</p>
-            <p>TVA : {formatEuro(summary.totalTVA)}</p>
-          </div>
-        )}
-        <p className="heading text-right text-lg font-bold">
-          Total {summary.tvaApplicable ? "TTC" : "HT"} : {formatEuro(summary.totalTTC)}
-        </p>
-        {!summary.tvaApplicable && (
-          <p className="text-subtle mt-2 text-right text-xs">{FRANCHISE_MENTION}.</p>
-        )}
+      <div className="space-y-6 px-6 pb-6">
+        <div className="border-t border-[var(--border)] pt-4">
+          {summary.tvaApplicable && (
+            <div className="text-body mb-2 space-y-1 text-right text-sm">
+              <p>Total HT : {formatEuro(summary.totalHT)}</p>
+              <p>TVA : {formatEuro(summary.totalTVA)}</p>
+            </div>
+          )}
+          <p className="heading text-right text-lg font-bold">
+            Total {summary.tvaApplicable ? "TTC" : "HT"} : {formatEuro(summary.totalTTC)}
+          </p>
+        </div>
+
         {draft.notes && (
-          <p className="text-body mt-4 border-t border-[var(--border)] pt-4 text-sm">
-            <span className="font-medium">Conditions : </span>
+          <p className="text-body border-t border-[var(--border)] pt-4 text-sm">
+            <span className="font-medium">Conditions particulières : </span>
             {draft.notes}
           </p>
         )}
-      </footer>
+
+        <DevisAssuranceDecennale company={null} />
+
+        <DevisBonPourAccord />
+
+        <DevisLegalFooter company={null} franchiseTva={!summary.tvaApplicable} />
+      </div>
     </article>
   );
 }

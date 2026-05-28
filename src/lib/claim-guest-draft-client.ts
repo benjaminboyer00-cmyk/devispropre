@@ -5,9 +5,10 @@ import {
   saveClaimError,
   savePendingDevisId,
 } from "@/lib/guest-devis-draft";
-import type { GuestDevisDraft } from "@/lib/schemas/forms";
 import { guestDevisDraftSchema } from "@/lib/schemas/forms";
-import { computeDraftTotals, computeLineTtc } from "@/lib/tva";
+import { draftSummary, lineDisplayTotal } from "@/lib/guest-devis-summary";
+
+export { draftSummary, lineDisplayTotal };
 
 export type ClaimGuestDraftResult = {
   id: string | null;
@@ -56,28 +57,4 @@ export async function claimGuestDraftIfPresent(): Promise<ClaimGuestDraftResult>
   clearGuestDraft();
   savePendingDevisId(data.id);
   return { id: data.id };
-}
-
-export function draftSummary(draft: GuestDevisDraft) {
-  const tvaApplicable = draft.tvaApplicable ?? true;
-  const totals = computeDraftTotals(draft.lignes, tvaApplicable);
-  return {
-    clientNom: draft.clientNom,
-    clientAdresse: draft.clientAdresse,
-    clientTelephone: draft.clientTelephone,
-    lignes: draft.lignes.length,
-    totalHT: totals.totalHT,
-    totalTVA: totals.totalTVA,
-    totalTTC: totals.totalTTC,
-    tvaApplicable,
-    validUntil: draft.validUntil,
-    notes: draft.notes,
-  };
-}
-
-export function lineDisplayTotal(
-  ligne: GuestDevisDraft["lignes"][number],
-  tvaApplicable: boolean
-): number {
-  return computeLineTtc(ligne.quantite, ligne.prixUnitaireHT, ligne.tva ?? 20, tvaApplicable);
 }

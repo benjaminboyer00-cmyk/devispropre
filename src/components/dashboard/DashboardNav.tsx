@@ -9,12 +9,12 @@ const NAV_LINKS = [
   { href: ROUTES.dashboard, label: "Accueil", prefix: "/dashboard/activer" },
   { href: ROUTES.dashboardDevisList, label: "Devis", prefix: "/dashboard/devis" },
   { href: ROUTES.dashboardFactures, label: "Factures", prefix: "/dashboard/factures" },
-  { href: ROUTES.dashboardSettings, label: "Compte", prefix: "/dashboard/settings" },
+  { href: ROUTES.dashboardSettings, label: "Mon compte", prefix: "/dashboard/settings" },
 ] as const;
 
 function isActive(pathname: string, href: string, prefix: string): boolean {
   if (href === ROUTES.dashboard) {
-    return pathname === ROUTES.dashboard || pathname === ROUTES.dashboardActiver;
+    return pathname === ROUTES.dashboard;
   }
   if (href === ROUTES.dashboardDevisList) {
     return pathname.startsWith("/dashboard/devis");

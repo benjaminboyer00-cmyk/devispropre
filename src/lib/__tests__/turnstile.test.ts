@@ -1,7 +1,10 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 vi.mock("../env", () => ({
-  env: { turnstileSecretKey: "test-secret" },
+  env: {
+    turnstileSecretKey: "test-secret",
+    turnstileSiteKey: "test-site-key",
+  },
 }));
 
 describe("verifyTurnstileToken", () => {
@@ -36,5 +39,19 @@ describe("verifyTurnstileToken", () => {
 
     const { verifyTurnstileToken, TurnstileError } = await import("../turnstile");
     await expect(verifyTurnstileToken("bad", "1.2.3.4")).rejects.toBeInstanceOf(TurnstileError);
+  });
+
+  it("ignore la vérification si une seule clé Turnstile est configurée", async () => {
+    vi.doMock("../env", () => ({
+      env: { turnstileSecretKey: "test-secret", turnstileSiteKey: "" },
+    }));
+    vi.resetModules();
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { verifyTurnstileToken } = await import("../turnstile");
+    await verifyTurnstileToken(undefined, "1.2.3.4");
+
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

@@ -10,6 +10,8 @@ import { ROUTES } from "@/lib/routes";
 export function ActivateTrialCheckout() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [devBypass, setDevBypass] = useState(false);
+  const [devActivating, setDevActivating] = useState(false);
   const [pendingDevisId, setPendingDevisId] = useState<string | null>(null);
   const { toast } = useToast();
 
@@ -43,6 +45,7 @@ export function ActivateTrialCheckout() {
         toast(msg, "error");
         setLoading(false);
         setError(msg);
+        setDevBypass(Boolean(json.devBypass));
       } catch {
         if (cancelled) return;
         const msg = "Connexion impossible — vérifiez votre réseau.";
@@ -63,7 +66,36 @@ export function ActivateTrialCheckout() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [toast]);
+
+  async function activateDevTrial() {
+    setDevActivating(true);
+    setError("");
+
+    try {
+      const res = await fetch("/api/stripe/dev-activate", { method: "POST" });
+      const json = await res.json();
+
+      if (!res.ok) {
+        const msg = json.error ?? "Activation impossible.";
+        toast(msg, "error");
+        setError(msg);
+        setDevActivating(false);
+        return;
+      }
+
+      toast("Essai Starter activé (mode développement).");
+      const pendingId = loadPendingDevisId();
+      window.location.href = pendingId
+        ? `${ROUTES.dashboardDevis(pendingId)}?ready=1`
+        : (json.redirect ?? ROUTES.dashboard);
+    } catch {
+      const msg = "Connexion impossible — vérifiez votre réseau.";
+      toast(msg, "error");
+      setError(msg);
+      setDevActivating(false);
+    }
+  }
 
   return (
     <div className="ui-card-padded mx-auto max-w-lg text-center">
@@ -91,13 +123,31 @@ export function ActivateTrialCheckout() {
       {error && (
         <>
           <p className="ui-alert-error mt-6">{error}</p>
-          <button
-            type="button"
-            onClick={() => window.location.reload()}
-            className="ui-btn-primary mt-6 px-6 py-3"
-          >
-            Réessayer
-          </button>
+          {devBypass ? (
+            <button
+              type="button"
+              onClick={activateDevTrial}
+              disabled={devActivating}
+              className="ui-btn-primary mt-6 px-6 py-3"
+            >
+              {devActivating ? "Activation…" : "Activer l'essai (mode dev, sans Stripe)"}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="ui-btn-primary mt-6 px-6 py-3"
+            >
+              Réessayer
+            </button>
+          )}
+          {devBypass && (
+            <p className="text-subtle mt-4 text-xs">
+              Ou configurez Stripe dans <code className="text-body">.env</code> :{" "}
+              <code className="text-body">STRIPE_SECRET_KEY</code>,{" "}
+              <code className="text-body">STRIPE_PRICE_STARTER</code>.
+            </p>
+          )}
         </>
       )}
 

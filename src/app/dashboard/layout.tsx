@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { PendingDevisRedirect } from "@/components/billing/PendingDevisRedirect";
+import { SubscriptionSetupBanner } from "@/components/billing/SubscriptionSetupBanner";
 import { BillingPastDueBanner } from "@/components/billing/BillingPastDueBanner";
 import { CheckoutFeedback } from "@/components/billing/CheckoutFeedback";
 import { ClaimGuestDraftOnMount } from "@/components/devis/ClaimGuestDraftOnMount";
@@ -21,6 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <PendingDevisRedirect />
       </Suspense>
       <DashboardNav />
+      <SubscriptionSetupBanner />
       <BillingPastDueBanner />
       <OfflineSyncBar />
       {children}

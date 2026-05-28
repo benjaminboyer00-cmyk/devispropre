@@ -17,8 +17,8 @@ import {
   validUntilToIso,
 } from "@/lib/devis-defaults";
 import { formatEuro } from "@/lib/format";
+import { formatDraftSavedAt } from "@/lib/format-draft-saved-at";
 import {
-  formatDraftSavedAt,
   loadGuestDraft,
   refreshGuestDraftSignature,
   saveGuestDraft,

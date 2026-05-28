@@ -168,6 +168,10 @@ model Company {
   capitalSocial String?
   rcs           String?
   assurances    String?
+  assuranceDecennaleAssureur   String?
+  assuranceDecennaleContrat    String?
+  assuranceDecennaleCouverture String?
+  activiteBtp                  Boolean  @default(false)
   tvaApplicable Boolean  @default(true)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -208,6 +212,8 @@ model Devis {
   sentAt         DateTime?
   acceptedAt     DateTime?
   refusedAt      DateTime?
+  clientAcceptanceText String?
+  clientSignatureData  String?
   reminderSentAt DateTime?
   pdfUrl         String?
   pdfArchivedAt  DateTime?

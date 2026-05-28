@@ -8,6 +8,7 @@ import { billingUserId, userNeedsSubscriptionSetup } from "@/lib/billing";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
 import { DevisActions } from "@/components/devis/DevisActions";
+import { DevisDocumentPreview } from "@/components/devis/DevisDocumentPreview";
 import { ROUTES } from "@/lib/routes";
 
 export const metadata = dashboardMetadata("Devis");
@@ -33,6 +34,10 @@ export default async function DevisDetailPage({ params }: PageProps) {
   const needsActivation = await userNeedsSubscriptionSetup(
     billingUserId(user.id, account.workspaceUserId, account.isTeamMember)
   );
+
+  const company = await prisma.company.findUnique({
+    where: { userId: account.workspaceUserId },
+  });
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
@@ -60,6 +65,8 @@ export default async function DevisDetailPage({ params }: PageProps) {
           subscriptionActive={!needsActivation}
         />
       </div>
+
+      <DevisDocumentPreview devis={devis} company={company} />
     </div>
   );
 }

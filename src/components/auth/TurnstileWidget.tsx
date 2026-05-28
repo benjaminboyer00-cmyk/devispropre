@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { isTurnstileRequired } from "@/lib/turnstile-client";
 
 const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? "";
 
@@ -23,9 +24,7 @@ interface TurnstileRenderOptions {
   theme?: "light" | "dark" | "auto";
 }
 
-export function isTurnstileConfigured(): boolean {
-  return SITE_KEY.length > 0;
-}
+export { isTurnstileRequired as isTurnstileConfigured };
 
 interface TurnstileWidgetProps {
   onToken: (token: string) => void;
@@ -33,10 +32,15 @@ interface TurnstileWidgetProps {
   className?: string;
 }
 
-/** Widget Cloudflare Turnstile — invisible en dev si NEXT_PUBLIC_TURNSTILE_SITE_KEY absent. */
+/** Widget Cloudflare Turnstile — masqué si NEXT_PUBLIC_TURNSTILE_SITE_KEY absent. */
 export function TurnstileWidget({ onToken, onExpire, className }: TurnstileWidgetProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const onTokenRef = useRef(onToken);
+  const onExpireRef = useRef(onExpire);
+
+  onTokenRef.current = onToken;
+  onExpireRef.current = onExpire;
 
   useEffect(() => {
     if (!SITE_KEY || !containerRef.current) return;
@@ -49,14 +53,14 @@ export function TurnstileWidget({ onToken, onExpire, className }: TurnstileWidge
       }
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: SITE_KEY,
-        callback: onToken,
+        callback: (token) => onTokenRef.current(token),
         "expired-callback": () => {
-          onExpire?.();
-          onToken("");
+          onExpireRef.current?.();
+          onTokenRef.current("");
         },
         "error-callback": () => {
-          onExpire?.();
-          onToken("");
+          onExpireRef.current?.();
+          onTokenRef.current("");
         },
         theme: "auto",
       });
@@ -81,7 +85,7 @@ export function TurnstileWidget({ onToken, onExpire, className }: TurnstileWidge
         widgetIdRef.current = null;
       }
     };
-  }, [onToken, onExpire]);
+  }, []);
 
   if (!SITE_KEY) return null;
 

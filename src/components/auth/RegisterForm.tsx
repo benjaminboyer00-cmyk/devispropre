@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { claimGuestDraftIfPresent } from "@/lib/claim-guest-draft-client";
@@ -32,7 +32,18 @@ export function RegisterForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileReady, setTurnstileReady] = useState(false);
   const { toast } = useToast();
+
+  const handleTurnstileToken = useCallback((token: string) => {
+    setTurnstileToken(token);
+    setTurnstileReady(token.length > 0);
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken("");
+    setTurnstileReady(false);
+  }, []);
 
   function update(field: string, value: string) {
     setForm((f) => ({ ...f, [field]: value }));
@@ -67,8 +78,11 @@ export function RegisterForm() {
     }
 
     if (isTurnstileConfigured() && !turnstileToken) {
-      toast("Veuillez compléter la vérification anti-robot.", "error");
-      setError("Veuillez compléter la vérification anti-robot.");
+      const msg = turnstileReady
+        ? "Veuillez compléter la vérification anti-robot."
+        : "Chargement de la vérification anti-robot… Réessayez dans quelques secondes.";
+      toast(msg, "error");
+      setError(msg);
       return;
     }
 
@@ -189,7 +203,11 @@ export function RegisterForm() {
         </button>
       )}
 
-      <TurnstileWidget onToken={setTurnstileToken} onExpire={() => setTurnstileToken("")} className="flex justify-center" />
+      <TurnstileWidget
+        onToken={handleTurnstileToken}
+        onExpire={handleTurnstileExpire}
+        className="flex justify-center"
+      />
 
       <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-4 text-base">
         {loading ? "Création…" : "Créer mon compte → essai gratuit 15 jours"}

@@ -4,7 +4,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { GuestDevisDocument } from "@/components/devis/GuestDevisDocument";
 import { WorkflowDevisFacture } from "@/components/devis/WorkflowDevisFacture";
-import { formatDraftSavedAt, loadGuestDraft } from "@/lib/guest-devis-draft";
+import { formatDraftSavedAt } from "@/lib/format-draft-saved-at";
+import { loadGuestDraft } from "@/lib/guest-devis-draft";
 import { ROUTES } from "@/lib/routes";
 import type { StoredGuestDraft } from "@/lib/guest-devis-draft";
 

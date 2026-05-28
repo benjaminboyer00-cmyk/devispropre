@@ -338,7 +338,8 @@ export async function transitionDevisStatusFromPublic(
   ctx: AuditContext,
   devisId: string,
   shareToken: string,
-  status: Extract<DevisStatus, "ACCEPTE" | "REFUSE">
+  status: Extract<DevisStatus, "ACCEPTE" | "REFUSE">,
+  acceptance?: { acceptanceText: string; signatureData: string }
 ) {
   const devis = await prisma.devis.findFirst({
     where: { id: devisId, userId: ctx.userId, shareToken, deletedAt: null, status: "ENVOYE" },
@@ -353,7 +354,13 @@ export async function transitionDevisStatusFromPublic(
     where: { id: devisId, userId: ctx.userId, shareToken, status: "ENVOYE", deletedAt: null },
     data: {
       status,
-      ...(status === "ACCEPTE" ? { acceptedAt: now } : { refusedAt: now }),
+      ...(status === "ACCEPTE"
+        ? {
+            acceptedAt: now,
+            clientAcceptanceText: acceptance?.acceptanceText,
+            clientSignatureData: acceptance?.signatureData,
+          }
+        : { refusedAt: now }),
     },
   });
 
@@ -372,7 +379,7 @@ export async function transitionDevisStatusFromPublic(
     entityId: devisId,
     devisId,
     contentHash: devis.contentHash,
-    metadata: { via: "public_share_token" },
+    metadata: { via: "public_share_token", acceptanceText: acceptance?.acceptanceText },
   });
 
   return updated!;

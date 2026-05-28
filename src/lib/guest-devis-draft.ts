@@ -1,5 +1,7 @@
 import type { GuestDevisDraft } from "@/lib/schemas/forms";
-import { createGuestDraftId } from "@/lib/guest-draft-claim";
+import { formatDraftSavedAt } from "@/lib/format-draft-saved-at";
+
+export { formatDraftSavedAt };
 
 export const GUEST_DRAFT_KEY = "devispropre_guest_draft";
 export const PENDING_DEVIS_ID_KEY = "devispropre_pending_devis_id";
@@ -26,15 +28,6 @@ export function loadGuestDraft(): StoredGuestDraft | null {
     const raw = localStorage.getItem(GUEST_DRAFT_KEY);
     if (!raw) return null;
     return JSON.parse(raw) as StoredGuestDraft;
-  } catch {
-    return null;
-  }
-}
-
-export function formatDraftSavedAt(iso: string | undefined): string | null {
-  if (!iso) return null;
-  try {
-    return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
   } catch {
     return null;
   }
@@ -89,12 +82,11 @@ export async function refreshGuestDraftSignature(): Promise<StoredGuestDraft | n
   if (!stored) return null;
 
   const draft = draftWithoutMeta(stored);
-  const draftId = stored.draftId ?? createGuestDraftId();
 
   const res = await fetch("/api/devis/guest-draft/sign", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ draftId, draft }),
+    body: JSON.stringify(stored.draftId ? { draftId: stored.draftId, draft } : { draft }),
   });
 
   if (!res.ok) return stored;

@@ -1,4 +1,3 @@
-import Script from "next/script";
 import { createHash } from "crypto";
 
 interface JsonLdProps {
@@ -14,15 +13,14 @@ function jsonLdScriptId(data: object, id?: string): string {
   return `json-ld-${String(type).toLowerCase()}-${hash}`;
 }
 
-/** JSON-LD SEO — via next/script (compatible React 19, pas de <script> React direct). */
+/** JSON-LD SEO — balise script native (Server Component, compatible React 19). */
 export function JsonLd({ data, id }: JsonLdProps) {
   const scriptId = jsonLdScriptId(data, id);
 
   return (
-    <Script
+    <script
       id={scriptId}
       type="application/ld+json"
-      strategy="beforeInteractive"
       dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
     />
   );

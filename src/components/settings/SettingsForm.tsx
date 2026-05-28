@@ -19,6 +19,10 @@ interface SettingsData {
     capitalSocial: string | null;
     rcs: string | null;
     assurances: string | null;
+    assuranceDecennaleAssureur: string | null;
+    assuranceDecennaleContrat: string | null;
+    assuranceDecennaleCouverture: string | null;
+    activiteBtp: boolean;
     logoUrl: string | null;
   } | null;
   isTeamMember?: boolean;
@@ -28,12 +32,16 @@ export function SettingsForm() {
   const [data, setData] = useState<SettingsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState("");
+  const [activiteBtp, setActiviteBtp] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
-      .then(setData)
+      .then((payload) => {
+        setData(payload);
+        setActiviteBtp(Boolean(payload.company?.activiteBtp));
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -78,6 +86,10 @@ export function SettingsForm() {
         capitalSocial: (fd.get("capitalSocial") as string) || null,
         rcs: (fd.get("rcs") as string) || null,
         assurances: (fd.get("assurances") as string) || null,
+        assuranceDecennaleAssureur: (fd.get("assuranceDecennaleAssureur") as string) || null,
+        assuranceDecennaleContrat: (fd.get("assuranceDecennaleContrat") as string) || null,
+        assuranceDecennaleCouverture: (fd.get("assuranceDecennaleCouverture") as string) || null,
+        activiteBtp: fd.get("activiteBtp") === "on",
       }),
     });
     const json = await res.json();
@@ -86,6 +98,7 @@ export function SettingsForm() {
       toast("Entreprise mise à jour");
       if (json.company) {
         setData((d) => (d ? { ...d, company: json.company } : d));
+        setActiviteBtp(Boolean(json.company.activiteBtp));
       }
     } else {
       toast(json.error ?? "Erreur entreprise", "error");
@@ -192,18 +205,74 @@ export function SettingsForm() {
               <input name="tvaIntracom" defaultValue={company?.tvaIntracom ?? ""} className={inputClass} />
             </div>
             <div>
-              <label className="ui-label">RCS</label>
-              <input name="rcs" defaultValue={company?.rcs ?? ""} className={inputClass} />
+              <label className="ui-label">RCS ou RM (ville de rattachement)</label>
+              <input
+                name="rcs"
+                defaultValue={company?.rcs ?? ""}
+                className={inputClass}
+                placeholder="RCS Paris 123 456 789 ou RM Lyon"
+              />
             </div>
           </div>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              name="activiteBtp"
+              type="checkbox"
+              checked={activiteBtp}
+              onChange={(e) => setActiviteBtp(e.target.checked)}
+            />
+            Je suis artisan du bâtiment (BTP) — afficher l&apos;assurance décennale sur mes devis
+          </label>
+          {activiteBtp && (
+          <div className="rounded-xl border border-[var(--border)] bg-[var(--surface-muted)] p-4">
+            <h3 className="heading text-sm font-semibold">Assurance décennale (BTP)</h3>
+            <p className="text-body mt-1 text-xs">
+              Obligatoire sur les devis et factures de travaux du bâtiment (loi Pinel). Affichée
+              automatiquement sur vos documents.
+            </p>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className="ui-label">Nom de l&apos;assureur</label>
+                <input
+                  name="assuranceDecennaleAssureur"
+                  defaultValue={company?.assuranceDecennaleAssureur ?? ""}
+                  className={inputClass}
+                  placeholder="Ex : AXA France IARD"
+                />
+              </div>
+              <div>
+                <label className="ui-label">N° de contrat</label>
+                <input
+                  name="assuranceDecennaleContrat"
+                  defaultValue={company?.assuranceDecennaleContrat ?? ""}
+                  className={inputClass}
+                  placeholder="Ex : 123456789"
+                />
+              </div>
+            </div>
+            <div className="mt-4">
+              <label className="ui-label">Couverture géographique</label>
+              <input
+                name="assuranceDecennaleCouverture"
+                defaultValue={company?.assuranceDecennaleCouverture ?? "France"}
+                className={inputClass}
+              />
+            </div>
+          </div>
+          )}
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className="ui-label">Capital social</label>
               <input name="capitalSocial" defaultValue={company?.capitalSocial ?? ""} className={inputClass} />
             </div>
             <div>
-              <label className="ui-label">Assurances (décennale, RC pro…)</label>
-              <input name="assurances" defaultValue={company?.assurances ?? ""} className={inputClass} />
+              <label className="ui-label">Autres assurances (RC pro…)</label>
+              <input
+                name="assurances"
+                defaultValue={company?.assurances ?? ""}
+                className={inputClass}
+                placeholder="RC Pro n° …"
+              />
             </div>
           </div>
           <label className="flex items-center gap-2 text-sm">

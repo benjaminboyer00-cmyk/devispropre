@@ -12,6 +12,10 @@ export type IssuerSnapshot = {
   rcs: string | null;
   capitalSocial: string | null;
   assurances: string | null;
+  assuranceDecennaleAssureur: string | null;
+  assuranceDecennaleContrat: string | null;
+  assuranceDecennaleCouverture: string | null;
+  activiteBtp: boolean;
 };
 
 export function snapshotFromCompany(company: Company | null): IssuerSnapshot | null {
@@ -27,6 +31,10 @@ export function snapshotFromCompany(company: Company | null): IssuerSnapshot | n
     rcs: company.rcs,
     capitalSocial: company.capitalSocial,
     assurances: company.assurances,
+    assuranceDecennaleAssureur: company.assuranceDecennaleAssureur,
+    assuranceDecennaleContrat: company.assuranceDecennaleContrat,
+    assuranceDecennaleCouverture: company.assuranceDecennaleCouverture,
+    activiteBtp: company.activiteBtp,
   };
 }
 
@@ -49,6 +57,10 @@ export function companyFromSnapshot(snapshot: unknown): Company | null {
     rcs: s.rcs ?? null,
     capitalSocial: s.capitalSocial ?? null,
     assurances: s.assurances ?? null,
+    assuranceDecennaleAssureur: s.assuranceDecennaleAssureur ?? null,
+    assuranceDecennaleContrat: s.assuranceDecennaleContrat ?? null,
+    assuranceDecennaleCouverture: s.assuranceDecennaleCouverture ?? null,
+    activiteBtp: s.activiteBtp ?? false,
     logoUrl: null,
     createdAt: new Date(0),
     updatedAt: new Date(0),

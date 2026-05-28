@@ -84,13 +84,16 @@ export async function proxy(request: NextRequest) {
       if (!pathname.startsWith("/dashboard/activer") && !pathname.startsWith("/dashboard/settings")) {
         const billTo = billingUserId(sessionPayload.sub, account.workspaceUserId, account.isTeamMember);
         const needsSub = await userNeedsSubscriptionSetup(billTo);
-        const devisDetail =
-          /^\/dashboard\/devis\/[^/]+$/.test(pathname) && pathname !== ROUTES.dashboardDevisNew;
 
-        if (needsSub && !devisDetail) {
-          return withHeaders(
-            NextResponse.redirect(new URL("/dashboard/activer", request.url))
-          );
+        if (needsSub) {
+          const allowedWithoutSubscription =
+            pathname === ROUTES.dashboard || pathname.startsWith("/dashboard/devis");
+
+          if (!allowedWithoutSubscription) {
+            return withHeaders(
+              NextResponse.redirect(new URL(ROUTES.dashboardActiver, request.url))
+            );
+          }
         }
       }
 

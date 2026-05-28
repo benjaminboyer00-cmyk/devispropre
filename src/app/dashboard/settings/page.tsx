@@ -34,7 +34,9 @@ export default async function SettingsPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
       <h1 className="heading text-2xl">Mon compte</h1>
-      <p className="text-body mt-1">Abonnement, profil, entreprise et sécurité</p>
+      <p className="text-body mt-1">
+        Abonnement Stripe, profil, entreprise (PDF), sécurité et équipe Pro
+      </p>
 
       <nav className="mt-6 flex flex-wrap gap-2 border-b border-[var(--border)] pb-4">
         {SECTIONS.map(({ id, label }) => (

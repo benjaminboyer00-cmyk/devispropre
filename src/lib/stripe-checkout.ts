@@ -1,7 +1,7 @@
 import type Stripe from "stripe";
 import { TRIAL_PERIOD_DAYS, isEligibleForTrial } from "./billing-constants";
 import { env } from "./env";
-import { getStripe } from "./stripe";
+import { getStripe, getStripeCheckoutError } from "./stripe";
 
 export type CheckoutPlan = "STARTER" | "PRO";
 
@@ -64,6 +64,11 @@ export async function createSubscriptionCheckoutSession(opts: {
   stripeCustomerId?: string | null;
   withTrial?: boolean;
 }): Promise<{ url: string } | { error: string }> {
+  const configError = getStripeCheckoutError(opts.plan);
+  if (configError) {
+    return { error: configError };
+  }
+
   const stripe = getStripe();
   if (!stripe) {
     return { error: "Paiement non configuré. Contactez le support." };

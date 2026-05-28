@@ -1,21 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { formatEuro } from "@/lib/format";
-
-interface PublicDevis {
-  numero: string;
-  status: string;
-  totalTTC: number;
-  integrityOk: boolean;
-  lockedAt: string | null;
-  client: { nom: string };
-  company: { raisonSociale: string } | null;
-  lignes: { description: string; quantite: number; prixUnitaireHT: number; totalHT: number }[];
-}
+import { DevisClientAcceptPanel } from "@/components/devis/DevisClientAcceptPanel";
+import { PublicDevisDocument, type PublicDevisData } from "@/components/devis/PublicDevisDocument";
 
 export function PublicDevisView({ token }: { token: string }) {
-  const [devis, setDevis] = useState<PublicDevis | null>(null);
+  const [devis, setDevis] = useState<PublicDevisData | null>(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
@@ -41,8 +31,12 @@ export function PublicDevisView({ token }: { token: string }) {
       .finally(() => setLoading(false));
   }, [token]);
 
-  async function respond(status: "ACCEPTE" | "REFUSE") {
+  async function respond(
+    status: "ACCEPTE" | "REFUSE",
+    extra?: { acceptanceText?: string; signatureData?: string }
+  ) {
     setActionLoading(true);
+    setError("");
     try {
       const res = await fetch(`/api/public/devis/${token}`, {
         method: "POST",
@@ -50,14 +44,24 @@ export function PublicDevisView({ token }: { token: string }) {
           "Content-Type": "application/json",
           "Idempotency-Key": idempotencyRef.current ?? nextIdempotencyKey(),
         },
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status, ...extra }),
       });
+      const data = await res.json();
       if (!res.ok) {
-        const data = await res.json();
         setError(data.error ?? "Erreur");
         return;
       }
-      setDevis((d) => (d ? { ...d, status } : d));
+      setDevis((d) =>
+        d
+          ? {
+              ...d,
+              status,
+              acceptedAt: status === "ACCEPTE" ? new Date().toISOString() : d.acceptedAt,
+              clientAcceptanceText: extra?.acceptanceText ?? d.clientAcceptanceText,
+              clientSignatureData: extra?.signatureData ?? d.clientSignatureData,
+            }
+          : d
+      );
     } catch {
       setError("Erreur réseau — réessayez.");
     } finally {
@@ -66,58 +70,46 @@ export function PublicDevisView({ token }: { token: string }) {
   }
 
   if (loading) return <p className="text-body p-8 text-center">Chargement…</p>;
-  if (error || !devis) {
-    return <p className="ui-alert-error mx-auto max-w-md p-8 text-center">{error || "Devis introuvable"}</p>;
+  if (error && !devis) {
+    return <p className="ui-alert-error mx-auto max-w-md p-8 text-center">{error}</p>;
+  }
+  if (!devis) {
+    return <p className="ui-alert-error mx-auto max-w-md p-8 text-center">Devis introuvable</p>;
   }
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-12">
-      <div className="ui-card-padded">
-        <p className="link-blue text-sm font-medium">DevisPropre</p>
-        <h1 className="heading mt-2 text-2xl">Devis {devis.numero}</h1>
-        {devis.company && <p className="text-body">{devis.company.raisonSociale}</p>}
+      {devis.integrityOk && (
+        <p className="ui-alert-success mb-6 text-center text-sm">
+          ✓ Document authentique — aucune altération détectée
+        </p>
+      )}
 
-        {devis.integrityOk && (
-          <p className="ui-alert-success mt-4">✓ Document authentique — aucune altération</p>
-        )}
+      {error && <p className="ui-alert-error mb-4 text-sm">{error}</p>}
 
-        <table className="mt-6 w-full text-sm">
-          <tbody>
-            {devis.lignes.map((l, i) => (
-              <tr key={i} className="border-b border-slate-200 dark:border-slate-700">
-                <td className="py-2">{l.description}</td>
-                <td className="py-2 text-right">{formatEuro(l.totalHT)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className="heading mt-4 text-right text-xl">{formatEuro(devis.totalTTC)} TTC</p>
-
+      <PublicDevisDocument devis={devis}>
         {devis.status === "ENVOYE" && (
-          <div className="mt-6 flex gap-3">
-            <button
-              onClick={() => respond("ACCEPTE")}
-              disabled={actionLoading}
-              className="ui-btn-primary flex-1 py-3 dark:bg-green-600 dark:hover:bg-green-500"
-            >
-              J&apos;accepte
-            </button>
-            <button
-              onClick={() => respond("REFUSE")}
-              disabled={actionLoading}
-              className="ui-btn-outline flex-1 border-red-600 py-3 text-red-700 dark:border-red-400 dark:text-red-300"
-            >
-              Je refuse
-            </button>
-          </div>
+          <DevisClientAcceptPanel
+            loading={actionLoading}
+            onAccept={({ acceptanceText, signatureData }) =>
+              respond("ACCEPTE", { acceptanceText, signatureData })
+            }
+            onRefuse={() => respond("REFUSE")}
+          />
         )}
 
         {devis.status === "ACCEPTE" && (
           <p className="mt-6 text-center font-medium text-green-700 dark:text-green-400">
-            ✅ Devis accepté — merci !
+            ✅ Devis accepté et signé — merci !
           </p>
         )}
-      </div>
+
+        {devis.status === "REFUSE" && (
+          <p className="mt-6 text-center font-medium text-red-700 dark:text-red-400">
+            Devis refusé.
+          </p>
+        )}
+      </PublicDevisDocument>
     </div>
   );
 }

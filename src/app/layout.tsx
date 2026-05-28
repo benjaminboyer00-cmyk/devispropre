@@ -5,6 +5,7 @@ import { PlausibleScript } from "@/components/analytics/PlausibleScript";
 import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
+import { SiteChrome } from "@/components/layout/SiteChrome";
 import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { UiProviders } from "@/components/ui/UiProviders";
@@ -74,11 +75,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <SiteAnalytics>
             <SkipLink />
             <RegisterServiceWorker />
-            <Header />
-            <main id="main-content" className="flex-1">
-              {children}
-            </main>
-            <Footer />
+            <SiteChrome header={<Header />} footer={<Footer />}>
+              <main id="main-content" className="flex-1">
+                {children}
+              </main>
+            </SiteChrome>
           </SiteAnalytics>
         </UiProviders>
       </body>

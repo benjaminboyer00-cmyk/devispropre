@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { Plan } from "@/generated/prisma/client";
 import { assertMutationSecurity, requireAuth, apiError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
+import { env } from "@/lib/env";
 import { createSubscriptionCheckoutSession, type CheckoutPlan } from "@/lib/stripe-checkout";
 
 export async function POST(request: NextRequest) {
@@ -32,7 +33,15 @@ export async function POST(request: NextRequest) {
   });
 
   if ("error" in result) {
-    return apiError(result.error, result.error.includes("configuré") ? 503 : 400);
+    const status =
+      result.error.includes("configuré") || result.error.includes("Stripe") ? 503 : 400;
+    return Response.json(
+      {
+        error: result.error,
+        devBypass: !env.isProd && process.env.DEV_SKIP_STRIPE_CHECKOUT === "true",
+      },
+      { status }
+    );
   }
 
   return Response.json({ url: result.url });

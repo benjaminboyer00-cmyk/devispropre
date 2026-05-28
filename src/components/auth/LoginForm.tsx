@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { claimGuestDraftIfPresent } from "@/lib/claim-guest-draft-client";
@@ -22,6 +22,14 @@ export function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const { toast } = useToast();
+
+  const handleTurnstileToken = useCallback((token: string) => {
+    setTurnstileToken(token);
+  }, []);
+
+  const handleTurnstileExpire = useCallback(() => {
+    setTurnstileToken("");
+  }, []);
 
   const linkError =
     urlError === "lien_expire"
@@ -159,7 +167,11 @@ export function LoginForm() {
               className="ui-input mt-1 text-base"
             />
           </div>
-          <TurnstileWidget onToken={setTurnstileToken} onExpire={() => setTurnstileToken("")} className="flex justify-center" />
+          <TurnstileWidget
+            onToken={handleTurnstileToken}
+            onExpire={handleTurnstileExpire}
+            className="flex justify-center"
+          />
           <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-4 text-base">
             {loading ? "Envoi…" : "Recevoir mon lien de connexion"}
           </button>
@@ -193,7 +205,11 @@ export function LoginForm() {
               className="ui-input mt-1"
             />
           </div>
-          <TurnstileWidget onToken={setTurnstileToken} onExpire={() => setTurnstileToken("")} className="flex justify-center" />
+          <TurnstileWidget
+            onToken={handleTurnstileToken}
+            onExpire={handleTurnstileExpire}
+            className="flex justify-center"
+          />
           <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-3">
             {loading ? "Connexion…" : "Se connecter"}
           </button>
