@@ -16,13 +16,13 @@ export const registerSchema = z
   .object({
     email: z.string().email("Adresse email invalide."),
     password: z.string().optional(),
-    name: z.string().min(2, "Nom : 2 caractères minimum."),
-    phone: z.string().optional(),
-    raisonSociale: z.string().min(2, "Raison sociale : 2 caractères minimum."),
-    siret: z.string().min(9, "SIRET invalide."),
-    adresse: z.string().min(2, "Adresse : 2 caractères minimum."),
-    codePostal: z.string().min(4, "Code postal invalide."),
-    ville: z.string().min(2, "Ville : 2 caractères minimum."),
+    name: z.string().min(2, "Nom : 2 caractères minimum.").max(120),
+    phone: z.string().max(30).optional(),
+    raisonSociale: z.string().min(2, "Raison sociale : 2 caractères minimum.").max(200),
+    siret: z.string().min(9, "SIRET invalide.").max(20),
+    adresse: z.string().min(2, "Adresse : 2 caractères minimum.").max(300),
+    codePostal: z.string().min(4, "Code postal invalide.").max(10),
+    ville: z.string().min(2, "Ville : 2 caractères minimum.").max(100),
   })
   .superRefine((data, ctx) => {
     if (data.password && data.password.length > 0 && data.password.length < 8) {
@@ -58,7 +58,7 @@ export const createDevisSchema = z.object({
 
 /** Payload brouillon invité (localStorage) avant inscription. */
 export const guestDevisDraftSchema = z.object({
-  clientNom: z.string().min(1, "Nom du client requis."),
+  clientNom: z.string().min(1, "Nom du client requis.").max(200),
   clientTelephone: z.string().optional(),
   clientEmail: z.string().email("Email client invalide.").optional().or(z.literal("")),
   clientAdresse: z.string().max(500).optional(),
@@ -73,8 +73,8 @@ export type GuestDevisDraft = z.infer<typeof guestDevisDraftSchema>;
 /** Payload devis pour file d'attente hors-ligne. */
 export const queuedDevisPayloadSchema = z.object({
   clientId: z.string().optional(),
-  newClient: z.string().optional(),
-  lignes: z.array(devisLigneSchema).min(1),
+  newClient: z.string().max(200).optional(),
+  lignes: z.array(devisLigneSchema).min(1).max(50),
 });
 
 export type QueuedDevisPayload = z.infer<typeof queuedDevisPayloadSchema>;

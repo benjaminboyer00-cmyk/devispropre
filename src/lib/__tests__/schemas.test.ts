@@ -39,6 +39,28 @@ describe("schemas partagés", () => {
     expect(result.success).toBe(false);
   });
 
+  it("rejette un devis sans aucune ligne", () => {
+    const result = createDevisSchema.safeParse({
+      clientId: "c1",
+      lignes: [],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(formatZodError(result.error)).toMatch(/ligne/i);
+    }
+  });
+
+  it("rejette un prix unitaire négatif", () => {
+    const result = createDevisSchema.safeParse({
+      clientId: "c1",
+      lignes: [{ description: "Pose", quantite: 1, prixUnitaireHT: -50, tva: 20 }],
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(formatZodError(result.error)).toMatch(/prix/i);
+    }
+  });
+
   it("valide magic link email", () => {
     expect(magicLinkSchema.safeParse({ email: "test@devispropre.fr" }).success).toBe(true);
   });

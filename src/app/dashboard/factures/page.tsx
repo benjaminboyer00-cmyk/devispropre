@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ListPagination } from "@/components/ui/ListPagination";
 import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
 import { factureListSelect } from "@/lib/prisma-selects";
 import { formatEuro } from "@/lib/format";
+import { paginationBounds, parsePageParam, totalPages } from "@/lib/pagination";
 import { hasStarter } from "@/lib/plan-features";
 import { getFactureStatusLabel } from "@/lib/services/facture";
 import { isFactureLocked } from "@/lib/immutability";
@@ -13,7 +15,7 @@ import { ROUTES } from "@/lib/routes";
 import type { FactureStatus } from "@/generated/prisma/client";
 
 type PageProps = {
-  searchParams: Promise<{ vue?: string }>;
+  searchParams: Promise<{ vue?: string; page?: string }>;
 };
 
 const VIEWS = {
@@ -41,27 +43,37 @@ export default async function FacturesListPage({ searchParams }: PageProps) {
   const account = await getAccountContext(user.id);
   const wsId = account.workspaceUserId;
   const starterPlus = hasStarter(account.plan);
-  const { vue } = await searchParams;
+  const { vue, page: pageRaw } = await searchParams;
   const activeView = resolveView(vue);
+  const page = parsePageParam(pageRaw);
+  const { skip, take } = paginationBounds(page);
+  const listWhere = {
+    userId: wsId,
+    deletedAt: null,
+    ...(VIEWS[activeView].filter ? { status: { in: VIEWS[activeView].filter } } : {}),
+  };
 
-  const factures = await prisma.facture.findMany({
-    where: {
-      userId: wsId,
-      deletedAt: null,
-      ...(VIEWS[activeView].filter ? { status: { in: VIEWS[activeView].filter } } : {}),
-    },
-    select: factureListSelect,
-    orderBy: [{ issuedAt: "desc" }, { createdAt: "desc" }],
-    take: 100,
-  });
+  const [factures, listTotal, definitiveCount] = await Promise.all([
+    prisma.facture.findMany({
+      where: listWhere,
+      select: factureListSelect,
+      orderBy: [{ issuedAt: "desc" }, { createdAt: "desc" }],
+      skip,
+      take,
+    }),
+    prisma.facture.count({ where: listWhere }),
+    prisma.facture.count({
+      where: {
+        userId: wsId,
+        deletedAt: null,
+        status: { in: ["EMISE", "PAYEE"] },
+      },
+    }),
+  ]);
 
-  const definitiveCount = await prisma.facture.count({
-    where: {
-      userId: wsId,
-      deletedAt: null,
-      status: { in: ["EMISE", "PAYEE"] },
-    },
-  });
+  const pages = totalPages(listTotal);
+  const paginationQuery =
+    activeView === "all" ? undefined : { vue: activeView };
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:py-12">
@@ -158,6 +170,14 @@ export default async function FacturesListPage({ searchParams }: PageProps) {
           })}
         </ul>
       )}
+
+      <ListPagination
+        page={page}
+        totalPages={pages}
+        basePath={ROUTES.dashboardFactures}
+        queryParams={paginationQuery}
+        label="factures"
+      />
     </div>
   );
 }

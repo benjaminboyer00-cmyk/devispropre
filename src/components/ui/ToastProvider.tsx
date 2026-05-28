@@ -28,9 +28,15 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const toast = useCallback((message: string, type: ToastType = "success") => {
     const id = crypto.randomUUID();
     setToasts((prev) => [...prev, { id, message, type }]);
+
+    const reducedMotion =
+      typeof window !== "undefined" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const durationMs = reducedMotion ? 8000 : 4200;
+
     window.setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
-    }, 4200);
+    }, durationMs);
   }, []);
 
   const value = useMemo(() => ({ toast }), [toast]);
@@ -47,7 +53,7 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
           <div
             key={t.id}
             role="status"
-            className={`rounded-lg border px-4 py-3 text-sm font-medium shadow-lg transition-opacity ${TOAST_STYLES[t.type]}`}
+            className={`rounded-lg border px-4 py-3 text-sm font-medium shadow-lg motion-safe:transition-opacity ${TOAST_STYLES[t.type]}`}
           >
             {t.message}
           </div>

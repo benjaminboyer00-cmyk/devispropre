@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useToast } from "@/components/ui/ToastProvider";
 import { TRIAL_PERIOD_DAYS } from "@/lib/billing-constants";
 import { loadPendingDevisId } from "@/lib/guest-devis-draft";
 import { ROUTES } from "@/lib/routes";
@@ -10,6 +11,7 @@ export function ActivateTrialCheckout() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
   const [pendingDevisId, setPendingDevisId] = useState<string | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     setPendingDevisId(loadPendingDevisId());
@@ -22,22 +24,32 @@ export function ActivateTrialCheckout() {
       setError("");
       setLoading(true);
 
-      const res = await fetch("/api/stripe/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: "STARTER", trial: true }),
-      });
-      const json = await res.json();
+      try {
+        const res = await fetch("/api/stripe/checkout", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ plan: "STARTER", trial: true }),
+        });
+        const json = await res.json();
 
-      if (cancelled) return;
+        if (cancelled) return;
 
-      if (json.url) {
-        window.location.href = json.url;
-        return;
+        if (json.url) {
+          window.location.href = json.url;
+          return;
+        }
+
+        const msg = json.error ?? "Impossible de démarrer l'essai gratuit.";
+        toast(msg, "error");
+        setLoading(false);
+        setError(msg);
+      } catch {
+        if (cancelled) return;
+        const msg = "Connexion impossible — vérifiez votre réseau.";
+        toast(msg, "error");
+        setLoading(false);
+        setError(msg);
       }
-
-      setLoading(false);
-      setError(json.error ?? "Impossible de démarrer l'essai gratuit.");
     }
 
     const params = new URLSearchParams(window.location.search);
@@ -45,6 +57,7 @@ export function ActivateTrialCheckout() {
       startCheckout();
     } else {
       setLoading(false);
+      toast("Paiement annulé — vous pouvez réessayer quand vous voulez.", "info");
     }
 
     return () => {

@@ -187,9 +187,10 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
             <button
               onClick={() => setConfirmSend(true)}
               disabled={!!loading}
-              className="ui-btn-primary w-full py-4 text-base font-semibold"
+              aria-busy={loading === "send"}
+              className="ui-btn-primary w-full py-4 text-base font-semibold disabled:opacity-60"
             >
-              Envoyer au client →
+              {loading === "send" ? "Envoi et verrouillage…" : "Envoyer au client →"}
             </button>
           </>
         )}
@@ -209,16 +210,20 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
             <button
               onClick={() => toFacture(true)}
               disabled={!!loading}
-              className="w-full rounded-lg bg-amber-600 py-4 text-base font-semibold text-white hover:bg-amber-500"
+              aria-busy={loading === "facture-issue"}
+              className="w-full rounded-lg bg-amber-600 py-4 text-base font-semibold text-white hover:bg-amber-500 disabled:opacity-60"
             >
-              {loading === "facture-issue" ? "Création…" : "Créer et émettre la facture →"}
+              {loading === "facture-issue"
+                ? "Génération du document sécurisé…"
+                : "Créer et émettre la facture →"}
             </button>
             <button
               onClick={() => toFacture(false)}
               disabled={!!loading}
-              className="ui-btn-outline w-full py-3 text-sm"
+              aria-busy={loading === "facture"}
+              className="ui-btn-outline w-full py-3 text-sm disabled:opacity-60"
             >
-              Créer un brouillon facture
+              {loading === "facture" ? "Création…" : "Créer un brouillon facture"}
             </button>
           </>
         )}
@@ -270,7 +275,33 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
       <DocumentAuditTrail entityType="devis" entityId={devis.id} enabled={paidAccess} />
 
       <div className="ui-list overflow-hidden">
-        <table className="w-full text-sm">
+        {/* Mobile : cartes empilées */}
+        <ul className="space-y-3 p-3 md:hidden">
+          {devis.lignes.map((l, i) => (
+            <li
+              key={i}
+              className="rounded-lg border border-[var(--border)] bg-[var(--surface-muted)] p-3 text-sm"
+            >
+              <p className="heading font-medium">{l.description}</p>
+              <dl className="text-body mt-2 grid grid-cols-3 gap-2 text-xs">
+                <div>
+                  <dt className="text-subtle">Qté</dt>
+                  <dd>{l.quantite}</dd>
+                </div>
+                <div>
+                  <dt className="text-subtle">P.U.</dt>
+                  <dd>{formatEuro(l.prixUnitaireHT)}</dd>
+                </div>
+                <div>
+                  <dt className="text-subtle">Total</dt>
+                  <dd className="font-medium">{formatEuro(l.totalHT)}</dd>
+                </div>
+              </dl>
+            </li>
+          ))}
+        </ul>
+        {/* Desktop : tableau */}
+        <table className="hidden w-full text-sm md:table">
           <thead>
             <tr className="border-b border-slate-200 bg-slate-50 text-left text-xs uppercase text-slate-500 dark:border-slate-700 dark:bg-slate-800/80 dark:text-slate-400">
               <th className="p-3">Description</th>

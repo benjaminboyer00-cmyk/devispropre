@@ -3,32 +3,44 @@ import { assertMutationSecurity, getRequestMeta, handleServiceError, requireAuth
 import { createFactureFromDevis } from "@/lib/services/facture";
 import { prisma } from "@/lib/db";
 import { factureApiListSelect } from "@/lib/prisma-selects";
+import { paginationBounds, parsePageParam, totalPages } from "@/lib/pagination";
 import { checkRateLimit, factureCreateKey } from "@/lib/rate-limit";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const auth = await requireAuth();
   if (auth.error) return auth.error;
 
-  const factures = await prisma.facture.findMany({
-    where: { userId: auth.workspaceUserId, deletedAt: null },
-    select: factureApiListSelect,
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+  const page = parsePageParam(request.nextUrl.searchParams.get("page"));
+  const { skip, take } = paginationBounds(page);
+  const where = { userId: auth.workspaceUserId, deletedAt: null };
 
-  return Response.json(factures);
+  const [factures, total] = await Promise.all([
+    prisma.facture.findMany({
+      where,
+      select: factureApiListSelect,
+      orderBy: { createdAt: "desc" },
+      skip,
+      take,
+    }),
+    prisma.facture.count({ where }),
+  ]);
+
+  return Response.json({
+    data: factures,
+    pagination: { page, pageSize: take, total, totalPages: totalPages(total) },
+  });
 }
 
 export async function POST(request: NextRequest) {
-  assertMutationSecurity(request);
-
-  const auth = await requireAuth();
-  if (auth.error) return auth.error;
-
-  const body = await request.json();
-  const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
-
   try {
+    assertMutationSecurity(request);
+
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
+    const body = await request.json();
+    const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
+
     await checkRateLimit(factureCreateKey(auth.workspaceUserId), {
       maxAttempts: 20,
       windowMs: 60 * 60 * 1000,

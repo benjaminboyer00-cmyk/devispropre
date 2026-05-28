@@ -1,33 +1,47 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { ListPagination } from "@/components/ui/ListPagination";
 import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
 import { devisListSelect } from "@/lib/prisma-selects";
 import { formatEuro } from "@/lib/format";
+import { paginationBounds, parsePageParam, totalPages } from "@/lib/pagination";
 import { getDevisCountThisMonth } from "@/lib/plan-limits";
 import { getDevisStatusEmoji, getDevisStatusLabel } from "@/lib/services/devis";
 import { ROUTES } from "@/lib/routes";
 
+type PageProps = {
+  searchParams: Promise<{ page?: string }>;
+};
+
 export const metadata = dashboardMetadata("Devis");
 
-export default async function DevisListPage() {
+export default async function DevisListPage({ searchParams }: PageProps) {
   const user = await getSession();
   if (!user) redirect("/connexion");
 
   const account = await getAccountContext(user.id);
   const wsId = account.workspaceUserId;
+  const { page: pageRaw } = await searchParams;
+  const page = parsePageParam(pageRaw);
+  const { skip, take } = paginationBounds(page);
+  const where = { userId: wsId, deletedAt: null };
 
-  const [devis, devisThisMonth] = await Promise.all([
+  const [devis, total, devisThisMonth] = await Promise.all([
     prisma.devis.findMany({
-      where: { userId: wsId, deletedAt: null },
+      where,
       select: devisListSelect,
       orderBy: { createdAt: "desc" },
-      take: 100,
+      skip,
+      take,
     }),
+    prisma.devis.count({ where }),
     getDevisCountThisMonth(wsId),
   ]);
+
+  const pages = totalPages(total);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-10 sm:py-12">
@@ -38,6 +52,7 @@ export default async function DevisListPage() {
             {account.plan === "FREE"
               ? `${devisThisMonth}/3 devis ce mois`
               : `Plan ${account.plan} — devis illimités`}
+            {total > 0 && ` · ${total} au total`}
           </p>
         </div>
         <Link href={ROUTES.dashboardDevisNew} className="ui-btn-primary py-3 px-6">
@@ -76,6 +91,13 @@ export default async function DevisListPage() {
           ))}
         </ul>
       )}
+
+      <ListPagination
+        page={page}
+        totalPages={pages}
+        basePath={ROUTES.dashboardDevisList}
+        label="devis"
+      />
     </div>
   );
 }

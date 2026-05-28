@@ -89,6 +89,44 @@ export function DevisForm({
     return ["ui-input", "text-base", invalid, extra].filter(Boolean).join(" ");
   }
 
+  function markFieldError(key: string) {
+    setFieldErrors((prev) => {
+      if (prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.add(key);
+      return next;
+    });
+  }
+
+  function validateClientOnBlur() {
+    if ((!pickExisting || mode === "guest") && !newClient.trim()) {
+      markFieldError("client");
+    }
+  }
+
+  function validateSimpleDescOnBlur() {
+    if (simpleMode && !simpleDesc.trim()) markFieldError("description");
+  }
+
+  function validateSimplePriceOnBlur() {
+    if (!simpleMode) return;
+    const price = parseFloat(simplePriceTtc);
+    if (!simplePriceTtc || !price || price <= 0) markFieldError("price");
+  }
+
+  function validateLigneOnBlur(i: number, field: "desc" | "qty" | "price") {
+    if (simpleMode) return;
+    const l = lignes[i];
+    if (!l) return;
+    if (field === "desc" && !l.description.trim()) markFieldError(`ligne-${i}-desc`);
+    if (field === "qty" && Number(l.quantite) <= 0) markFieldError(`ligne-${i}-qty`);
+    if (field === "price" && Number(l.prixUnitaireHT) <= 0) markFieldError(`ligne-${i}-price`);
+  }
+
+  function validateValidUntilOnBlur() {
+    if (!simpleMode && !validUntil.trim()) markFieldError("validUntil");
+  }
+
   const handleValidUntilChange = useCallback((v: string) => {
     setValidUntil(v);
     setFieldErrors((prev) => {
@@ -281,24 +319,32 @@ export function DevisForm({
 
     let clientIdFinal = cid;
     if (newClientName) {
-      const cr = await fetch("/api/clients", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          nom: newClientName,
-          telephone: clientPhone.trim() || undefined,
-          email: clientEmail.trim() || undefined,
-          adresse: clientAdresse.trim() || undefined,
-        }),
-      });
-      if (!cr.ok) {
-        toast("Impossible de créer le client.", "error");
-        setError("Impossible de créer le client.");
+      try {
+        const cr = await fetch("/api/clients", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            nom: newClientName,
+            telephone: clientPhone.trim() || undefined,
+            email: clientEmail.trim() || undefined,
+            adresse: clientAdresse.trim() || undefined,
+          }),
+        });
+        if (!cr.ok) {
+          toast("Impossible de créer le client.", "error");
+          setError("Impossible de créer le client.");
+          setLoading(false);
+          return;
+        }
+        const client = await cr.json();
+        clientIdFinal = client.id;
+      } catch {
+        const msg = "Connexion impossible — vérifiez votre réseau.";
+        toast(msg, "error");
+        setError(msg);
         setLoading(false);
         return;
       }
-      const client = await cr.json();
-      clientIdFinal = client.id;
     }
 
     const devisPayload = createDevisSchema.safeParse({
@@ -313,25 +359,32 @@ export function DevisForm({
       return;
     }
 
-    const res = await fetch("/api/devis", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(devisPayload.data),
-    });
+    try {
+      const res = await fetch("/api/devis", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(devisPayload.data),
+      });
 
-    setLoading(false);
-    if (!res.ok) {
-      const data = await res.json();
-      const msg = data.error ?? "Erreur";
+      setLoading(false);
+      if (!res.ok) {
+        const data = await res.json();
+        const msg = data.error ?? "Erreur";
+        toast(msg, "error");
+        setError(msg);
+        return;
+      }
+
+      const devis = await res.json();
+      toast("Devis créé avec succès");
+      router.push(`/dashboard/devis/${devis.id}`);
+      router.refresh();
+    } catch {
+      const msg = "Connexion impossible — vérifiez votre réseau.";
       toast(msg, "error");
       setError(msg);
-      return;
+      setLoading(false);
     }
-
-    const devis = await res.json();
-    toast("Devis créé avec succès");
-    router.push(`/dashboard/devis/${devis.id}`);
-    router.refresh();
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -440,6 +493,7 @@ export function DevisForm({
                 setNewClient(e.target.value);
                 clearField("client");
               }}
+              onBlur={validateClientOnBlur}
               className={fieldClass("client")}
               aria-invalid={fieldErrors.has("client") || undefined}
             />
@@ -498,6 +552,7 @@ export function DevisForm({
               setSimpleDesc(e.target.value);
               clearField("description");
             }}
+            onBlur={validateSimpleDescOnBlur}
             className={fieldClass("description")}
             aria-invalid={fieldErrors.has("description") || undefined}
           />
@@ -514,6 +569,7 @@ export function DevisForm({
                 setSimplePriceTtc(e.target.value);
                 clearField("price");
               }}
+              onBlur={validateSimplePriceOnBlur}
               className={fieldClass("price", "mt-1")}
               aria-invalid={fieldErrors.has("price") || undefined}
               inputMode="decimal"
@@ -541,6 +597,7 @@ export function DevisForm({
                   updateLigne(i, "description", e.target.value);
                   clearField(`ligne-${i}-desc`);
                 }}
+                onBlur={() => validateLigneOnBlur(i, "desc")}
                 className={`${fieldClass(`ligne-${i}-desc`, "sm:col-span-2 !mt-0")}`}
                 aria-invalid={fieldErrors.has(`ligne-${i}-desc`) || undefined}
               />
@@ -554,6 +611,7 @@ export function DevisForm({
                   updateLigne(i, "quantite", parseFloat(e.target.value) || 0);
                   clearField(`ligne-${i}-qty`);
                 }}
+                onBlur={() => validateLigneOnBlur(i, "qty")}
                 className={fieldClass(`ligne-${i}-qty`, "!mt-0")}
                 aria-invalid={fieldErrors.has(`ligne-${i}-qty`) || undefined}
               />
@@ -567,6 +625,7 @@ export function DevisForm({
                   updateLigne(i, "prixUnitaireHT", parseFloat(e.target.value) || 0);
                   clearField(`ligne-${i}-price`);
                 }}
+                onBlur={() => validateLigneOnBlur(i, "price")}
                 className={fieldClass(`ligne-${i}-price`, "!mt-0")}
                 aria-invalid={fieldErrors.has(`ligne-${i}-price`) || undefined}
               />
@@ -624,6 +683,7 @@ export function DevisForm({
             label="Validité du devis *"
             value={validUntil}
             onChange={handleValidUntilChange}
+            onBlur={validateValidUntilOnBlur}
             defaultValue={defaultValidUntilInputValue()}
             required
             invalid={fieldErrors.has("validUntil")}

@@ -39,6 +39,15 @@ export async function nextFactureNumero(userId: string): Promise<string> {
   return `FAC-${year}-${String(seq).padStart(4, "0")}`;
 }
 
+export async function nextFactureNumeroInTransaction(
+  tx: Prisma.TransactionClient,
+  userId: string
+): Promise<string> {
+  const year = new Date().getFullYear();
+  const seq = await nextSequence(tx, userId, "FACTURE");
+  return `FAC-${year}-${String(seq).padStart(4, "0")}`;
+}
+
 export function computeLineTotalHT(quantite: number, prixUnitaireHT: number): number {
   return Math.round(quantite * prixUnitaireHT * 100) / 100;
 }

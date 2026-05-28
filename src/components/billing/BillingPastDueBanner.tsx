@@ -1,8 +1,9 @@
-import Link from "next/link";
 import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { StripePortalButton } from "@/components/billing/StripePortalButton";
 
+/** Bannière non dismissible — CTA direct vers le portail Stripe. */
 export async function BillingPastDueBanner() {
   const session = await getSession();
   if (!session) return null;
@@ -16,12 +17,16 @@ export async function BillingPastDueBanner() {
   if (!billing?.subscriptionPastDue) return null;
 
   return (
-    <div className="border-b border-amber-200 bg-amber-50 px-4 py-3 text-center text-sm text-amber-950">
-      <strong>Paiement en échec.</strong> Mettez à jour votre moyen de paiement pour créer de
-      nouveaux devis et factures.{" "}
-      <Link href="/dashboard/settings#abonnement" className="link-underline font-medium">
-        Gérer mon abonnement
-      </Link>
+    <div
+      role="alert"
+      className="border-b-2 border-amber-400 bg-amber-50 px-4 py-4 text-center text-sm text-amber-950"
+    >
+      <p className="font-semibold">Paiement en échec — action requise</p>
+      <p className="mt-1">
+        Mettez à jour votre moyen de paiement pour créer de nouveaux devis et factures. La
+        consultation de vos documents reste accessible.
+      </p>
+      <StripePortalButton />
     </div>
   );
 }

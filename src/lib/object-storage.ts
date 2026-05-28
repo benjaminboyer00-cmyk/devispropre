@@ -285,3 +285,7 @@ export function isObjectStorageConfigured(): boolean {
 export async function pendingR2UploadCount(): Promise<number> {
   return (await readPendingQueue()).length;
 }
+
+export async function getR2DeadLetterCount(): Promise<number> {
+  return (await readJsonFile<unknown>(DEAD_LETTER_PATH)).length;
+}

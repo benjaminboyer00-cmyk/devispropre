@@ -21,11 +21,15 @@ vi.mock("../billing-status", () => ({
   assertBillingNotPastDue: (...args: unknown[]) => assertBillingNotPastDue(...args),
 }));
 
-vi.mock("../plan-limits", () => ({
-  assertCanCreateDevis: (...args: unknown[]) => assertCanCreateDevis(...args),
-  enforceFreeDevisQuotaInTransaction: (...args: unknown[]) =>
-    enforceFreeDevisQuotaInTransaction(...args),
-}));
+vi.mock("../plan-limits", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../plan-limits")>();
+  return {
+    ...actual,
+    assertCanCreateDevis: (...args: unknown[]) => assertCanCreateDevis(...args),
+    enforceFreeDevisQuotaInTransaction: (...args: unknown[]) =>
+      enforceFreeDevisQuotaInTransaction(...args),
+  };
+});
 
 vi.mock("../numbers", () => ({
   computeLineTotalHT: (q: number, p: number) => q * p,
@@ -43,6 +47,7 @@ vi.mock("../audit", () => ({
 
 import { createDevis } from "../services/devis";
 import { ForbiddenError } from "../errors";
+import { PlanLimitError } from "../plan-limits";
 
 describe("createDevis", () => {
   const ctx = { userId: "user_1", ipAddress: "127.0.0.1", userAgent: "test" };
@@ -111,5 +116,28 @@ describe("createDevis", () => {
         lignes: [{ description: "X", quantite: 1, prixUnitaireHT: 50 }],
       })
     ).rejects.toBeInstanceOf(ForbiddenError);
+  });
+
+  it("refuse si quota FREE dépassé", async () => {
+    userFindFirst.mockResolvedValue({ plan: Plan.FREE });
+    companyFindUnique.mockResolvedValue({ tvaApplicable: true });
+    enforceFreeDevisQuotaInTransaction.mockRejectedValue(
+      new PlanLimitError("Quota mensuel de devis atteint.")
+    );
+
+    transactionMock.mockImplementation(async (fn) => {
+      const tx = {
+        client: { findFirst: vi.fn().mockResolvedValue({ id: "client_1", nom: "Client A" }) },
+        devis: { create: vi.fn() },
+      };
+      return fn(tx);
+    });
+
+    await expect(
+      createDevis(ctx, {
+        clientId: "client_1",
+        lignes: [{ description: "Pose", quantite: 1, prixUnitaireHT: 100, tva: 20 }],
+      })
+    ).rejects.toBeInstanceOf(PlanLimitError);
   });
 });

@@ -39,3 +39,23 @@ export const GUIDE_ARTICLES: GuideArticle[] = [
     keywords: ["devis WhatsApp", "devis plombier PDF"],
   },
 ];
+
+/** Articles éditoriaux SEO (requêtes informationnelles). */
+export const BLOG_EDITORIAL_ARTICLES: GuideArticle[] = [
+  {
+    href: ROUTES.blogDevisPlombier,
+    title: "Comment chiffrer un chantier de plomberie en 2026",
+    description:
+      "Méthode terrain : diagnostic, fournitures, main-d'œuvre, déplacement et marge — avec exemple chiffré pour Paris et province.",
+    keywords: ["devis plombier", "chiffrage plomberie", "prix plombier chantier"],
+  },
+  {
+    href: ROUTES.blogFactureAe2026,
+    title: "Facture auto-entrepreneur 2026 : obligations et modèle",
+    description:
+      "Différence devis/facture, mentions obligatoires, franchise TVA vs assujetti, numérotation et conformité anti-fraude.",
+    keywords: ["facture auto entrepreneur 2026", "devis facture auto-entrepreneur", "mentions obligatoires facture"],
+  },
+];
+
+export const ALL_BLOG_ARTICLES: GuideArticle[] = [...BLOG_EDITORIAL_ARTICLES, ...GUIDE_ARTICLES];

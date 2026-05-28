@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { JsonLd } from "@/components/seo/JsonLd";
-import { GUIDE_ARTICLES } from "@/lib/guides";
+import { ALL_BLOG_ARTICLES } from "@/lib/guides";
 import { ROUTES } from "@/lib/routes";
 import { jsonLdBreadcrumbList, pageMetadata } from "@/lib/seo";
 
@@ -46,7 +46,7 @@ export default function BlogPage() {
         </p>
 
         <ul className="mt-12 space-y-4">
-          {GUIDE_ARTICLES.map((article) => (
+          {ALL_BLOG_ARTICLES.map((article) => (
             <li key={article.href}>
               <Link href={article.href} className="ui-card-padded block hover:no-underline">
                 <h2 className="heading text-lg font-semibold">{article.title}</h2>

@@ -60,14 +60,24 @@ export async function requestMagicLink(email: string): Promise<void> {
   await ensureMinimumElapsed(start, AUTH_RESPONSE_MIN_MS);
 }
 
+/** Consommation atomique single-use (15 min) — évite double session si double-clic. */
 export async function consumeMagicLink(rawToken: string): Promise<SessionUser | null> {
   const tokenHash = sha256(rawToken.trim());
-  const record = await prisma.magicLinkToken.findFirst({
+  const now = new Date();
+
+  const consumed = await prisma.magicLinkToken.updateMany({
     where: {
       tokenHash,
       usedAt: null,
-      expiresAt: { gt: new Date() },
+      expiresAt: { gt: now },
     },
+    data: { usedAt: now },
+  });
+
+  if (consumed.count === 0) return null;
+
+  const record = await prisma.magicLinkToken.findFirst({
+    where: { tokenHash },
     include: {
       user: {
         select: { id: true, email: true, name: true, plan: true, deletedAt: true },
@@ -76,11 +86,6 @@ export async function consumeMagicLink(rawToken: string): Promise<SessionUser | 
   });
 
   if (!record?.user || record.user.deletedAt) return null;
-
-  await prisma.magicLinkToken.update({
-    where: { id: record.id },
-    data: { usedAt: new Date() },
-  });
 
   return {
     id: record.user.id,

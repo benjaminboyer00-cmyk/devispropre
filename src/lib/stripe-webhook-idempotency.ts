@@ -5,7 +5,7 @@ export function isPrismaUniqueViolation(err: unknown): boolean {
   return err instanceof Prisma.PrismaClientKnownRequestError && err.code === "P2002";
 }
 
-/** Retourne false si l'événement Stripe a déjà été traité (replay webhook). */
+/** Retourne false si l'événement Stripe a déjà été traité (INSERT atomique, pas SELECT+INSERT). */
 export async function claimStripeWebhookEvent(eventId: string, type: string): Promise<boolean> {
   try {
     await prisma.stripeWebhookEvent.create({

@@ -9,34 +9,46 @@ import {
 } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
 import { devisApiListSelect } from "@/lib/prisma-selects";
+import { paginationBounds, parsePageParam, totalPages } from "@/lib/pagination";
 import { createDevisSchema, formatZodError } from "@/lib/schemas/forms";
 import { checkRateLimit, devisCreateKey } from "@/lib/rate-limit";
 import { createDevis } from "@/lib/services/devis";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const auth = await requireAuth();
   if (auth.error) return auth.error;
 
-  const devis = await prisma.devis.findMany({
-    where: { userId: auth.workspaceUserId, deletedAt: null },
-    select: {
-      ...devisApiListSelect,
-      lignes: { ...devisApiListSelect.lignes, orderBy: { ordre: "asc" } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 100,
-  });
+  const page = parsePageParam(request.nextUrl.searchParams.get("page"));
+  const { skip, take } = paginationBounds(page);
+  const where = { userId: auth.workspaceUserId, deletedAt: null };
 
-  return Response.json(devis);
+  const [devis, total] = await Promise.all([
+    prisma.devis.findMany({
+      where,
+      select: {
+        ...devisApiListSelect,
+        lignes: { ...devisApiListSelect.lignes, orderBy: { ordre: "asc" } },
+      },
+      orderBy: { createdAt: "desc" },
+      skip,
+      take,
+    }),
+    prisma.devis.count({ where }),
+  ]);
+
+  return Response.json({
+    data: devis,
+    pagination: { page, pageSize: take, total, totalPages: totalPages(total) },
+  });
 }
 
 export async function POST(request: NextRequest) {
-  assertMutationSecurity(request);
-
-  const auth = await requireAuth();
-  if (auth.error) return auth.error;
-
   try {
+    assertMutationSecurity(request);
+
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
     await checkRateLimit(devisCreateKey(auth.workspaceUserId), {
       maxAttempts: 20,
       windowMs: 60 * 60 * 1000,

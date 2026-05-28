@@ -1,13 +1,24 @@
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
-const devisFindFirst = vi.fn();
-const clientFindFirst = vi.fn();
-const transactionMock = vi.fn();
-const nextFactureNumero = vi.fn();
-const logAuditMock = vi.fn();
-const assertBillingNotPastDue = vi.fn();
-const assertStarterFeature = vi.fn();
-const userFindFirst = vi.fn();
+const {
+  devisFindFirst,
+  clientFindFirst,
+  transactionMock,
+  nextFactureNumeroInTransaction,
+  logAuditMock,
+  assertBillingNotPastDue,
+  assertStarterFeature,
+  userFindFirst,
+} = vi.hoisted(() => ({
+  devisFindFirst: vi.fn(),
+  clientFindFirst: vi.fn(),
+  transactionMock: vi.fn(),
+  nextFactureNumeroInTransaction: vi.fn(),
+  logAuditMock: vi.fn(),
+  assertBillingNotPastDue: vi.fn(),
+  assertStarterFeature: vi.fn(),
+  userFindFirst: vi.fn(),
+}));
 
 vi.mock("../db", () => ({
   prisma: {
@@ -27,7 +38,8 @@ vi.mock("../plan-features", () => ({
 }));
 
 vi.mock("../numbers", () => ({
-  nextFactureNumero: (...args: unknown[]) => nextFactureNumero(...args),
+  nextFactureNumeroInTransaction: (...args: unknown[]) =>
+    nextFactureNumeroInTransaction(...args),
   computeLineTotalHT: (q: number, p: number) => q * p,
   computeTotals: () => ({ totalHT: 0, totalTVA: 0, totalTTC: 0, tauxTVA: 20 }),
 }));
@@ -46,11 +58,11 @@ describe("createFactureFromDevis", () => {
     devisFindFirst.mockReset();
     clientFindFirst.mockReset();
     transactionMock.mockReset();
-    nextFactureNumero.mockReset();
+    nextFactureNumeroInTransaction.mockReset();
     logAuditMock.mockReset();
     assertBillingNotPastDue.mockResolvedValue(undefined);
     userFindFirst.mockResolvedValue({ plan: "STARTER", stripeCustomerId: "cus_1" });
-    nextFactureNumero.mockResolvedValue("FAC-2026-001");
+    nextFactureNumeroInTransaction.mockResolvedValue("FAC-2026-001");
   });
 
   it("refuse un devis non accepté", async () => {
@@ -122,5 +134,53 @@ describe("createFactureFromDevis", () => {
     const facture = await createFactureFromDevis(ctx, "devis_1");
     expect(facture.numero).toBe("FAC-2026-001");
     expect(logAuditMock).toHaveBeenCalled();
+  });
+
+  it("convertit un devis accepté franchise TVA (0 %)", async () => {
+    devisFindFirst.mockResolvedValue({
+      id: "devis_1",
+      clientId: "client_1",
+      status: "ACCEPTE",
+      facture: null,
+      lignes: [
+        {
+          ordre: 1,
+          description: "Travaux",
+          quantite: 1,
+          prixUnitaireHT: 500,
+          tva: 0,
+          totalHT: 500,
+        },
+      ],
+      totalHT: 500,
+      totalTVA: 0,
+      totalTTC: 500,
+      tauxTVA: 0,
+      notes: "TVA non applicable, art. 293 B du CGI.",
+    });
+    clientFindFirst.mockResolvedValue({ id: "client_1" });
+
+    const factureCreated = {
+      id: "fac_1",
+      numero: "FAC-2026-001",
+      totalHT: 500,
+      totalTVA: 0,
+      totalTTC: 500,
+      tauxTVA: 0,
+      lignes: [],
+      client: { nom: "Client" },
+    };
+
+    transactionMock.mockImplementation(async (fn) => {
+      const tx = {
+        facture: { create: vi.fn().mockResolvedValue(factureCreated) },
+        devis: { update: vi.fn().mockResolvedValue({}) },
+      };
+      return fn(tx);
+    });
+
+    const facture = await createFactureFromDevis(ctx, "devis_1");
+    expect(facture.totalTTC).toBe(500);
+    expect(facture.totalTVA).toBe(0);
   });
 });

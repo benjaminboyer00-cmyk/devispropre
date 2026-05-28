@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useToast } from "@/components/ui/ToastProvider";
 import { PLAN_CATALOG } from "@/lib/plan-catalog";
 import { TRIAL_PERIOD_DAYS } from "@/lib/billing-constants";
 import { ROUTES } from "@/lib/routes";
@@ -15,36 +16,55 @@ interface SubscriptionPanelProps {
 export function SubscriptionPanel({ plan, hasStripeCustomer, isTeamMember }: SubscriptionPanelProps) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState("");
+  const { toast } = useToast();
 
   const catalog = PLAN_CATALOG[plan as keyof typeof PLAN_CATALOG] ?? PLAN_CATALOG.FREE;
 
   async function checkout(checkoutPlan: "STARTER" | "PRO") {
     setLoading(checkoutPlan);
     setMessage("");
-    const res = await fetch("/api/stripe/checkout", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ plan: checkoutPlan }),
-    });
-    const json = await res.json();
-    setLoading("");
-    if (json.url) {
-      window.location.href = json.url;
-    } else {
-      setMessage(json.error ?? "Paiement indisponible");
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: checkoutPlan }),
+      });
+      const json = await res.json();
+      setLoading("");
+      if (json.url) {
+        window.location.href = json.url;
+      } else {
+        const msg = json.error ?? "Paiement indisponible";
+        toast(msg, "error");
+        setMessage(msg);
+      }
+    } catch {
+      setLoading("");
+      const msg = "Connexion impossible — vérifiez votre réseau.";
+      toast(msg, "error");
+      setMessage(msg);
     }
   }
 
   async function openPortal() {
     setLoading("portal");
     setMessage("");
-    const res = await fetch("/api/stripe/portal", { method: "POST" });
-    const json = await res.json();
-    setLoading("");
-    if (json.url) {
-      window.location.href = json.url;
-    } else {
-      setMessage(json.error ?? "Portail indisponible");
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const json = await res.json();
+      setLoading("");
+      if (json.url) {
+        window.location.href = json.url;
+      } else {
+        const msg = json.error ?? "Portail indisponible";
+        toast(msg, "error");
+        setMessage(msg);
+      }
+    } catch {
+      setLoading("");
+      const msg = "Connexion impossible — vérifiez votre réseau.";
+      toast(msg, "error");
+      setMessage(msg);
     }
   }
 

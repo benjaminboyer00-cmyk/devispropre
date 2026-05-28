@@ -15,6 +15,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/guide/mentions-obligatoires-devis": 0.75,
     "/guide/partager-devis-whatsapp": 0.75,
     "/blog": 0.78,
+    "/blog/devis-plombier-chiffrage": 0.82,
+    "/blog/facture-auto-entrepreneur-2026": 0.8,
     "/inscription": 0.8,
   };
 

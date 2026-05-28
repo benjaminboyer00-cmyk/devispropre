@@ -8,6 +8,7 @@ interface DateInputProps {
   label: string;
   value: string;
   onChange: (value: string) => void;
+  onBlur?: () => void;
   required?: boolean;
   hint?: string;
   min?: string;
@@ -25,6 +26,7 @@ export function DateInput({
   label,
   value,
   onChange,
+  onBlur,
   required,
   hint,
   min,
@@ -52,6 +54,7 @@ export function DateInput({
         min={todayMin}
         value={ready ? value : ""}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         className={`ui-input ui-input-date mt-1 text-base ${invalid ? "ui-input-invalid" : ""}`}
         aria-invalid={invalid || undefined}
       />

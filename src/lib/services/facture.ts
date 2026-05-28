@@ -15,7 +15,7 @@ import { assertStarterFeature } from "../plan-features";
 import {
   computeLineTotalHT,
   computeTotals,
-  nextFactureNumero,
+  nextFactureNumeroInTransaction,
 } from "../numbers";
 import {
   archivePdf,
@@ -61,9 +61,9 @@ export async function createFactureFromDevis(ctx: AuditContext, devisId: string)
   }
   if (devis.facture) throw new Error("Une facture existe déjà pour ce devis.");
 
-  const numero = await nextFactureNumero(ctx.userId);
-
   const facture = await prisma.$transaction(async (tx) => {
+    const numero = await nextFactureNumeroInTransaction(tx, ctx.userId);
+
     const created = await tx.facture.create({
       data: {
         userId: ctx.userId,
@@ -96,6 +96,8 @@ export async function createFactureFromDevis(ctx: AuditContext, devisId: string)
 
     return created;
   });
+
+  const numero = facture.numero;
 
   await logAudit(ctx, {
     action: "CONVERT_TO_FACTURE",
