@@ -142,3 +142,23 @@ export async function sendMagicLinkEmail(opts: {
     `,
   });
 }
+
+export async function sendDevisSignatureOtpEmail(opts: {
+  to: string;
+  clientNom: string;
+  devisNumero: string;
+  companyName: string;
+  code: string;
+  expiresMinutes: number;
+}): Promise<{ sent: boolean; reason?: string }> {
+  return sendEmail({
+    to: opts.to,
+    subject: `Code de signature — Devis ${escapeHtml(opts.devisNumero)}`,
+    html: `
+      <p>Bonjour ${escapeHtml(opts.clientNom)},</p>
+      <p>Pour signer le devis <strong>${escapeHtml(opts.devisNumero)}</strong> de <strong>${escapeHtml(opts.companyName)}</strong>, saisissez ce code sur la page du devis :</p>
+      <p style="font-size:28px;font-weight:700;letter-spacing:0.2em;font-family:monospace">${escapeHtml(opts.code)}</p>
+      <p style="color:#64748b;font-size:12px">Ce code expire dans ${opts.expiresMinutes} minutes. Ne le partagez avec personne.</p>
+    `,
+  });
+}

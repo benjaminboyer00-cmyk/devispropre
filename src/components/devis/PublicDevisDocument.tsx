@@ -14,6 +14,11 @@ export interface PublicDevisData {
   totalTVA: number;
   totalTTC: number;
   validUntil: string | null;
+  shareLinkExpiresAt?: string | null;
+  linkExpired?: boolean;
+  canAccept?: boolean;
+  signatureOtpRequired?: boolean;
+  clientEmailHint?: string | null;
   notes: string | null;
   createdAt: string;
   integrityOk: boolean;

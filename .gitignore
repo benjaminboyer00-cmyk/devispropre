@@ -24,6 +24,12 @@
 .DS_Store
 *.pem
 
+# bases SQLite locales (ne jamais versionner)
+dev.db
+*.db
+*.sqlite
+*.sqlite3
+
 # debug
 npm-debug.log*
 yarn-debug.log*

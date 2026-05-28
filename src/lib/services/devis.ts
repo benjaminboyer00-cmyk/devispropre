@@ -25,6 +25,7 @@ import { defaultValidUntilDate, parseValidUntilInput } from "../devis-defaults";
 import { snapshotFromCompany, resolveIssuerCompany } from "../issuer-snapshot";
 import { resolveLineTva, ensureFranchiseNotes } from "../tva";
 import { ROUTES } from "../routes";
+import { isShareLinkExpired } from "../share-token";
 
 export interface LigneInput {
   description: string;
@@ -347,6 +348,15 @@ export async function transitionDevisStatusFromPublic(
 
   if (!devis) {
     throw new Error("Ce devis a déjà été traité ou n'est plus disponible.");
+  }
+
+  if (
+    isShareLinkExpired({
+      sentAt: devis.sentAt,
+      validUntil: devis.validUntil,
+    })
+  ) {
+    throw new Error("Ce lien de signature a expiré.");
   }
 
   const now = new Date();

@@ -59,4 +59,10 @@ describe("validateEnv", () => {
     const { validateEnv } = await import("../env");
     expect(() => validateEnv()).not.toThrow();
   });
+
+  it("refuse ALLOWED_ORIGINS avec wildcard en production", async () => {
+    stubCompleteProdEnv({ ALLOWED_ORIGINS: "*" });
+    const { validateEnv } = await import("../env");
+    expect(() => validateEnv()).toThrow(/wildcard/i);
+  });
 });

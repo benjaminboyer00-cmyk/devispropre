@@ -24,7 +24,10 @@ export function validateEnv(): void {
 
   requireEnv("DATABASE_URL");
   requireEnv("NEXT_PUBLIC_APP_URL");
-  requireEnv("ALLOWED_ORIGINS");
+  const allowedOrigins = requireEnv("ALLOWED_ORIGINS");
+  if (allowedOrigins.includes("*")) {
+    throw new Error("ALLOWED_ORIGINS ne doit pas contenir de wildcard (*) en production.");
+  }
   requireEnv("TURNSTILE_SECRET_KEY");
   requireEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY");
   requireEnv("CRON_SECRET");

@@ -7,12 +7,23 @@ import { readIdempotencyKey, withIdempotency } from "@/lib/idempotency";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { transitionDevisStatusFromPublic } from "@/lib/services/devis";
 import { publicJsonResponse } from "@/lib/public-api-response";
+import {
+  computeShareLinkExpiresAt,
+  isShareLinkExpired,
+  isValidShareTokenFormat,
+} from "@/lib/share-token";
+import {
+  clientRequiresSignatureOtp,
+  consumeDevisSignatureOtp,
+  maskClientEmail,
+} from "@/lib/devis-signature-otp";
 
 const statusSchema = z
   .object({
     status: z.enum(["ACCEPTE", "REFUSE"]),
     acceptanceText: z.string().min(1).max(200).optional(),
     signatureData: z.string().max(200_000).optional(),
+    otpCode: z.string().max(12).optional(),
   })
   .superRefine((data, ctx) => {
     if (data.status !== "ACCEPTE") return;
@@ -34,8 +45,25 @@ const statusSchema = z
 
 type RouteParams = { params: Promise<{ token: string }> };
 
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+function clientIp(request: NextRequest): string {
+  return (
+    request.headers.get("x-real-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    "unknown"
+  );
+}
+
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const { token } = await params;
+
+  if (!isValidShareTokenFormat(token)) {
+    return publicJsonResponse({ error: "Devis introuvable" }, { status: 404 });
+  }
+
+  await checkRateLimit(`public-devis-read:${clientIp(request)}`, {
+    maxAttempts: 60,
+    windowMs: 60 * 60 * 1000,
+  });
 
   const devis = await prisma.devis.findFirst({
     where: { shareToken: token, deletedAt: null },
@@ -56,6 +84,18 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     ? verifyDocumentIntegrity(devis.contentHash, payload)
     : false;
 
+  const linkExpired = isShareLinkExpired({
+    sentAt: devis.sentAt,
+    validUntil: devis.validUntil,
+  });
+  const shareLinkExpiresAt = computeShareLinkExpiresAt({
+    sentAt: devis.sentAt,
+    validUntil: devis.validUntil,
+  });
+  const canAccept = devis.status === "ENVOYE" && !linkExpired;
+  const signatureOtpRequired = clientRequiresSignatureOtp(devis.client.email);
+  const clientEmailHint = devis.client.email ? maskClientEmail(devis.client.email) : null;
+
   return publicJsonResponse({
     numero: devis.numero,
     status: devis.status,
@@ -63,6 +103,11 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
     totalTVA: devis.totalTVA,
     totalTTC: devis.totalTTC,
     validUntil: devis.validUntil?.toISOString().slice(0, 10) ?? null,
+    shareLinkExpiresAt: shareLinkExpiresAt?.toISOString() ?? null,
+    linkExpired,
+    canAccept,
+    signatureOtpRequired,
+    clientEmailHint,
     notes: devis.notes,
     createdAt: devis.createdAt.toISOString(),
     client: {
@@ -110,24 +155,57 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     assertMutationSecurity(request);
 
-    const ip =
-      request.headers.get("x-real-ip") ??
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-      "unknown";
+    const ip = clientIp(request);
 
     await checkRateLimit(`public-devis:${ip}`, { maxAttempts: 20, windowMs: 60 * 60 * 1000 });
 
     const { token } = await params;
 
+    if (!isValidShareTokenFormat(token)) {
+      return publicJsonResponse({ error: "Devis introuvable ou déjà traité" }, { status: 404 });
+    }
+
     const devis = await prisma.devis.findFirst({
       where: { shareToken: token, deletedAt: null, status: "ENVOYE" },
+      include: { client: true },
     });
 
     if (!devis) {
       return publicJsonResponse({ error: "Devis introuvable ou déjà traité" }, { status: 404 });
     }
 
-    const { status, acceptanceText, signatureData } = statusSchema.parse(await request.json());
+    if (
+      isShareLinkExpired({
+        sentAt: devis.sentAt,
+        validUntil: devis.validUntil,
+      })
+    ) {
+      return publicJsonResponse(
+        { error: "Ce lien de signature a expiré. Demandez un nouveau devis à votre artisan." },
+        { status: 410 }
+      );
+    }
+
+    const { status, acceptanceText, signatureData, otpCode } = statusSchema.parse(
+      await request.json()
+    );
+
+    if (status === "ACCEPTE" && clientRequiresSignatureOtp(devis.client.email)) {
+      if (!otpCode?.trim()) {
+        return publicJsonResponse(
+          { error: "Code de vérification requis. Demandez-le par email avant de signer." },
+          { status: 401 }
+        );
+      }
+      const otpOk = await consumeDevisSignatureOtp(devis.id, otpCode);
+      if (!otpOk) {
+        return publicJsonResponse(
+          { error: "Code invalide ou expiré. Demandez un nouveau code." },
+          { status: 401 }
+        );
+      }
+    }
+
     const ctx = {
       userId: devis.userId,
       ...getRequestMeta(request),

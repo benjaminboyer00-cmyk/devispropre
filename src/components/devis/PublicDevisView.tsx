@@ -31,9 +31,20 @@ export function PublicDevisView({ token }: { token: string }) {
       .finally(() => setLoading(false));
   }, [token]);
 
+  async function requestOtp(): Promise<{ ok: boolean; error?: string; emailHint?: string }> {
+    try {
+      const res = await fetch(`/api/public/devis/${token}/otp`, { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) return { ok: false, error: data.error ?? "Erreur" };
+      return { ok: true, emailHint: data.emailHint };
+    } catch {
+      return { ok: false, error: "Erreur réseau — réessayez." };
+    }
+  }
+
   async function respond(
     status: "ACCEPTE" | "REFUSE",
-    extra?: { acceptanceText?: string; signatureData?: string }
+    extra?: { acceptanceText?: string; signatureData?: string; otpCode?: string }
   ) {
     setActionLoading(true);
     setError("");
@@ -88,14 +99,23 @@ export function PublicDevisView({ token }: { token: string }) {
       {error && <p className="ui-alert-error mb-4 text-sm">{error}</p>}
 
       <PublicDevisDocument devis={devis}>
-        {devis.status === "ENVOYE" && (
+        {devis.status === "ENVOYE" && devis.canAccept !== false && (
           <DevisClientAcceptPanel
             loading={actionLoading}
-            onAccept={({ acceptanceText, signatureData }) =>
-              respond("ACCEPTE", { acceptanceText, signatureData })
+            signatureOtpRequired={devis.signatureOtpRequired}
+            clientEmailHint={devis.clientEmailHint}
+            onRequestOtp={devis.signatureOtpRequired ? requestOtp : undefined}
+            onAccept={({ acceptanceText, signatureData, otpCode }) =>
+              respond("ACCEPTE", { acceptanceText, signatureData, otpCode })
             }
             onRefuse={() => respond("REFUSE")}
           />
+        )}
+
+        {devis.status === "ENVOYE" && devis.linkExpired && (
+          <p className="ui-alert-warning mt-6 text-center text-sm">
+            Ce lien de signature a expiré. Contactez votre artisan pour recevoir un nouveau devis.
+          </p>
         )}
 
         {devis.status === "ACCEPTE" && (

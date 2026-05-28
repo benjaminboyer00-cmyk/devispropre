@@ -227,6 +227,7 @@ model Devis {
   lignes    DevisLigne[]
   facture   Facture?
   auditLogs AuditLog[] @relation("DevisAudit")
+  signatureOtps DevisSignatureOtp[]
 
   @@unique([userId, numero])
   @@index([userId, status])
@@ -245,6 +246,18 @@ model DevisLigne {
   tva            Float
   totalHT        Float
   @@index([devisId])
+}
+
+model DevisSignatureOtp {
+  id        String    @id @default(cuid())
+  devisId   String
+  devis     Devis     @relation(fields: [devisId], references: [id], onDelete: Cascade)
+  codeHash  String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([devisId, usedAt, expiresAt])
 }
 
 model Facture {
