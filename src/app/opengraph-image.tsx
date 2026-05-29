@@ -1,5 +1,5 @@
 import { ImageResponse } from "next/og";
-import { SITE } from "@/lib/seo";
+import { SITE, siteHostname } from "@/lib/seo";
 
 export const runtime = "edge";
 export const revalidate = 31536000;
@@ -29,7 +29,7 @@ export default function OpenGraphImage() {
           Devis · Factures conformes TVA 2018 · WhatsApp · Artisans BTP
         </div>
         <div style={{ fontSize: 24, color: "#d97706", marginTop: 48, fontWeight: 700 }}>
-          devispropre.fr
+          {siteHostname()}
         </div>
       </div>
     ),

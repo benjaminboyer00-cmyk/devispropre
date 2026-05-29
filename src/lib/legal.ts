@@ -5,7 +5,7 @@ export const LEGAL = {
     name: "Benjamin Boyer",
     company: SITE.name,
     address: "France",
-    email: "contact@devispropre.fr",
+    email: SITE.email,
     phone: SITE.phone,
     phoneRaw: SITE.phoneRaw,
     siret: "En cours d'immatriculation",

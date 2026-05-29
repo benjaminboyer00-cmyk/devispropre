@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { siteHostname } from "@/lib/seo";
 
 export const OG_IMAGE_SIZE = { width: 1200, height: 630 };
 export const OG_IMAGE_CONTENT_TYPE = "image/png";
@@ -32,7 +33,7 @@ export function renderLocalOgImage(title: string, subtitle: string) {
         </div>
         <div style={{ fontSize: 28, color: "#475569", marginTop: 28, maxWidth: 900 }}>{subtitle}</div>
         <div style={{ fontSize: 22, color: "#d97706", marginTop: 40, fontWeight: 600 }}>
-          devispropre.fr · Conforme TVA 2018
+          {siteHostname()} · Conforme TVA 2018
         </div>
       </div>
     ),

@@ -1,5 +1,5 @@
 import { LEGAL } from "@/lib/legal";
-import { pageMetadata } from "@/lib/seo";
+import { pageMetadata, siteHostname } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Mentions légales",
@@ -22,7 +22,7 @@ export default function MentionsLegalesPage() {
       <p>Hetzner Online GmbH — Allemagne</p>
       <h2>Propriété intellectuelle</h2>
       <p>
-        L&apos;ensemble du contenu du site devispropre.fr est protégé par le droit d&apos;auteur.
+        L&apos;ensemble du contenu du site {siteHostname()} est protégé par le droit d&apos;auteur.
       </p>
     </article>
   );

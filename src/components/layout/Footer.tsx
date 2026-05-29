@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ROUTES } from "@/lib/routes";
-import { SITE } from "@/lib/seo";
+import { SITE, siteHostname } from "@/lib/seo";
 
 export function Footer() {
   return (
@@ -138,7 +138,7 @@ export function Footer() {
           </div>
         </div>
         <p className="text-subtle mt-12 text-center text-xs" suppressHydrationWarning>
-          © {new Date().getFullYear()} DevisPropre · devispropre.fr
+          © {new Date().getFullYear()} DevisPropre · {siteHostname()}
         </p>
       </div>
     </footer>

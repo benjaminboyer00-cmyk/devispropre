@@ -1,8 +1,6 @@
 import type { MetadataRoute } from "next";
 import {
-  CITIES,
-  TRADES,
-  localSeoPath,
+  getAllLocalSeoPaths,
   sitemapLastModifiedForPath,
 } from "@/lib/local-seo";
 import { MARKETING_ROUTES } from "@/lib/routes";
@@ -42,29 +40,15 @@ function toEntry(path: string, priority: number): MetadataRoute.Sitemap[number] 
   };
 }
 
-/** Sitemap index : marketing + un fichier par métier (évite un XML monolithique). */
-export async function generateSitemaps() {
-  return [{ id: "marketing" }, ...Object.keys(TRADES).map((slug) => ({ id: slug }))];
-}
+/** Sitemap unique — ~70 URLs (marketing + 6 métiers × 10 villes). Pas de DB, pas d'index multi-fichiers. */
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const marketing = MARKETING_ROUTES.map((path) =>
+    toEntry(path, MARKETING_PRIORITIES[path] ?? 0.5)
+  );
 
-export default async function sitemap(props: {
-  id: Promise<string>;
-}): Promise<MetadataRoute.Sitemap> {
-  const id = await props.id;
-
-  if (id === "marketing") {
-    return MARKETING_ROUTES.map((path) => toEntry(path, MARKETING_PRIORITIES[path] ?? 0.5));
-  }
-
-  const trade = TRADES[id];
-  if (!trade) return [];
-
-  const paths = [
-    localSeoPath(trade.slug),
-    ...Object.values(CITIES).map((city) => localSeoPath(trade.slug, city.slug)),
-  ];
-
-  return paths.map((path) =>
+  const local = getAllLocalSeoPaths().map((path) =>
     toEntry(path, path.split("/").length === 3 ? 0.75 : 0.65)
   );
+
+  return [...marketing, ...local];
 }

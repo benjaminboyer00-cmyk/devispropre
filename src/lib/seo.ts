@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { env } from "./env";
 
 const APP_URL = (
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://devispropre.fr"
+  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://devispropre.com"
 );
 
 const DEFAULT_SAME_AS = [
@@ -17,12 +17,21 @@ export const SITE = {
   phone: "06 60 61 48 39",
   phoneRaw: "33660614839",
   owner: "Benjamin Boyer",
-  email: "contact@devispropre.fr",
+  email: "contact@devispropre.com",
   sameAs: DEFAULT_SAME_AS,
   description:
     "Créez un devis pro en 2 min depuis votre téléphone. Conformité TVA 2018 garantie. Essai 15 jours gratuit, puis 19€/mois. WhatsApp, factures, relances J+3.",
   tagline: "L'anti-usine à gaz de l'artisanat",
 } as const;
+
+/** Nom de domaine public (sans www) — OG, footer, mentions légales. */
+export function siteHostname(): string {
+  try {
+    return new URL(SITE.url).hostname.replace(/^www\./, "");
+  } catch {
+    return "devispropre.com";
+  }
+}
 
 /** Liens sameAs JSON-LD — surcharge via SITE_SAME_AS (URLs séparées par des virgules). */
 export function getSiteSameAs(): string[] {

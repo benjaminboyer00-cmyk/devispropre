@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-COMPOSE="docker compose -f docker-compose.prod.yml"
+COMPOSE="docker compose --env-file .env.production -f docker-compose.prod.yml"
 
 if [ ! -f ".env.production" ]; then
   echo "Créez .env.production depuis .env.production.example" >&2

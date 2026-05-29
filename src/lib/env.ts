@@ -63,8 +63,8 @@ export const env = {
   stripePricePro: process.env.STRIPE_PRICE_PRO?.trim() ?? "",
   resendApiKey: process.env.RESEND_API_KEY?.trim() ?? "",
   resendFromEmail:
-    process.env.RESEND_FROM_EMAIL?.trim() ?? "DevisPropre <noreply@devispropre.fr>",
-  supportEmail: process.env.SUPPORT_EMAIL?.trim() ?? "contact@devispropre.fr",
+    process.env.RESEND_FROM_EMAIL?.trim() ?? "DevisPropre <noreply@devispropre.com>",
+  supportEmail: process.env.SUPPORT_EMAIL?.trim() ?? "contact@devispropre.com",
   slackWebhookUrl: process.env.SLACK_WEBHOOK_URL?.trim() ?? "",
   alertWebhookUrl: process.env.ALERT_WEBHOOK_URL?.trim() ?? "",
   turnstileSecretKey: process.env.TURNSTILE_SECRET_KEY?.trim() ?? "",
