@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { env } from "./env";
 
-const APP_URL = (
-  process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://devispropre.com"
-);
+/** URL publique canonique (robots, sitemap, JSON-LD). Fallback .com — jamais .fr. */
+export function getPublicSiteUrl(): string {
+  return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://devispropre.com";
+}
+
+const APP_URL = getPublicSiteUrl();
 
 const DEFAULT_SAME_AS = [
   "https://www.linkedin.com/company/devispropre",

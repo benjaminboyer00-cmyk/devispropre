@@ -4,7 +4,7 @@ import {
   sitemapLastModifiedForPath,
 } from "@/lib/local-seo";
 import { MARKETING_ROUTES } from "@/lib/routes";
-import { SITE } from "@/lib/seo";
+import { getPublicSiteUrl } from "@/lib/seo";
 
 const MARKETING_PRIORITIES: Record<string, number> = {
   "/": 1,
@@ -33,12 +33,15 @@ function changeFreq(path: string): MetadataRoute.Sitemap[number]["changeFrequenc
 
 function toEntry(path: string, priority: number): MetadataRoute.Sitemap[number] {
   return {
-    url: `${SITE.url}${path}`,
+    url: `${getPublicSiteUrl()}${path}`,
     lastModified: sitemapLastModifiedForPath(path),
     changeFrequency: changeFreq(path),
     priority,
   };
 }
+
+/** Régénéré à chaque requête — URLs .com depuis NEXT_PUBLIC_APP_URL runtime. */
+export const dynamic = "force-dynamic";
 
 /** Sitemap unique — ~70 URLs (marketing + 6 métiers × 10 villes). Pas de DB, pas d'index multi-fichiers. */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

@@ -1,8 +1,13 @@
 import type { MetadataRoute } from "next";
 import { ROUTES } from "@/lib/routes";
-import { SITE } from "@/lib/seo";
+import { getPublicSiteUrl } from "@/lib/seo";
+
+/** Régénéré à chaque requête — lit NEXT_PUBLIC_APP_URL du .env.production (pas figé au build). */
+export const dynamic = "force-dynamic";
 
 export default function robots(): MetadataRoute.Robots {
+  const siteUrl = getPublicSiteUrl();
+
   return {
     rules: {
       userAgent: "*",
@@ -17,6 +22,6 @@ export default function robots(): MetadataRoute.Robots {
         ROUTES.offline,
       ],
     },
-    sitemap: `${SITE.url}/sitemap.xml`,
+    sitemap: `${siteUrl}/sitemap.xml`,
   };
 }
