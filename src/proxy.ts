@@ -21,6 +21,17 @@ import { applySecurityHeaders, buildContentSecurityPolicy } from "@/lib/security
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  // Routes SEO / PWA — pas de logique auth (laisser Next.js servir sitemap, robots, manifest)
+  if (
+    pathname === "/sitemap.xml" ||
+    pathname === "/robots.txt" ||
+    pathname === "/manifest.webmanifest" ||
+    pathname === "/sw.js"
+  ) {
+    return NextResponse.next();
+  }
+
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const csp = buildContentSecurityPolicy(nonce);
 
@@ -107,5 +118,14 @@ export async function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon|opengraph-image).*)"],
+  matcher: [
+    /*
+     * Protège les routes applicatives SAUF :
+     * - api (sécurité propre aux handlers)
+     * - _next/static & _next/image (assets Next.js)
+     * - SEO / PWA : sitemap, robots, manifest, service worker
+     * - favicon & images OG dynamiques
+     */
+    "/((?!api|_next/static|_next/image|favicon.ico|icon|opengraph-image|sitemap\\.xml|robots\\.txt|manifest\\.webmanifest|sw\\.js).*)",
+  ],
 };

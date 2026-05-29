@@ -40,10 +40,7 @@ function toEntry(path: string, priority: number): MetadataRoute.Sitemap[number] 
   };
 }
 
-/** Régénéré à chaque requête — URLs .com depuis NEXT_PUBLIC_APP_URL runtime. */
-export const dynamic = "force-dynamic";
-
-/** Sitemap unique — ~70 URLs (marketing + 6 métiers × 10 villes). Pas de DB, pas d'index multi-fichiers. */
+/** Sitemap unique — ~70 URLs (marketing + 6 métiers × 10 villes). */
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const marketing = MARKETING_ROUTES.map((path) =>
     toEntry(path, MARKETING_PRIORITIES[path] ?? 0.5)
