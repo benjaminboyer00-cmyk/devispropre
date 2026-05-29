@@ -1,5 +1,7 @@
 import { NextRequest } from "next/server";
 import { assertMutationSecurity, getRequestMeta, handleServiceError, requireAuth } from "@/lib/api-helpers";
+import { env } from "@/lib/env";
+import { readIdempotencyKey, withIdempotency } from "@/lib/idempotency";
 import { checkRateLimit, devisSendKey } from "@/lib/rate-limit";
 import { sendDevis } from "@/lib/services/devis";
 
@@ -19,8 +21,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       windowMs: 60 * 60 * 1000,
     });
 
-    const devis = await sendDevis(ctx, id);
-    return Response.json(devis);
+    const idempotencyKey = readIdempotencyKey(request);
+
+    return withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
+      const result = await sendDevis(ctx, id);
+      const { shareTokenRaw, ...devis } = result;
+      const shareUrl = shareTokenRaw ? `${env.appUrl}/devis/${shareTokenRaw}` : null;
+      return { status: 200, body: { ...devis, shareUrl } };
+    });
   } catch (e) {
     return handleServiceError(e);
   }

@@ -31,9 +31,28 @@ function customerIdFromInvoice(invoice: Stripe.Invoice): string | null {
 }
 
 export async function downgradeCustomerToFree(customerId: string): Promise<void> {
+  const users = await prisma.user.findMany({
+    where: { stripeCustomerId: customerId },
+    select: { id: true },
+  });
+
   await prisma.user.updateMany({
     where: { stripeCustomerId: customerId },
     data: { plan: Plan.FREE, subscriptionPastDue: false },
+  });
+
+  for (const u of users) {
+    await suspendProTeamMembers(u.id);
+  }
+}
+
+/** Désactive les membres d'équipe quand le plan Pro n'est plus actif. */
+async function suspendProTeamMembers(ownerId: string): Promise<void> {
+  const team = await prisma.team.findUnique({ where: { ownerId } });
+  if (!team) return;
+
+  await prisma.teamMember.deleteMany({
+    where: { teamId: team.id, userId: { not: null } },
   });
 }
 
@@ -76,6 +95,14 @@ export async function syncUserPlanFromSubscription(
     });
     for (const u of users) {
       await ensureProTeam(u.id);
+    }
+  } else {
+    const users = await prisma.user.findMany({
+      where: { stripeCustomerId: customerId },
+      select: { id: true },
+    });
+    for (const u of users) {
+      await suspendProTeamMembers(u.id);
     }
   }
 }

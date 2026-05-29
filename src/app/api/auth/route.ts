@@ -4,6 +4,7 @@ import {
   apiError,
   assertMutationSecurity,
   getRequestMeta,
+  getTrustedClientIpOrUnknown,
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
@@ -25,6 +26,7 @@ import { acceptTeamInvites } from "@/lib/account-context";
 import { logAudit } from "@/lib/audit";
 import { generateShareToken } from "@/lib/crypto";
 import { prisma } from "@/lib/db";
+import { sendEmailVerification } from "@/lib/email-verification";
 import { verifyTurnstileToken } from "@/lib/turnstile";
 import { bumpUserSessionVersion } from "@/lib/user-session";
 import {
@@ -36,7 +38,7 @@ import {
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getTrustedClientIpOrUnknown(request);
 
   try {
     const body = await request.json();
@@ -83,11 +85,10 @@ export async function POST(request: NextRequest) {
         metadata: { email: user.email },
       });
 
-      const token = await createSession(user, sessionMetaFromRequest(request));
-      await setSessionCookie(token);
+      await sendEmailVerification(user.id, user.email, user.name);
 
       return Response.json(
-        { ok: true, user: { id: user.id, email: user.email, name: user.name } },
+        { ok: true, needsEmailVerification: true, user: { id: user.id, email: user.email, name: user.name } },
         { status: 201 }
       );
     }
@@ -101,11 +102,16 @@ export async function POST(request: NextRequest) {
       const data = loginSchema.parse(body);
       const user = await prisma.user.findFirst({
         where: { email: data.email, deletedAt: null },
-        select: { id: true, email: true, name: true, plan: true, passwordHash: true },
+        select: { id: true, email: true, name: true, plan: true, passwordHash: true, emailVerifiedAt: true },
       });
 
       if (!user || !(await verifyPassword(data.password, user.passwordHash))) {
         return apiError("Email ou mot de passe incorrect", 401);
+      }
+
+      if (!user.emailVerifiedAt) {
+        await sendEmailVerification(user.id, user.email, user.name);
+        return apiError("Confirmez votre email — un nouveau lien vient d'être envoyé.", 403);
       }
 
       const token = await createSession(

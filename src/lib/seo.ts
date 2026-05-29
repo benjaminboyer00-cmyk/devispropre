@@ -134,6 +134,9 @@ export const defaultMetadata: Metadata = {
     ...sharedSocial,
   },
   robots: { index: true, follow: true },
+  ...(env.googleSiteVerification
+    ? { verification: { google: env.googleSiteVerification } }
+    : {}),
   alternates: {
     canonical: SITE.url,
     languages: {

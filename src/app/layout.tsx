@@ -6,7 +6,6 @@ import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { SiteChrome } from "@/components/layout/SiteChrome";
-import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 import { SkipLink } from "@/components/ui/SkipLink";
 import { UiProviders } from "@/components/ui/UiProviders";
 import { getRequestNonce } from "@/lib/nonce";
@@ -74,7 +73,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <UiProviders>
           <SiteAnalytics>
             <SkipLink />
-            <RegisterServiceWorker />
             <SiteChrome header={<Header />} footer={<Footer />}>
               <main id="main-content" className="flex-1">
                 {children}

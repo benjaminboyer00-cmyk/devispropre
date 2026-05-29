@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { PdfDownloadButton } from "@/components/ui/PdfDownloadButton";
@@ -43,6 +43,11 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
   const [confirmSend, setConfirmSend] = useState(false);
   const [actionError, setActionError] = useState("");
 
+  const statusIdempotencyKey = useMemo(
+    () => `devis-status-${devis.id}`,
+    [devis.id]
+  );
+
   useEffect(() => {
     setOrigin(window.location.origin);
   }, []);
@@ -71,7 +76,7 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Idempotency-Key": crypto.randomUUID(),
+        "Idempotency-Key": statusIdempotencyKey,
       },
       body: JSON.stringify({ status }),
     });
@@ -94,7 +99,7 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Idempotency-Key": crypto.randomUUID(),
+        "Idempotency-Key": `facture-from-${devis.id}`,
       },
       body: JSON.stringify({ devisId: devis.id }),
     });

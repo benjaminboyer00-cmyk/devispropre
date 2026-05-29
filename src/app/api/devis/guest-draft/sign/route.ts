@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiError, assertMutationSecurity, handleServiceError } from "@/lib/api-helpers";
+import { apiError, assertMutationSecurity, getTrustedClientIpOrUnknown, handleServiceError } from "@/lib/api-helpers";
 import {
   createGuestDraftId,
   isGuestDraftSignatureFresh,
@@ -18,10 +18,7 @@ const signSchema = z.object({
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const ip =
-    request.headers.get("x-real-ip") ??
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown";
+  const ip = getTrustedClientIpOrUnknown(request);
 
   try {
     await checkRateLimit(`guest-draft-sign:${ip}`, { maxAttempts: 30, windowMs: 60 * 60 * 1000 });

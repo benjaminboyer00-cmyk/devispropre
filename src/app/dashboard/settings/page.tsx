@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getSession } from "@/lib/auth";
 import { getAccountContext } from "@/lib/account-context";
+import { canStartTrial } from "@/lib/billing";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { loadSettingsPayload } from "@/lib/settings-data";
 import { SettingsForm } from "@/components/settings/SettingsForm";
@@ -24,6 +25,7 @@ export default async function SettingsPage() {
 
   const account = await getAccountContext(user.id);
   const settingsData = await loadSettingsPayload(user.id, account);
+  const trialEligible = await canStartTrial(account.workspaceUserId);
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
@@ -49,6 +51,7 @@ export default async function SettingsPage() {
           plan={account.plan}
           hasStripeCustomer={settingsData.hasStripeCustomer}
           isTeamMember={account.isTeamMember}
+          canStartTrial={trialEligible}
         />
         <SettingsForm initialData={settingsData} />
         <AccountSessionsPanel />

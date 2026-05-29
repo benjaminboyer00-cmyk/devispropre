@@ -134,6 +134,19 @@ export function handleServiceError(error: unknown) {
       return apiError(error.message, 403);
     }
     if (process.env.NODE_ENV === "production") {
+      const safeMessages = [
+        "Devis introuvable",
+        "Facture introuvable",
+        "Seul un brouillon",
+        "Seul un devis accepté",
+        "Une facture existe déjà",
+        "Ce devis a déjà été traité",
+        "Ce lien de signature a expiré",
+        "Utilisateur introuvable",
+      ];
+      if (safeMessages.some((prefix) => error.message.includes(prefix))) {
+        return apiError(error.message, 400);
+      }
       console.error("[api]", error);
       return apiError("Requête invalide", 400);
     }

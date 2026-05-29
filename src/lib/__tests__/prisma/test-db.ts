@@ -61,5 +61,6 @@ export async function createIntegrationUser(prisma: PrismaClient) {
 }
 
 export async function deleteIntegrationUser(prisma: PrismaClient, userId: string) {
+  await prisma.auditLog.deleteMany({ where: { userId } });
   await prisma.user.delete({ where: { id: userId } });
 }

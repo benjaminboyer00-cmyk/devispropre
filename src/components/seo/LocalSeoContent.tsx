@@ -51,7 +51,7 @@ export function LocalSeoContent({ trade, city }: LocalSeoContentProps) {
           dateModified: lastModified,
         })}
       />
-      {city && <JsonLd data={jsonLdFaqFromItems(sections.faq)} />}
+      <JsonLd data={jsonLdFaqFromItems(sections.faq)} />
 
       <article className="mx-auto max-w-3xl px-4 py-16 sm:py-20">
         <nav aria-label="Fil d'Ariane" className="text-sm text-subtle">

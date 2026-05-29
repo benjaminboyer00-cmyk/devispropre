@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GuideRelatedLinks } from "@/components/seo/GuideRelatedLinks";
+import { GuideArticleJsonLd, guideArticleMeta } from "@/components/seo/GuideArticleJsonLd";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ROUTES } from "@/lib/routes";
 import { jsonLdBreadcrumbList, pageMetadata } from "@/lib/seo";
@@ -14,14 +15,17 @@ export const metadata = pageMetadata({
 
 const BREADCRUMBS = [
   { name: "Accueil", path: "/" },
-  { name: "Guides", path: ROUTES.guideDevisConforme },
+  { name: "Guides", path: ROUTES.blog },
   { name: "Mentions obligatoires devis", path: ROUTES.guideMentionsDevis },
 ];
+
+const ARTICLE = guideArticleMeta(ROUTES.guideMentionsDevis)!;
 
 export default function GuideMentionsDevisPage() {
   return (
     <>
       <JsonLd data={jsonLdBreadcrumbList(BREADCRUMBS)} />
+      <GuideArticleJsonLd article={ARTICLE} />
 
       <article className="prose-legal mx-auto max-w-3xl px-4 py-16 sm:py-20">
         <h1 className="heading-hero mt-4 text-3xl sm:text-4xl">

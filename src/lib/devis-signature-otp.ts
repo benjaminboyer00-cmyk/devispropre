@@ -24,6 +24,11 @@ export function maskClientEmail(email: string): string {
 }
 
 export function clientRequiresSignatureOtp(clientEmail: string | null | undefined): boolean {
+  return true;
+}
+
+/** Signature en ligne impossible sans email client (OTP requis). */
+export function clientCanSignOnline(clientEmail: string | null | undefined): boolean {
   return Boolean(clientEmail?.trim());
 }
 

@@ -80,12 +80,17 @@ export async function consumeMagicLink(rawToken: string): Promise<SessionUser | 
     where: { tokenHash },
     include: {
       user: {
-        select: { id: true, email: true, name: true, plan: true, deletedAt: true },
+        select: { id: true, email: true, name: true, plan: true, deletedAt: true, emailVerifiedAt: true },
       },
     },
   });
 
   if (!record?.user || record.user.deletedAt) return null;
+
+  await prisma.user.update({
+    where: { id: record.user.id },
+    data: { emailVerifiedAt: record.user.emailVerifiedAt ?? now },
+  });
 
   return {
     id: record.user.id,

@@ -6,6 +6,7 @@ export const metadata = pageMetadata({
   description:
     "Créez votre compte DevisPropre. Essai Starter 15 jours gratuit, puis 19€/mois sans résiliation.",
   path: "/inscription",
+  noindex: true,
 });
 
 export default async function InscriptionPage({

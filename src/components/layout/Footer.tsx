@@ -6,7 +6,7 @@ export function Footer() {
   return (
     <footer className="site-footer mt-auto border-t">
       <div className="mx-auto max-w-6xl px-4 py-16 sm:py-20">
-        <div className="grid gap-10 md:grid-cols-5">
+        <div className="grid gap-10 md:grid-cols-6">
           <div>
             <p className="text-lg font-bold">
               <span className="text-brand">Devis</span>
@@ -47,6 +47,31 @@ export function Footer() {
               <li>
                 <Link href={ROUTES.guideDevisWhatsapp} className="link-underline">
                   Devis par WhatsApp
+                </Link>
+              </li>
+            </ul>
+          </div>
+          <div>
+            <p className="heading text-sm font-semibold">Métiers</p>
+            <ul className="text-body mt-3 space-y-2 text-sm">
+              <li>
+                <Link href={ROUTES.devisArtisanHub} className="link-underline">
+                  Tous les métiers BTP
+                </Link>
+              </li>
+              <li>
+                <Link href="/devis-artisan/plombier" className="link-underline">
+                  Devis plombier
+                </Link>
+              </li>
+              <li>
+                <Link href="/devis-artisan/electricien" className="link-underline">
+                  Devis électricien
+                </Link>
+              </li>
+              <li>
+                <Link href="/devis-artisan/peintre" className="link-underline">
+                  Devis peintre
                 </Link>
               </li>
             </ul>

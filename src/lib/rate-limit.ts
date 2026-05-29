@@ -97,3 +97,19 @@ export function facturePayKey(userId: string): string {
 export function factureCancelKey(userId: string): string {
   return `facture:cancel:${userId}`;
 }
+
+export function teamInviteKey(userId: string): string {
+  return `team:invite:${userId}`;
+}
+
+export function supportTicketKey(userId: string): string {
+  return `support:ticket:${userId}`;
+}
+
+export function settingsLogoKey(userId: string): string {
+  return `settings:logo:${userId}`;
+}
+
+export function claimGuestDraftKey(userId: string, draftId: string): string {
+  return `devis:claim-draft:${userId}:${draftId}`;
+}

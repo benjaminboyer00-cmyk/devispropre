@@ -10,7 +10,7 @@ import {
   isGuestDraftSignatureFresh,
   verifyGuestDraftClaim,
 } from "@/lib/guest-draft-claim";
-import { checkRateLimit, devisClaimDraftKey } from "@/lib/rate-limit";
+import { checkRateLimit, claimGuestDraftKey } from "@/lib/rate-limit";
 import { claimGuestDraftSchema } from "@/lib/schemas/forms";
 import { claimGuestDraftAsDevis } from "@/lib/services/devis";
 
@@ -22,13 +22,13 @@ export async function POST(request: NextRequest) {
     const auth = await requireAuth({ skipSubscriptionCheck: true });
     if (auth.error) return auth.error;
 
-    await checkRateLimit(devisClaimDraftKey(auth.workspaceUserId!), {
-      maxAttempts: 10,
-      windowMs: 60_000,
-    });
-
     const body = claimGuestDraftSchema.parse(await request.json());
     const { draftId, claimSignature, signedAt, ...draft } = body;
+
+    await checkRateLimit(claimGuestDraftKey(auth.workspaceUserId!, draftId), {
+      maxAttempts: 5,
+      windowMs: 60_000,
+    });
 
     if (!verifyGuestDraftClaim(draftId, draft, claimSignature)) {
       return Response.json({ error: "Brouillon invité non autorisé." }, { status: 403 });

@@ -12,6 +12,7 @@ import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { ForbiddenError } from "@/lib/errors";
 import { logoApiPath, parseLogoDataUri, saveLogoFile } from "@/lib/logo-storage";
+import { checkRateLimit, settingsLogoKey } from "@/lib/rate-limit";
 import { loadSettingsPayload } from "@/lib/settings-data";
 import { softDeleteAccount } from "@/lib/services/account";
 import { clearSessionCookie, logoutSession } from "@/lib/auth";
@@ -106,6 +107,10 @@ export async function PATCH(request: NextRequest) {
         if (data.logoUrl === null) {
           logoPath = null;
         } else {
+          await checkRateLimit(settingsLogoKey(auth.workspaceUserId), {
+            maxAttempts: 10,
+            windowMs: 60 * 60 * 1000,
+          });
           const { buffer, ext } = await parseLogoDataUri(data.logoUrl);
           logoPath = await saveLogoFile(auth.workspaceUserId, buffer, ext);
         }

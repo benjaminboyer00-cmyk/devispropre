@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LogoutButton } from "@/components/auth/LogoutButton";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { ROUTES } from "@/lib/routes";
 
 const NAV_LINKS = [
@@ -33,6 +34,7 @@ export function DashboardNav() {
             DevisPropre
           </Link>
           <div className="flex items-center gap-2">
+            <ThemeToggle />
             <Link href={ROUTES.dashboardDevisNew} className="ui-btn-primary px-3 py-2 text-sm sm:px-4">
               + Devis
             </Link>

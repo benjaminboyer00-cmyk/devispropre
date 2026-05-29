@@ -4,7 +4,7 @@ import { timingSafeEqualStrings } from "./timing-safe";
 
 /** Accès détaillé healthcheck (monitoring interne). */
 export function isHealthMonitorAuthorized(request: NextRequest): boolean {
-  const secret = env.cronSecret;
+  const secret = env.healthMonitorSecret || env.cronSecret;
   if (!secret) return false;
 
   const authHeader = request.headers.get("authorization");

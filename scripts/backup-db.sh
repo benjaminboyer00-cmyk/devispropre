@@ -7,6 +7,15 @@ BACKUP_DIR="${BACKUP_DIR:-$ROOT/backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
 COMPOSE_FILE="${COMPOSE_FILE:-$ROOT/docker-compose.prod.yml}"
 
+notify_failure() {
+  local msg="$1"
+  echo "✗ $msg" >&2
+  if command -v node >/dev/null 2>&1; then
+    node "$ROOT/scripts/notify-alert.mjs" "Échec backup PostgreSQL" "{\"error\":\"$msg\"}" || true
+  fi
+  exit 1
+}
+
 if [ -f "$ROOT/.env.production" ]; then
   set -a
   # shellcheck disable=SC1091
@@ -33,8 +42,7 @@ if [ -f "$COMPOSE_FILE" ] && docker compose -f "$COMPOSE_FILE" ps postgres -q 2>
 elif command -v pg_dump >/dev/null 2>&1 && [ -n "${DATABASE_URL:-}" ]; then
   pg_dump "$DATABASE_URL" | gzip > "$FILE"
 else
-  echo "Impossible de sauvegarder : postgres Docker indisponible et pg_dump/DATABASE_URL absents" >&2
-  exit 1
+  notify_failure "postgres Docker indisponible et pg_dump/DATABASE_URL absents"
 fi
 
 echo "✓ $(du -h "$FILE" | cut -f1)"
@@ -45,8 +53,7 @@ if command -v node >/dev/null 2>&1; then
   if node "$ROOT/scripts/upload-backup-r2.mjs" "$FILE"; then
     echo "→ Copie offsite R2 OK"
   else
-    echo "⚠ Upload R2 échoué — backup local conservé dans $FILE" >&2
-    exit 1
+    notify_failure "Upload R2 échoué — backup local dans $FILE"
   fi
 else
   echo "⚠ node absent — backup offsite R2 ignoré" >&2

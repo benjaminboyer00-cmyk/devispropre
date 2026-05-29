@@ -56,6 +56,7 @@ export const env = {
   ),
   appUrl: optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000").replace(/\/$/, ""),
   cronSecret: process.env.CRON_SECRET?.trim() ?? "",
+  healthMonitorSecret: process.env.HEALTH_MONITOR_SECRET?.trim() ?? "",
   stripeSecretKey: process.env.STRIPE_SECRET_KEY?.trim() ?? "",
   stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET?.trim() ?? "",
   stripePriceStarter: process.env.STRIPE_PRICE_STARTER?.trim() ?? "",
@@ -72,6 +73,7 @@ export const env = {
     .split(",")
     .map((s) => s.trim())
     .filter(Boolean),
+  googleSiteVerification: process.env.GOOGLE_SITE_VERIFICATION?.trim() ?? "",
   allowedOrigins: (
     process.env.ALLOWED_ORIGINS?.trim() ||
     optionalEnv("NEXT_PUBLIC_APP_URL", "http://localhost:3000")

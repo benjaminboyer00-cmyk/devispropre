@@ -61,6 +61,15 @@ export default function ConformitePage() {
       </section>
 
       <section className="mt-10">
+        <h2>Spécification technique (audit)</h2>
+        <p className="mt-2">
+          Le format reproductible des empreintes SHA-256 et du chaînage factures est documenté dans le
+          dépôt : <code>docs/HASH-SPEC.md</code> (canonicalisation JSON, champs inclus, formule{" "}
+          <code>GENESIS:contentHash</code>).
+        </p>
+      </section>
+
+      <section className="mt-10">
         <h2>Journal d&apos;audit</h2>
         <p className="mt-2">
           Chaque action est tracée avec horodatage, adresse IP et empreinte du document au moment

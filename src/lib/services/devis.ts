@@ -1,6 +1,5 @@
-import type { DevisStatus } from "@/generated/prisma/client";
+import { Plan, type DevisStatus } from "@/generated/prisma/client";
 import { logAudit, type AuditContext } from "../audit";
-import { generateShareToken } from "../crypto";
 import {
   buildDevisPayload,
   computeChainHash,
@@ -10,7 +9,12 @@ import {
 import { prisma } from "../db";
 import { assertDevisEditable, ImmutabilityError } from "../immutability";
 import { ForbiddenError } from "../errors";
-import { assertCanCreateDevis, enforceFreeDevisQuotaInTransaction } from "../plan-limits";
+import {
+  assertCanCreateDevis,
+  enforceFreeDevisQuotaInTransaction,
+  FREE_DEVIS_PER_MONTH,
+  PlanLimitError,
+} from "../plan-limits";
 import { computeLineTotalHT, computeTotals, nextDevisNumeroInTransaction } from "../numbers";
 import { logCriticalAlert } from "../critical-alert";
 import {
@@ -26,6 +30,29 @@ import { snapshotFromCompany, resolveIssuerCompany } from "../issuer-snapshot";
 import { resolveLineTva, ensureFranchiseNotes } from "../tva";
 import { ROUTES } from "../routes";
 import { isShareLinkExpired } from "../share-token";
+import { issueShareTokenPair, shareTokenLookupWhere } from "../share-token-storage";
+
+function startOfCurrentMonth(): Date {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), 1);
+}
+
+async function assertFreeSendQuota(userId: string, plan: Plan): Promise<void> {
+  if (plan !== Plan.FREE) return;
+  const sent = await prisma.devis.count({
+    where: {
+      userId,
+      deletedAt: null,
+      sentAt: { gte: startOfCurrentMonth() },
+      status: { not: "BROUILLON" },
+    },
+  });
+  if (sent >= FREE_DEVIS_PER_MONTH) {
+    throw new PlanLimitError(
+      `Plan gratuit limité à ${FREE_DEVIS_PER_MONTH} envois par mois. Passez au plan Starter.`
+    );
+  }
+}
 
 export interface LigneInput {
   description: string;
@@ -238,6 +265,13 @@ export async function updateDevis(
 export async function sendDevis(ctx: AuditContext, devisId: string) {
   await assertBillingNotPastDue(ctx.userId);
 
+  const owner = await prisma.user.findFirst({
+    where: { id: ctx.userId, deletedAt: null },
+    select: { plan: true },
+  });
+  if (!owner) throw new ForbiddenError("Utilisateur introuvable");
+  await assertFreeSendQuota(ctx.userId, owner.plan);
+
   const devis = await prisma.devis.findFirst({
     where: { id: devisId, userId: ctx.userId, deletedAt: null },
     include: { lignes: true, client: true },
@@ -253,7 +287,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
   const payload = buildDevisPayload(devis, company);
   const contentHash = computeContentHash(payload);
   const chainHash = computeChainHash(contentHash, null);
-  const shareToken = generateShareToken();
+  const { raw: shareTokenRaw, hash: shareTokenHash, enc: shareTokenEnc } = issueShareTokenPair();
   const now = new Date();
   const issuerForPdf = resolveIssuerCompany(issuerSnapshot, company);
 
@@ -264,7 +298,8 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
     sentAt: now,
     contentHash,
     chainHash,
-    shareToken,
+    shareTokenHash,
+    shareTokenEnc,
   };
 
   let pdfUrl: string;
@@ -286,7 +321,8 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
         sentAt: now,
         contentHash,
         chainHash,
-        shareToken,
+        shareTokenHash,
+        shareTokenEnc,
         pdfUrl,
         pdfArchivedAt: now,
         issuerSnapshot: issuerSnapshot ?? undefined,
@@ -321,7 +357,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
       metadata: { channel: "whatsapp", pdfUrl },
     });
 
-    return updated;
+    return { ...updated, shareTokenRaw };
   } catch (err) {
     await deleteArchivedPdf(pdfKey);
     logCriticalAlert("Orphelin R2 après échec sendDevis", {
@@ -338,12 +374,13 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
 export async function transitionDevisStatusFromPublic(
   ctx: AuditContext,
   devisId: string,
-  shareToken: string,
+  shareTokenRaw: string,
   status: Extract<DevisStatus, "ACCEPTE" | "REFUSE">,
   acceptance?: { acceptanceText: string; signatureData: string }
 ) {
+  const tokenWhere = shareTokenLookupWhere(shareTokenRaw);
   const devis = await prisma.devis.findFirst({
-    where: { id: devisId, userId: ctx.userId, shareToken, deletedAt: null, status: "ENVOYE" },
+    where: { id: devisId, userId: ctx.userId, deletedAt: null, status: "ENVOYE", ...tokenWhere },
   });
 
   if (!devis) {
@@ -361,7 +398,7 @@ export async function transitionDevisStatusFromPublic(
 
   const now = new Date();
   const result = await prisma.devis.updateMany({
-    where: { id: devisId, userId: ctx.userId, shareToken, status: "ENVOYE", deletedAt: null },
+    where: { id: devisId, userId: ctx.userId, status: "ENVOYE", deletedAt: null, ...tokenWhere },
     data: {
       status,
       ...(status === "ACCEPTE"

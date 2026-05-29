@@ -3,6 +3,7 @@ import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
+import { resolveShareTokenRaw } from "@/lib/share-token-storage";
 import { FacturePageWrapper } from "@/components/facture/FactureActions";
 
 export const metadata = dashboardMetadata("Facture");
@@ -26,5 +27,12 @@ export default async function FactureDetailPage({ params }: PageProps) {
 
   if (!facture) notFound();
 
-  return <FacturePageWrapper facture={JSON.parse(JSON.stringify(facture))} plan={account.plan} />;
+  const shareToken = resolveShareTokenRaw(facture);
+
+  return (
+    <FacturePageWrapper
+      facture={{ ...JSON.parse(JSON.stringify(facture)), shareToken }}
+      plan={account.plan}
+    />
+  );
 }

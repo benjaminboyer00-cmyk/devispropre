@@ -4,6 +4,7 @@ import {
   apiError,
   assertMutationSecurity,
   getRequestMeta,
+  getTrustedClientIpOrUnknown,
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
@@ -13,6 +14,7 @@ import { sendTeamInviteEmail } from "@/lib/email";
 import { assertProFeature } from "@/lib/plan-features";
 import { ForbiddenError } from "@/lib/errors";
 import { ensureProTeam } from "@/lib/account-context";
+import { checkRateLimit, teamInviteKey } from "@/lib/rate-limit";
 
 const inviteSchema = z.object({
   email: z.string().email(),
@@ -75,6 +77,11 @@ export async function POST(request: NextRequest) {
     if (auth.isTeamMember) {
       throw new ForbiddenError("Seul le propriétaire du compte Pro peut inviter des membres.");
     }
+
+    await checkRateLimit(teamInviteKey(auth.workspaceUserId), {
+      maxAttempts: 20,
+      windowMs: 60 * 60 * 1000,
+    });
 
     const { email } = inviteSchema.parse(await request.json());
     const normalized = email.toLowerCase();

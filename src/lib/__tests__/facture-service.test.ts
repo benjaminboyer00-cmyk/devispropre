@@ -126,7 +126,7 @@ describe("createFactureFromDevis", () => {
     transactionMock.mockImplementation(async (fn) => {
       const tx = {
         facture: { create: vi.fn().mockResolvedValue(factureCreated) },
-        devis: { update: vi.fn().mockResolvedValue({}) },
+        devis: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
       };
       return fn(tx);
     });
@@ -174,7 +174,7 @@ describe("createFactureFromDevis", () => {
     transactionMock.mockImplementation(async (fn) => {
       const tx = {
         facture: { create: vi.fn().mockResolvedValue(factureCreated) },
-        devis: { update: vi.fn().mockResolvedValue({}) },
+        devis: { updateMany: vi.fn().mockResolvedValue({ count: 1 }) },
       };
       return fn(tx);
     });

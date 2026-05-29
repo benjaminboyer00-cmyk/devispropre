@@ -132,13 +132,27 @@ Installer le crontab depuis `deploy/cron/crontab.example` :
 
 ## 10. Monitoring (recommandé)
 
-- [ ] Configurer `SLACK_WEBHOOK_URL` ou `ALERT_WEBHOOK_URL` pour les alertes `[CRITICAL]` (orphelins R2)
+- [ ] Configurer `SLACK_WEBHOOK_URL` ou `ALERT_WEBHOOK_URL` pour les alertes :
+  - `[CRITICAL]` — orphelins R2, échec backup PostgreSQL, échec cron relances
+  - `[WARNING]` — relances J+3 partielles, OTP signature verrouillé (bruteforce)
+- [ ] Vérifier Nginx : logs `dp_sanitized` actifs (`/var/log/nginx/devispropre.access.log`) — tokens masqués
+- [ ] Tester une alerte backup : `node scripts/notify-alert.mjs "Test VPS" '{"ok":true}'`
 - [ ] Surveiller les logs Docker : `docker compose -f docker-compose.prod.yml logs -f app`
 - [ ] Optionnel : Sentry / Grafana Loki pour agrégation des logs
 
 ---
 
-## 11. Ce qui est déjà fait dans le code (rien à coder)
+## 11. Durcissement post-audit (déjà dans le code)
+
+- Rate limit signature publique : 8 acceptations/h/IP (`PUBLIC_DEVIS_LIMITS`)
+- Spec hash audit : `docs/HASH-SPEC.md`
+- Tests intégration DB : `npm run test:integration`
+- Audit IDOR routes : `npm run audit:idor`
+- HSTS + logs sanitizés : `deploy/nginx/devispropre.conf`
+
+---
+
+## 12. Ce qui est déjà fait dans le code (rien à coder)
 
 - Webhook Stripe annulation / mise à jour abonnement
 - Partage facture (`shareToken` + page publique)
@@ -154,7 +168,7 @@ Installer le crontab depuis `deploy/cron/crontab.example` :
 
 ---
 
-## 12. Non prévu / évolutions futures
+## 13. Non prévu / évolutions futures
 
 - Auth SMS / WhatsApp OTP (nécessite Twilio ou Meta Business API)
 - Mode sombre automatique selon l’heure

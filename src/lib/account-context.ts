@@ -60,16 +60,30 @@ export async function ensureProTeam(ownerId: string) {
 }
 
 export async function acceptTeamInvites(email: string, userId: string) {
-  await prisma.teamMember.updateMany({
+  const pending = await prisma.teamMember.findMany({
     where: {
       email: email.toLowerCase(),
       status: "PENDING",
       userId: null,
     },
-    data: {
-      userId,
-      status: "ACTIVE",
-      acceptedAt: new Date(),
-    },
+    orderBy: { invitedAt: "asc" },
+    take: 1,
   });
+
+  if (pending.length === 0) return;
+
+  const invite = pending[0]!;
+
+  try {
+    await prisma.teamMember.update({
+      where: { id: invite.id },
+      data: {
+        userId,
+        status: "ACTIVE",
+        acceptedAt: new Date(),
+      },
+    });
+  } catch {
+    /* conflit userId unique — une autre équipe a déjà été acceptée */
+  }
 }

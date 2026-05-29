@@ -7,6 +7,7 @@ import { CheckoutFeedback } from "@/components/billing/CheckoutFeedback";
 import { ClaimGuestDraftOnMount } from "@/components/devis/ClaimGuestDraftOnMount";
 import { DashboardNav } from "@/components/dashboard/DashboardNav";
 import { OfflineSyncBar } from "@/components/pwa/OfflineSyncBar";
+import { RegisterServiceWorker } from "@/components/pwa/RegisterServiceWorker";
 import { dashboardRobotsOnly } from "@/lib/dashboard-metadata";
 
 export const metadata: Metadata = dashboardRobotsOnly;
@@ -15,6 +16,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   return (
     <>
       <ClaimGuestDraftOnMount />
+      <RegisterServiceWorker />
       <Suspense fallback={null}>
         <CheckoutFeedback />
       </Suspense>

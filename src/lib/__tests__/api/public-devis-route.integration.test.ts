@@ -214,9 +214,8 @@ describe("API /api/public/devis/[token]", () => {
     expect(transitionDevisStatusFromPublic).toHaveBeenCalled();
   });
 
-  it("POST accepte sans OTP si le client n'a pas d'email", async () => {
+  it("POST refuse la signature si le client n'a pas d'email", async () => {
     devisFindFirst.mockResolvedValue(mockEnvoieDevis({ client: { nom: "Client", email: null } }));
-    transitionDevisStatusFromPublic.mockResolvedValue({ status: "ACCEPTE" });
 
     const res = await POST(
       buildApiRequest(`/api/public/devis/${VALID_TOKEN}`, {
@@ -230,8 +229,8 @@ describe("API /api/public/devis/[token]", () => {
       { params: Promise.resolve({ token: VALID_TOKEN }) }
     );
 
-    expect(res.status).toBe(200);
-    expect(consumeDevisSignatureOtp).not.toHaveBeenCalled();
+    expect(res.status).toBe(400);
+    expect(transitionDevisStatusFromPublic).not.toHaveBeenCalled();
     expect(verifyDevisSignatureOtp).not.toHaveBeenCalled();
   });
 

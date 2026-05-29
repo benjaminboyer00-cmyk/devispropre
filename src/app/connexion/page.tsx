@@ -4,7 +4,7 @@ import { LoginForm } from "@/components/auth/LoginForm";
 
 export const metadata: Metadata = {
   title: "Connexion",
-  robots: { index: false },
+  robots: { index: false, follow: false },
 };
 
 export default function ConnexionPage() {

@@ -4,9 +4,10 @@ import { Suspense } from "react";
 import { DevisStatusBanner } from "@/components/devis/DevisStatusBanner";
 import { getAccountContext } from "@/lib/account-context";
 import { getSession } from "@/lib/auth";
-import { billingUserId, userNeedsSubscriptionSetup } from "@/lib/billing";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
+import { hasStarter } from "@/lib/plan-features";
+import { resolveShareTokenRaw } from "@/lib/share-token-storage";
 import { DevisActions } from "@/components/devis/DevisActions";
 import { DevisDocumentPreview } from "@/components/devis/DevisDocumentPreview";
 import { ROUTES } from "@/lib/routes";
@@ -31,9 +32,7 @@ export default async function DevisDetailPage({ params }: PageProps) {
 
   if (!devis) notFound();
 
-  const needsActivation = await userNeedsSubscriptionSetup(
-    billingUserId(user.id, account.workspaceUserId, account.isTeamMember)
-  );
+  const shareToken = resolveShareTokenRaw(devis);
 
   const company = await prisma.company.findUnique({
     where: { userId: account.workspaceUserId },
@@ -60,9 +59,9 @@ export default async function DevisDetailPage({ params }: PageProps) {
       )}
       <div className="mt-8">
         <DevisActions
-          devis={JSON.parse(JSON.stringify(devis))}
+          devis={{ ...JSON.parse(JSON.stringify(devis)), shareToken }}
           plan={account.plan}
-          subscriptionActive={!needsActivation}
+          subscriptionActive={hasStarter(account.plan)}
         />
       </div>
 

@@ -1,6 +1,6 @@
 import type { FactureStatus } from "@/generated/prisma/client";
 import { logAudit, type AuditContext } from "../audit";
-import { generateAttestationNumero, generateShareToken } from "../crypto";
+import { generateAttestationNumero } from "../crypto";
 import { logCriticalAlert } from "../critical-alert";
 import {
   buildFacturePayload,
@@ -28,6 +28,7 @@ import { generateAttestationPdf, generateFacturePdf } from "../pdf-document";
 import { assertBillingNotPastDue } from "../billing-status";
 import { snapshotFromCompany, resolveIssuerCompany } from "../issuer-snapshot";
 import { ROUTES } from "../routes";
+import { issueShareTokenPair } from "../share-token-storage";
 
 async function assertFacturationAllowed(userId: string) {
   const owner = await prisma.user.findFirst({
@@ -88,8 +89,8 @@ export async function createFactureFromDevis(ctx: AuditContext, devisId: string)
       include: { lignes: true, client: true },
     });
 
-    await tx.devis.update({
-      where: { id: devisId },
+    await tx.devis.updateMany({
+      where: { id: devisId, userId: ctx.userId, status: "ACCEPTE", deletedAt: null },
       data: { status: "FACTURE" },
     });
 
@@ -137,53 +138,27 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
   const issuerForPdf = resolveIssuerCompany(issuerSnapshot, company);
   const payload = buildFacturePayload(facture, company);
   const contentHash = computeContentHash(payload);
+  const attestationNumero = generateAttestationNumero(ctx.userId, facture.numero);
+  const pdfKey = facturePdfKey(ctx.userId, factureId);
+  const attestationKey = attestationPdfKey(ctx.userId, factureId);
 
-  const { previousHash, chainHash, shareToken, now } = await prisma.$transaction(async (tx) => {
-    await tx.$executeRawUnsafe(
-      `SELECT pg_advisory_xact_lock(hashtext($1))`,
-      `facture-chain:${ctx.userId}`
-    );
-
-    const lastIssued = await tx.facture.findFirst({
-      where: {
-        userId: ctx.userId,
-        status: { in: ["EMISE", "PAYEE"] },
-        contentHash: { not: null },
-      },
-      orderBy: { issuedAt: "desc" },
-      select: { contentHash: true },
-    });
-
-    const previousHash = lastIssued?.contentHash ?? null;
-    const chainHash = computeChainHash(contentHash, previousHash);
-    const shareToken = generateShareToken();
-    const now = new Date();
-
-    return { previousHash, chainHash, shareToken, now };
-  });
-
+  const draftIssuedAt = new Date();
   const lockedForPdf = {
     ...facture,
     status: "EMISE" as const,
-    lockedAt: now,
-    issuedAt: now,
+    lockedAt: draftIssuedAt,
+    issuedAt: draftIssuedAt,
     contentHash,
-    chainHash,
-    previousHash,
+    chainHash: null as string | null,
+    previousHash: null as string | null,
   };
-
-  const attestationNumero = generateAttestationNumero(ctx.userId, facture.numero);
-  const attestationDraft = { numero: attestationNumero, contentHash, signedAt: now };
-  const attestationKey = attestationPdfKey(ctx.userId, factureId);
+  const attestationDraft = { numero: attestationNumero, contentHash, signedAt: draftIssuedAt };
 
   let pdfUrl: string;
   let attestationPdfUrl: string;
-  const pdfKey = facturePdfKey(ctx.userId, factureId);
-
   try {
     const pdfBuffer = await generateFacturePdf(lockedForPdf, issuerForPdf);
     pdfUrl = await archivePdf(pdfKey, pdfBuffer, ROUTES.apiArchiveFacture(factureId));
-
     const attestationBuffer = await generateAttestationPdf(attestationDraft, lockedForPdf, issuerForPdf);
     attestationPdfUrl = await archivePdf(
       attestationKey,
@@ -197,9 +172,30 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
     throw new ObjectStorageError("Impossible d'archiver les PDF de la facture.");
   }
 
+  const { raw: shareTokenRaw, hash: shareTokenHash, enc: shareTokenEnc } = issueShareTokenPair();
+
   let updated;
   try {
     updated = await prisma.$transaction(async (tx) => {
+      await tx.$executeRawUnsafe(
+        `SELECT pg_advisory_xact_lock(hashtext($1))`,
+        `facture-chain:${ctx.userId}`
+      );
+
+      const lastIssued = await tx.facture.findFirst({
+        where: {
+          userId: ctx.userId,
+          status: { in: ["EMISE", "PAYEE"] },
+          contentHash: { not: null },
+        },
+        orderBy: { issuedAt: "desc" },
+        select: { contentHash: true },
+      });
+
+      const previousHash = lastIssued?.contentHash ?? null;
+      const chainHash = computeChainHash(contentHash, previousHash);
+      const now = new Date();
+
       const locked = await tx.facture.updateMany({
         where: { id: factureId, userId: ctx.userId, status: "BROUILLON", deletedAt: null },
         data: {
@@ -209,7 +205,8 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
           contentHash,
           chainHash,
           previousHash,
-          shareToken,
+          shareTokenHash,
+          shareTokenEnc,
           pdfUrl,
           pdfArchivedAt: now,
           issuerSnapshot: issuerSnapshot ?? undefined,
@@ -266,7 +263,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
     contentHash,
   });
 
-  return updated;
+  return { ...updated, shareTokenRaw };
 }
 
 export async function markFacturePaid(ctx: AuditContext, factureId: string) {
@@ -322,6 +319,17 @@ export async function verifyFactureIntegrity(ctx: AuditContext, factureId: strin
   let chainValid = true;
   if (facture.previousHash) {
     chainValid = facture.chainHash === computeChainHash(facture.contentHash, facture.previousHash);
+    const predecessor = await prisma.facture.findFirst({
+      where: {
+        userId: ctx.userId,
+        contentHash: facture.previousHash,
+        status: { in: ["EMISE", "PAYEE"] },
+      },
+      select: { id: true },
+    });
+    if (!predecessor) chainValid = false;
+  } else {
+    chainValid = facture.chainHash === computeChainHash(facture.contentHash, null);
   }
 
   await logAudit(ctx, {

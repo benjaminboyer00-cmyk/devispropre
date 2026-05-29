@@ -4,6 +4,7 @@ import posthog from "posthog-js";
 import { PostHogProvider as PHProvider, usePostHog } from "posthog-js/react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Suspense, useEffect } from "react";
+import { analyticsPageUrl } from "@/lib/analytics-path";
 import { ANALYTICS, primaryAnalyticsProvider } from "@/lib/analytics";
 
 const posthogIsPrimary =
@@ -35,9 +36,8 @@ function PostHogPageViewInner() {
 
   useEffect(() => {
     if (!pathname || !client) return;
-    let url = window.origin + pathname;
-    const qs = searchParams?.toString();
-    if (qs) url += `?${qs}`;
+    const url = analyticsPageUrl(window.origin, pathname, searchParams?.toString() ?? "");
+    if (!url) return;
     client.capture("$pageview", { $current_url: url });
   }, [pathname, searchParams, client]);
 

@@ -23,6 +23,7 @@ const MARKETING_PRIORITIES: Record<string, number> = {
   "/blog/facture-auto-entrepreneur-2026": 0.8,
   "/blog/devis-electricien-normes": 0.81,
   "/blog/relancer-devis-artisan": 0.79,
+  "/devis-artisan": 0.82,
   "/inscription": 0.8,
 };
 

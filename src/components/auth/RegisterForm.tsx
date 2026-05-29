@@ -108,6 +108,12 @@ export function RegisterForm() {
       return;
     }
 
+    if ((data as { needsEmailVerification?: boolean }).needsEmailVerification) {
+      toast("Vérifiez votre boîte mail pour activer votre compte.");
+      router.push(`${ROUTES.connexion}?verify=1`);
+      return;
+    }
+
     toast("Compte créé — finalisation en cours…");
 
     const claim = await claimGuestDraftIfPresent();

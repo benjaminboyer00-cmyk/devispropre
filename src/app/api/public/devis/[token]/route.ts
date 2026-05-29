@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { verifyDocumentIntegrity, buildDevisPayload } from "@/lib/document-hash";
 import { readIdempotencyKey, withIdempotency } from "@/lib/idempotency";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { PUBLIC_DEVIS_LIMITS } from "@/lib/public-api-limits";
 import { transitionDevisStatusFromPublic } from "@/lib/services/devis";
 import { publicJsonResponse } from "@/lib/public-api-response";
 import {
@@ -13,10 +14,12 @@ import {
   isValidShareTokenFormat,
 } from "@/lib/share-token";
 import {
+  clientCanSignOnline,
   clientRequiresSignatureOtp,
   maskClientEmail,
   verifyDevisSignatureOtp,
 } from "@/lib/devis-signature-otp";
+import { shareTokenLookupWhere } from "@/lib/share-token-storage";
 import { validateClientSignatureDataUri } from "@/lib/signature-payload";
 
 const statusSchema = z
@@ -53,13 +56,10 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return publicJsonResponse({ error: "Devis introuvable" }, { status: 404 });
   }
 
-  await checkRateLimit(`public-devis-read:${getTrustedClientIpOrUnknown(request)}`, {
-    maxAttempts: 60,
-    windowMs: 60 * 60 * 1000,
-  });
+  await checkRateLimit(`public-devis-read:${getTrustedClientIpOrUnknown(request)}`, PUBLIC_DEVIS_LIMITS.readPerIp);
 
   const devis = await prisma.devis.findFirst({
-    where: { shareToken: token, deletedAt: null },
+    where: { ...shareTokenLookupWhere(token), deletedAt: null },
     include: {
       lignes: { orderBy: { ordre: "asc" } },
       client: true,
@@ -107,7 +107,6 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       nom: devis.client.nom,
       adresse: devis.client.adresse,
       telephone: devis.client.telephone,
-      email: devis.client.email,
     },
     company: company
       ? {
@@ -150,7 +149,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const ip = getTrustedClientIpOrUnknown(request);
 
-    await checkRateLimit(`public-devis:${ip}`, { maxAttempts: 20, windowMs: 60 * 60 * 1000 });
+    await checkRateLimit(`public-devis:${ip}`, PUBLIC_DEVIS_LIMITS.signPerIp);
 
     const { token } = await params;
 
@@ -159,7 +158,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const devis = await prisma.devis.findFirst({
-      where: { shareToken: token, deletedAt: null, status: "ENVOYE" },
+      where: { ...shareTokenLookupWhere(token), deletedAt: null, status: "ENVOYE" },
       include: { client: true },
     });
 
@@ -183,7 +182,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       await request.json()
     );
 
-    if (status === "ACCEPTE" && clientRequiresSignatureOtp(devis.client.email)) {
+    if (status === "ACCEPTE") {
+      if (!clientCanSignOnline(devis.client.email)) {
+        return publicJsonResponse(
+          { error: "Signature en ligne impossible — l'artisan doit enregistrer l'email du client." },
+          { status: 400 }
+        );
+      }
+      if (clientRequiresSignatureOtp(devis.client.email)) {
       if (!otpCode?.trim()) {
         return publicJsonResponse(
           { error: "Code de vérification requis. Demandez-le par email avant de signer." },
@@ -191,13 +197,15 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
         );
       }
 
-      await checkRateLimit(`public-devis-otp-verify:${devis.id}`, {
-        maxAttempts: 10,
-        windowMs: 60 * 60 * 1000,
-      });
+      await checkRateLimit(`public-devis-otp-verify:${devis.id}`, PUBLIC_DEVIS_LIMITS.otpVerifyPerDevis);
 
       const otpResult = await verifyDevisSignatureOtp(devis.id, otpCode);
       if (otpResult === "locked") {
+        const { logOperationalAlert } = await import("@/lib/critical-alert");
+        logOperationalAlert("warning", "Signature OTP verrouillée (bruteforce)", {
+          devisId: devis.id,
+          ip,
+        });
         return publicJsonResponse(
           {
             error:
@@ -211,6 +219,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
           { error: "Code invalide ou expiré. Demandez un nouveau code." },
           { status: 401 }
         );
+      }
       }
     }
 

@@ -70,7 +70,7 @@ export async function getSession(): Promise<SessionUser | null> {
     if (!active) return null;
 
     const user = await prisma.user.findFirst({
-      where: { id: sessionPayload.sub, deletedAt: null },
+      where: { id: sessionPayload.sub, deletedAt: null, emailVerifiedAt: { not: null } },
       select: { id: true, email: true, name: true, plan: true },
     });
 

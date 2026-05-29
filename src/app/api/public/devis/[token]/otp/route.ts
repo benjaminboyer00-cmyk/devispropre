@@ -1,13 +1,12 @@
 import { NextRequest } from "next/server";
 import { assertMutationSecurity, getTrustedClientIpOrUnknown, handleServiceError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
-import {
-  clientRequiresSignatureOtp,
-  requestDevisSignatureOtp,
-} from "@/lib/devis-signature-otp";
+import { clientCanSignOnline, requestDevisSignatureOtp } from "@/lib/devis-signature-otp";
 import { checkRateLimit } from "@/lib/rate-limit";
+import { PUBLIC_DEVIS_LIMITS } from "@/lib/public-api-limits";
 import { publicJsonResponse } from "@/lib/public-api-response";
 import { isShareLinkExpired, isValidShareTokenFormat } from "@/lib/share-token";
+import { shareTokenLookupWhere } from "@/lib/share-token-storage";
 
 type RouteParams = { params: Promise<{ token: string }> };
 
@@ -17,7 +16,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     assertMutationSecurity(request);
 
     const ip = getTrustedClientIpOrUnknown(request);
-    await checkRateLimit(`public-devis-otp:${ip}`, { maxAttempts: 10, windowMs: 60 * 60 * 1000 });
+    await checkRateLimit(`public-devis-otp:${ip}`, PUBLIC_DEVIS_LIMITS.otpRequestPerIp);
 
     const { token } = await params;
     if (!isValidShareTokenFormat(token)) {
@@ -25,7 +24,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const devis = await prisma.devis.findFirst({
-      where: { shareToken: token, deletedAt: null, status: "ENVOYE" },
+      where: { ...shareTokenLookupWhere(token), deletedAt: null, status: "ENVOYE" },
       include: {
         client: true,
         user: { include: { company: true } },
@@ -46,17 +45,14 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     }
 
     const clientEmail = devis.client.email?.trim();
-    if (!clientRequiresSignatureOtp(clientEmail)) {
+    if (!clientCanSignOnline(clientEmail)) {
       return publicJsonResponse(
-        { error: "Aucun email client enregistré — la signature ne nécessite pas de code." },
+        { error: "Aucun email client enregistré — signature impossible en ligne." },
         { status: 400 }
       );
     }
 
-    await checkRateLimit(`public-devis-otp:devis:${devis.id}`, {
-      maxAttempts: 5,
-      windowMs: 60 * 60 * 1000,
-    });
+    await checkRateLimit(`public-devis-otp:devis:${devis.id}`, PUBLIC_DEVIS_LIMITS.otpRequestPerDevis);
 
     const result = await requestDevisSignatureOtp({
       devisId: devis.id,

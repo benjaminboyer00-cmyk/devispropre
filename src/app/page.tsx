@@ -138,6 +138,17 @@ export default function HomePage() {
       </section>
 
       <section className="section-page">
+        <h2 className="heading-section">Devis par métier</h2>
+        <p className="text-body mt-3 max-w-2xl">
+          Plombier, électricien, peintre, maçon, couvreur ou chauffagiste — pages dédiées avec
+          exemples par ville.
+        </p>
+        <Link href={ROUTES.devisArtisanHub} className="link-underline mt-4 inline-block font-medium">
+          Voir tous les métiers →
+        </Link>
+      </section>
+
+      <section className="section-page">
         <h2 className="heading-section">Ils gagnent du temps sur le terrain</h2>
         <ul className="mt-8 grid gap-6 sm:grid-cols-3">
           {REVIEWS.map((r) => (

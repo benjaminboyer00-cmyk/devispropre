@@ -247,7 +247,7 @@ export function getLocalSeeAlsoLinks(trade: TradeMeta, city?: CityMeta): LocalSe
 export function getLocalBreadcrumbs(trade: TradeMeta, city?: CityMeta) {
   const items = [
     { name: "Accueil", path: "/" },
-    { name: "Devis artisan", path: "/devis-artisan/plombier" },
+    { name: "Devis artisan", path: "/devis-artisan" },
     { name: trade.plural, path: localSeoPath(trade.slug) },
   ];
   if (city) {

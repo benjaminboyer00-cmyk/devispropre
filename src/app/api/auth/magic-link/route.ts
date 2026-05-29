@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiError, assertMutationSecurity, handleServiceError } from "@/lib/api-helpers";
+import { apiError, assertMutationSecurity, getTrustedClientIpOrUnknown, handleServiceError } from "@/lib/api-helpers";
 import {
   authEmailOnlyKey,
   authGlobalMagicLinkKey,
@@ -19,7 +19,7 @@ const bodySchema = magicLinkSchema.extend({
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? "unknown";
+  const ip = getTrustedClientIpOrUnknown(request);
 
   try {
     await checkRateLimit(authGlobalMagicLinkKey(), { maxAttempts: 40, windowMs: 60 * 60 * 1000 });

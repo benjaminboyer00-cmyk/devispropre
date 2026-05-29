@@ -11,9 +11,15 @@ interface SubscriptionPanelProps {
   plan: string;
   hasStripeCustomer: boolean;
   isTeamMember: boolean;
+  canStartTrial?: boolean;
 }
 
-export function SubscriptionPanel({ plan, hasStripeCustomer, isTeamMember }: SubscriptionPanelProps) {
+export function SubscriptionPanel({
+  plan,
+  hasStripeCustomer,
+  isTeamMember,
+  canStartTrial = false,
+}: SubscriptionPanelProps) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState("");
   const { toast } = useToast();
@@ -24,7 +30,7 @@ export function SubscriptionPanel({ plan, hasStripeCustomer, isTeamMember }: Sub
     setLoading(checkoutPlan);
     setMessage("");
     try {
-      const withTrial = plan === "FREE" && checkoutPlan === "STARTER";
+      const withTrial = canStartTrial && checkoutPlan === "STARTER";
       const res = await fetch("/api/stripe/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },

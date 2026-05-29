@@ -25,32 +25,38 @@ export async function withIdempotency<T>(
     return Response.json(body, { status });
   }
 
-  const expiresAt = new Date(Date.now() + ttlMs);
-  const existing = await prisma.idempotencyRecord.findUnique({
-    where: { userId_key: { userId, key } },
-  });
+  return prisma.$transaction(async (tx) => {
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtext(${`${userId}:idem:${key}`}))`;
 
-  if (existing && existing.expiresAt > new Date()) {
-    return Response.json(existing.body, { status: existing.status });
-  }
-
-  try {
-    const { status, body } = await handler();
-    await prisma.idempotencyRecord.upsert({
+    const expiresAt = new Date(Date.now() + ttlMs);
+    const existing = await tx.idempotencyRecord.findUnique({
       where: { userId_key: { userId, key } },
-      create: { userId, key, status, body: body as Prisma.InputJsonValue, expiresAt },
-      update: { status, body: body as Prisma.InputJsonValue, expiresAt },
     });
-    return Response.json(body, { status });
-  } catch (err) {
-    if (isUniqueViolation(err)) {
-      const cached = await prisma.idempotencyRecord.findUnique({
-        where: { userId_key: { userId, key } },
-      });
-      if (cached) {
-        return Response.json(cached.body, { status: cached.status });
-      }
+
+    if (existing && existing.expiresAt > new Date()) {
+      return Response.json(existing.body, { status: existing.status });
     }
-    throw err;
-  }
+
+    const { status, body } = await handler();
+
+    try {
+      await tx.idempotencyRecord.upsert({
+        where: { userId_key: { userId, key } },
+        create: { userId, key, status, body: body as Prisma.InputJsonValue, expiresAt },
+        update: { status, body: body as Prisma.InputJsonValue, expiresAt },
+      });
+    } catch (err) {
+      if (isUniqueViolation(err)) {
+        const cached = await tx.idempotencyRecord.findUnique({
+          where: { userId_key: { userId, key } },
+        });
+        if (cached) {
+          return Response.json(cached.body, { status: cached.status });
+        }
+      }
+      throw err;
+    }
+
+    return Response.json(body, { status });
+  });
 }

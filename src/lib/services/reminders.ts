@@ -1,7 +1,9 @@
 import { Plan } from "@/generated/prisma/client";
 import { prisma } from "../db";
 import { logAudit, type AuditContext } from "../audit";
+import { logOperationalAlert } from "../critical-alert";
 import { env } from "../env";
+import { resolveShareTokenRaw } from "../share-token-storage";
 import { sendDevisReminderEmail, sendDevisReminderToClient } from "../email";
 
 const REMINDER_DAYS = 3;
@@ -41,10 +43,24 @@ export async function processReminders(systemCtx: AuditContext) {
     clientEmailReason?: string;
     artisanEmailReason?: string;
   }[] = [];
+  const failures: string[] = [];
 
   for (const devis of devisList) {
-    const shareUrl = devis.shareToken
-      ? `${env.appUrl}/devis/${devis.shareToken}`
+    const claimed = await prisma.devis.updateMany({
+      where: {
+        id: devis.id,
+        status: "ENVOYE",
+        reminderSentAt: null,
+        deletedAt: null,
+      },
+      data: { reminderSentAt: new Date() },
+    });
+
+    if (claimed.count === 0) continue;
+
+    const shareRaw = resolveShareTokenRaw(devis);
+    const shareUrl = shareRaw
+      ? `${env.appUrl}/devis/${shareRaw}`
       : `${env.appUrl}/dashboard/devis/${devis.id}`;
 
     const companyName = devis.user.company?.raisonSociale ?? devis.user.name;
@@ -78,8 +94,18 @@ export async function processReminders(systemCtx: AuditContext) {
 
     await prisma.devis.update({
       where: { id: devis.id },
-      data: { reminderSentAt: new Date() },
+      data: {
+        reminderSentAt:
+          artisanResult.sent || clientEmailSent ? new Date() : null,
+      },
     });
+
+    if (!artisanResult.sent && artisanResult.reason) {
+      failures.push(`${devis.numero}: artisan — ${artisanResult.reason}`);
+    }
+    if (devis.client.email && !clientEmailSent && clientEmailReason) {
+      failures.push(`${devis.numero}: client — ${clientEmailReason}`);
+    }
 
     await logAudit(
       { userId: devis.userId, ipAddress: systemCtx.ipAddress, userAgent: "cron-reminders" },
@@ -110,5 +136,12 @@ export async function processReminders(systemCtx: AuditContext) {
     });
   }
 
-  return { processed: results.length, devis: results };
+  if (failures.length > 0) {
+    logOperationalAlert("warning", "Relances J+3 — échecs partiels", {
+      count: failures.length,
+      samples: failures.slice(0, 5),
+    });
+  }
+
+  return { processed: results.length, devis: results, failures: failures.length };
 }

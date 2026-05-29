@@ -11,6 +11,7 @@ import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { sendSupportTicketEmail } from "@/lib/email";
 import { assertProFeature } from "@/lib/plan-features";
+import { checkRateLimit, supportTicketKey } from "@/lib/rate-limit";
 
 const ticketSchema = z.object({
   subject: z.string().min(3).max(120),
@@ -51,6 +52,11 @@ export async function POST(request: NextRequest) {
 
   try {
     assertProFeature(auth.plan, "Support prioritaire");
+
+    await checkRateLimit(supportTicketKey(auth.user.id), {
+      maxAttempts: 10,
+      windowMs: 60 * 60 * 1000,
+    });
 
     const body = ticketSchema.parse(await request.json());
 

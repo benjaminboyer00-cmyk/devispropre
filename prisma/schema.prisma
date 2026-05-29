@@ -50,6 +50,7 @@ model User {
   passwordHash String
   name         String
   phone        String?
+  emailVerifiedAt DateTime?
   plan         Plan      @default(FREE)
   stripeCustomerId String? @unique
   subscriptionPastDue Boolean @default(false)
@@ -208,7 +209,8 @@ model Devis {
   lockedAt       DateTime?
   contentHash    String?
   chainHash      String?
-  shareToken     String?     @unique
+  shareTokenHash String?     @unique @map("shareToken")
+  shareTokenEnc  String?
   sentAt         DateTime?
   acceptedAt     DateTime?
   refusedAt      DateTime?
@@ -279,7 +281,8 @@ model Facture {
   contentHash  String?
   chainHash    String?
   previousHash String?
-  shareToken   String?       @unique
+  shareTokenHash String?       @unique @map("shareToken")
+  shareTokenEnc  String?
   issuedAt     DateTime?
   paidAt       DateTime?
   pdfUrl       String?
