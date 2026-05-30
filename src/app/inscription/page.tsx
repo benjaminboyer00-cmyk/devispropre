@@ -1,4 +1,5 @@
 import { RegisterForm } from "@/components/auth/RegisterForm";
+import { TurnstileScript } from "@/components/auth/TurnstileScript";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata = pageMetadata({
@@ -18,8 +19,12 @@ export default async function InscriptionPage({
   const fromDevis = params.from === "devis";
   const fromFacture = params.from === "facture";
 
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
   return (
-    <div className="mx-auto max-w-lg px-4 py-20 sm:py-24">
+    <>
+      <TurnstileScript siteKey={turnstileSiteKey} />
+      <div className="mx-auto max-w-lg px-4 py-20 sm:py-24">
       <h1 className="heading-section">Créer mon compte</h1>
       {fromDevis ? (
         <p className="text-lead mt-3 font-light">
@@ -37,8 +42,9 @@ export default async function InscriptionPage({
         </p>
       )}
       <div className="ui-card-padded mt-10">
-        <RegisterForm turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
+        <RegisterForm turnstileSiteKey={turnstileSiteKey} />
       </div>
     </div>
+    </>
   );
 }

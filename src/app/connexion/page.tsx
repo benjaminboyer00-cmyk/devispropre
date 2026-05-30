@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { LoginForm } from "@/components/auth/LoginForm";
+import { TurnstileScript } from "@/components/auth/TurnstileScript";
 
 export const metadata: Metadata = {
   title: "Connexion",
@@ -11,7 +12,9 @@ export default function ConnexionPage() {
   const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
 
   return (
-    <div className="mx-auto max-w-md px-4 py-20 sm:py-24">
+    <>
+      <TurnstileScript siteKey={turnstileSiteKey} />
+      <div className="mx-auto max-w-md px-4 py-20 sm:py-24">
       <h1 className="heading-section text-3xl">Connexion</h1>
       <p className="text-lead mt-3 font-light">
         Retrouvez vos devis, vos factures et gérez votre abonnement. Connexion par lien email — sans
@@ -23,5 +26,6 @@ export default function ConnexionPage() {
         </Suspense>
       </div>
     </div>
+    </>
   );
 }

@@ -42,15 +42,22 @@ export function RegisterForm({ turnstileSiteKey }: RegisterFormProps) {
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
   const [turnstileReady, setTurnstileReady] = useState(false);
+  const [turnstileError, setTurnstileError] = useState("");
   const { toast } = useToast();
 
   const handleTurnstileToken = useCallback((token: string) => {
     setTurnstileToken(token);
     setTurnstileReady(token.length > 0);
+    setTurnstileError("");
   }, []);
 
   const handleTurnstileExpire = useCallback(() => {
     setTurnstileToken("");
+    setTurnstileReady(false);
+  }, []);
+
+  const handleTurnstileError = useCallback((message: string) => {
+    setTurnstileError(message);
     setTurnstileReady(false);
   }, []);
 
@@ -87,9 +94,11 @@ export function RegisterForm({ turnstileSiteKey }: RegisterFormProps) {
     }
 
     if (isTurnstileConfigured(turnstileSiteKey) && !turnstileToken) {
-      const msg = turnstileReady
-        ? "Veuillez compléter la vérification anti-robot."
-        : "Chargement de la vérification anti-robot… Réessayez dans quelques secondes.";
+      const msg = turnstileError
+        ? turnstileError
+        : turnstileReady
+          ? "Veuillez compléter la vérification anti-robot."
+          : "Chargement de la vérification anti-robot… Réessayez dans quelques secondes.";
       toast(msg, "error");
       setError(msg);
       return;
@@ -224,8 +233,10 @@ export function RegisterForm({ turnstileSiteKey }: RegisterFormProps) {
         siteKey={turnstileSiteKey}
         onToken={handleTurnstileToken}
         onExpire={handleTurnstileExpire}
+        onError={handleTurnstileError}
         className="flex justify-center"
       />
+      {turnstileError && <p className="text-body text-center text-sm text-red-600">{turnstileError}</p>}
 
       <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-4 text-base">
         {loading ? "Création…" : "Créer mon compte → essai gratuit 15 jours"}

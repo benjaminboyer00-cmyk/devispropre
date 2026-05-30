@@ -30,14 +30,20 @@ export function LoginForm({ turnstileSiteKey }: LoginFormProps) {
   const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState("");
+  const [turnstileError, setTurnstileError] = useState("");
   const { toast } = useToast();
 
   const handleTurnstileToken = useCallback((token: string) => {
     setTurnstileToken(token);
+    setTurnstileError("");
   }, []);
 
   const handleTurnstileExpire = useCallback(() => {
     setTurnstileToken("");
+  }, []);
+
+  const handleTurnstileError = useCallback((message: string) => {
+    setTurnstileError(message);
   }, []);
 
   const linkError =
@@ -63,7 +69,7 @@ export function LoginForm({ turnstileSiteKey }: LoginFormProps) {
     }
 
     if (isTurnstileConfigured(turnstileSiteKey) && !turnstileToken) {
-      const msg = "Veuillez compléter la vérification anti-robot.";
+      const msg = turnstileError || "Veuillez compléter la vérification anti-robot.";
       toast(msg, "error");
       setError(msg);
       return;
@@ -120,7 +126,7 @@ export function LoginForm({ turnstileSiteKey }: LoginFormProps) {
     }
 
     if (isTurnstileConfigured(turnstileSiteKey) && !turnstileToken) {
-      const msg = "Veuillez compléter la vérification anti-robot.";
+      const msg = turnstileError || "Veuillez compléter la vérification anti-robot.";
       toast(msg, "error");
       setError(msg);
       return;
@@ -183,8 +189,10 @@ export function LoginForm({ turnstileSiteKey }: LoginFormProps) {
             siteKey={turnstileSiteKey}
             onToken={handleTurnstileToken}
             onExpire={handleTurnstileExpire}
+            onError={handleTurnstileError}
             className="flex justify-center"
           />
+          {turnstileError && <p className="text-body text-center text-sm text-red-600">{turnstileError}</p>}
           <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-4 text-base">
             {loading ? "Envoi…" : "Recevoir mon lien de connexion"}
           </button>
@@ -223,8 +231,10 @@ export function LoginForm({ turnstileSiteKey }: LoginFormProps) {
             siteKey={turnstileSiteKey}
             onToken={handleTurnstileToken}
             onExpire={handleTurnstileExpire}
+            onError={handleTurnstileError}
             className="flex justify-center"
           />
+          {turnstileError && <p className="text-body text-center text-sm text-red-600">{turnstileError}</p>}
           <button type="submit" disabled={loading} aria-busy={loading} className="ui-btn-primary w-full py-3">
             {loading ? "Connexion…" : "Se connecter"}
           </button>
