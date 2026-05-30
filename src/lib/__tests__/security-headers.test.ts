@@ -28,5 +28,7 @@ describe("buildContentSecurityPolicy", () => {
     const csp = buildContentSecurityPolicy("n");
     expect(csp).toContain("https://plausible.io");
     expect(csp).toContain("https://eu.i.posthog.com");
+    expect(csp).toContain("https://www.googletagmanager.com");
+    expect(csp).toContain("https://www.google-analytics.com");
   });
 });

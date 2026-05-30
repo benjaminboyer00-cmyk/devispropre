@@ -20,6 +20,15 @@ import { ROUTES } from "@/lib/routes";
 import { applySecurityHeaders, buildContentSecurityPolicy } from "@/lib/security-headers";
 
 export async function proxy(request: NextRequest) {
+  const host = request.headers.get("host")?.toLowerCase().split(":")[0] ?? "";
+  if (host.startsWith("www.") && host.endsWith("devispropre.com")) {
+    const url = request.nextUrl.clone();
+    url.hostname = host.replace(/^www\./, "");
+    url.protocol = "https:";
+    url.port = "";
+    return NextResponse.redirect(url, 301);
+  }
+
   const { pathname } = request.nextUrl;
 
   // Routes SEO / PWA — pas de logique auth (laisser Next.js servir sitemap, robots, manifest)

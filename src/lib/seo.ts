@@ -78,6 +78,20 @@ const sharedSocial = {
   images: [OG_IMAGE],
 };
 
+function trimMetaDescription(text: string, max = 160): string {
+  if (text.length <= max) return text;
+  const cut = text.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 80 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
+function trimPageTitle(title: string, max = 58): string {
+  if (title.length <= max) return title;
+  const cut = title.slice(0, max - 1);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${(lastSpace > 30 ? cut.slice(0, lastSpace) : cut).trimEnd()}…`;
+}
+
 /** Metadata réutilisable par page marketing. */
 export function pageMetadata(opts: {
   title: string;
@@ -90,20 +104,17 @@ export function pageMetadata(opts: {
   noindex?: boolean;
 }): Metadata {
   const url = `${SITE.url}${opts.path}`;
-  const ogTitle = `${opts.title} | ${SITE.name}`;
+  const pageTitle = trimPageTitle(opts.title);
+  const description = trimMetaDescription(opts.description);
+  const ogTitle = `${pageTitle} | ${SITE.name}`;
   const ogImageUrl = opts.ogImagePath ?? OG_IMAGE.url;
   const ogImage = { ...OG_IMAGE, url: ogImageUrl };
   return {
-    title: opts.title,
-    description: opts.description,
+    title: pageTitle,
+    description,
     keywords: opts.keywords ?? [...KEYWORDS],
     alternates: {
       canonical: url,
-      languages: {
-        "fr-FR": url,
-        fr: url,
-        "x-default": url,
-      },
     },
     openGraph: {
       type: "website",
@@ -157,11 +168,6 @@ export const defaultMetadata: Metadata = {
     : {}),
   alternates: {
     canonical: SITE.url,
-    languages: {
-      "fr-FR": SITE.url,
-      fr: SITE.url,
-      "x-default": SITE.url,
-    },
   },
 };
 

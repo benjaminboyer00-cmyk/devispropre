@@ -32,11 +32,12 @@ export default function PolitiqueConfidentialitePage() {
       </p>
       <h2>Mesure d&apos;audience</h2>
       <p>
-        Le site marketing utilise Plausible Analytics (statistiques anonymisées, sans cookies
-        publicitaires), PostHog (analyse UX et replays de session — champs masqués) et Vercel
-        Speed Insights (performance Core Web Vitals). Ces outils ne sont actifs qu&apos;en
-        production lorsque configurés. Vous pouvez vous opposer via les paramètres de votre
-        navigateur ou nous contacter.
+        Le site marketing utilise Google Tag Manager et Google Analytics 4 (mesure d&apos;audience
+        avec cookies analytiques — vous pouvez refuser via les paramètres de votre navigateur ou
+        l&apos;extension de désactivation Google). Plausible Analytics (statistiques anonymisées) et
+        PostHog (analyse UX) peuvent compléter ces outils lorsqu&apos;ils sont configurés. Ces
+        services ne sont actifs qu&apos;en production. Contact : {LEGAL.editor.email} pour exercer
+        vos droits.
       </p>
     </article>
   );

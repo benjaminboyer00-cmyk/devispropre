@@ -2,7 +2,7 @@
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
-import { primaryAnalyticsProvider } from "@/lib/analytics";
+import { primaryAnalyticsProvider, googleAnalyticsEnabled } from "@/lib/analytics";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { WebVitals } from "@/components/analytics/WebVitals";
 
@@ -13,7 +13,7 @@ export function SiteAnalytics({ children }: { children: React.ReactNode }) {
   const body = (
     <>
       {children}
-      {provider && <WebVitals />}
+      {(provider || googleAnalyticsEnabled()) && <WebVitals />}
       {provider === "vercel" && (
         <>
           <Analytics />
