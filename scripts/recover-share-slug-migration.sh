@@ -7,19 +7,23 @@ cd "$ROOT"
 
 COMPOSE="docker compose --env-file .env.production -f docker-compose.prod.yml"
 MIGRATION="20260528100000_share_slug"
-
-set -a
-# shellcheck disable=SC1091
-source .env.production
-set +a
-
-PGUSER="${POSTGRES_USER:-devispropre}"
-PGDB="${POSTGRES_DB:-devispropre}"
+PRISMA='cd /app/prisma-cli && node ./node_modules/prisma/build/index.js'
 
 if [ ! -f ".env.production" ]; then
   echo "Créez .env.production avant de continuer." >&2
   exit 1
 fi
+
+# Ne pas `source .env.production` (valeurs multilignes / <> cassent bash)
+PGUSER="$(grep -E '^POSTGRES_USER=' .env.production | cut -d= -f2- | tr -d '"' | tr -d "'")"
+PGDB="$(grep -E '^POSTGRES_DB=' .env.production | cut -d= -f2- | tr -d '"' | tr -d "'")"
+PGUSER="${PGUSER:-devispropre}"
+PGDB="${PGDB:-devispropre}"
+
+prisma_cmd() {
+  # Contourne docker-entrypoint.sh (sinon migrate deploy échoue avant resolve)
+  $COMPOSE run --rm --no-deps --entrypoint sh app -c "$PRISMA $*"
+}
 
 echo "→ État actuel des colonnes shareSlug…"
 $COMPOSE exec -T postgres psql -U "$PGUSER" -d "$PGDB" <<'SQL'
@@ -37,13 +41,19 @@ ALTER TABLE "Facture" DROP COLUMN IF EXISTS "shareSlug";
 SQL
 
 echo "→ Marquage de la migration comme annulée (Prisma)…"
-$COMPOSE run --rm --no-deps app sh -c "cd /app/prisma-cli && node ./node_modules/prisma/build/index.js migrate resolve --rolled-back ${MIGRATION}"
+if ! prisma_cmd "migrate resolve --rolled-back ${MIGRATION}"; then
+  echo "→ Fallback SQL sur _prisma_migrations…"
+  $COMPOSE exec -T postgres psql -U "$PGUSER" -d "$PGDB" <<SQL
+DELETE FROM "_prisma_migrations"
+WHERE migration_name = '${MIGRATION}' AND finished_at IS NULL;
+SQL
+fi
 
 echo "→ Relance des migrations…"
-$COMPOSE run --rm --no-deps app sh -c "cd /app/prisma-cli && node ./node_modules/prisma/build/index.js migrate deploy"
+prisma_cmd "migrate deploy"
 
 echo "→ Redémarrage de l'application…"
-$COMPOSE up -d app
+$COMPOSE up -d --force-recreate app
 
 echo "→ Attente healthcheck…"
 for i in $(seq 1 30); do
