@@ -1,5 +1,6 @@
 import { env } from "./env";
 import { escapeHtml } from "./html-escape";
+import { documentShareHtml } from "./share-utils";
 
 interface SendEmailParams {
   to: string;
@@ -49,14 +50,23 @@ export async function sendDevisReminderToClient(opts: {
   devisNumero: string;
   shareUrl: string;
 }): Promise<{ sent: boolean; reason?: string }> {
+  const bodyHtml = documentShareHtml({
+    beforeLink: `Bonjour ${opts.clientNom},
+
+Nous n'avons pas encore reçu votre réponse concernant le devis n° ${opts.devisNumero} transmis par ${opts.companyName}.`,
+    linkWord: "devis",
+    afterLink: `
+
+Merci de votre confiance !`,
+    shareUrl: opts.shareUrl,
+  });
+
   return sendEmail({
     to: opts.clientEmail,
     subject: `Rappel — Devis ${escapeHtml(opts.devisNumero)} de ${escapeHtml(opts.companyName)}`,
     html: `
-      <p>Bonjour ${escapeHtml(opts.clientNom)},</p>
-      <p>Nous n'avons pas encore reçu votre réponse concernant le devis <strong>${escapeHtml(opts.devisNumero)}</strong> transmis par <strong>${escapeHtml(opts.companyName)}</strong>.</p>
-      <p><a href="${escapeHtml(opts.shareUrl)}">Consulter et répondre au devis en ligne</a></p>
-      <p style="color:#64748b;font-size:12px">Message automatique DevisPropre — relance J+3</p>
+      ${bodyHtml}
+      <p style="color:#64748b;font-size:12px;margin-top:16px">Message automatique DevisPropre — relance J+3</p>
     `,
   });
 }
@@ -156,17 +166,26 @@ export async function sendFactureLinkEmail(opts: {
     : `Facture ${opts.factureNumero} — ${opts.companyName}`;
 
   const intro = opts.resend
-    ? `Voici à nouveau le lien pour consulter la facture <strong>${escapeHtml(opts.factureNumero)}</strong> de <strong>${escapeHtml(opts.companyName)}</strong>.`
-    : `Votre facture <strong>${escapeHtml(opts.factureNumero)}</strong> de <strong>${escapeHtml(opts.companyName)}</strong> est disponible en ligne.`;
+    ? `Voici à nouveau votre facture n° ${opts.factureNumero} de ${opts.companyName} :`
+    : `Votre facture n° ${opts.factureNumero} de ${opts.companyName} est disponible en ligne :`;
+
+  const bodyHtml = documentShareHtml({
+    beforeLink: `Bonjour ${opts.clientNom},
+
+${intro}`,
+    linkWord: "facture",
+    afterLink: `
+
+Merci de votre confiance !`,
+    shareUrl: opts.shareUrl,
+  });
 
   return sendEmail({
     to: opts.to,
     subject,
     html: `
-      <p>Bonjour ${escapeHtml(opts.clientNom)},</p>
-      <p>${intro}</p>
-      <p><a href="${escapeHtml(opts.shareUrl)}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Consulter la facture</a></p>
-      <p style="color:#64748b;font-size:12px">Document transmis via DevisPropre.</p>
+      ${bodyHtml}
+      <p style="color:#64748b;font-size:12px;margin-top:16px">Document transmis via DevisPropre.</p>
     `,
   });
 }

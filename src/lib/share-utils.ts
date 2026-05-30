@@ -41,17 +41,22 @@ Merci de votre confiance !`,
   };
 }
 
-/** Texte affiché / copié — le mot devis|facture remplace l’URL visible. */
+/** Texte affiché / email plain — le mot devis|facture remplace l’URL visible. */
 export function documentShareDisplayText(message: DocumentShareMessage): string {
   return `${message.beforeLink}\n${message.linkWord}${message.afterLink}`;
 }
 
-/** WhatsApp, SMS, mailto — l’URL doit rester en clair pour ces canaux. */
-export function documentShareExternalText(message: DocumentShareMessage): string {
+/** WhatsApp et SMS — URL complète (lien cliquable dans l’app). */
+export function documentShareWhatsAppText(message: DocumentShareMessage): string {
   return `${message.beforeLink}\n${message.shareUrl}${message.afterLink}`;
 }
 
-/** Copie riche — le mot devis|facture est un lien cliquable. */
+/** @deprecated Utiliser documentShareWhatsAppText */
+export function documentShareExternalText(message: DocumentShareMessage): string {
+  return documentShareWhatsAppText(message);
+}
+
+/** Email HTML — le mot devis|facture est un lien cliquable. */
 export function documentShareHtml(message: DocumentShareMessage): string {
   const before = escapeHtml(message.beforeLink).replace(/\n/g, "<br>");
   const after = escapeHtml(message.afterLink).replace(/\n/g, "<br>");

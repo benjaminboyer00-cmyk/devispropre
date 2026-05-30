@@ -26,4 +26,5 @@ export {
   documentShareDisplayText,
   documentShareExternalText,
   documentShareHtml,
+  documentShareWhatsAppText,
 } from "./share-utils";

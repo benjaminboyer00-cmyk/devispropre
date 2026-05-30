@@ -4,6 +4,7 @@ import {
   documentShareDisplayText,
   documentShareExternalText,
   documentShareHtml,
+  documentShareWhatsAppText,
   mailShareHref,
   smsShareHref,
   whatsAppShareHref,
@@ -23,9 +24,10 @@ describe("share-utils", () => {
     expect(text).not.toContain("https://devispropre.com/devis/devis-dev-2026-0003");
   });
 
-  it("inclut l’URL courte pour WhatsApp, SMS et mailto", () => {
-    const text = documentShareExternalText(sample);
+  it("inclut l’URL complète pour WhatsApp et SMS", () => {
+    const text = documentShareWhatsAppText(sample);
     expect(text).toContain("https://devispropre.com/devis/devis-dev-2026-0003");
+    expect(documentShareExternalText(sample)).toBe(text);
   });
 
   it("génère du HTML avec un lien sur le mot devis", () => {
