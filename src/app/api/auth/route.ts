@@ -10,9 +10,10 @@ import {
 } from "@/lib/api-helpers";
 import {
   authIpRateLimitKey,
-  authPasswordLoginIpKey,
+  authLoginEmailKey,
   authPasswordChangeIpKey,
-  authRateLimitKey,
+  authPasswordLoginIpKey,
+  authRegisterEmailKey,
   checkRateLimit,
 } from "@/lib/rate-limit";
 import {
@@ -46,11 +47,15 @@ export async function POST(request: NextRequest) {
 
     if (action === "register") {
       await checkRateLimit(authIpRateLimitKey(ip), { maxAttempts: 20, windowMs: 60 * 60 * 1000 });
-      await checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 5, windowMs: 60 * 60 * 1000 });
+
+      const data = registerSchema.parse(body);
+      await checkRateLimit(authRegisterEmailKey(ip, data.email), {
+        maxAttempts: 5,
+        windowMs: 60 * 60 * 1000,
+      });
 
       await verifyTurnstileToken(body.turnstileToken, ip);
 
-      const data = registerSchema.parse(body);
       const existing = await prisma.user.findUnique({ where: { email: data.email } });
       if (existing) return apiError("Impossible de créer le compte avec cet email.", 409);
 
@@ -94,12 +99,16 @@ export async function POST(request: NextRequest) {
     }
 
     if (action === "login") {
-      await checkRateLimit(authPasswordLoginIpKey(ip), { maxAttempts: 5, windowMs: 60 * 1000 });
-      await checkRateLimit(authRateLimitKey(ip, body.email), { maxAttempts: 5, windowMs: 60 * 1000 });
+      const data = loginSchema.parse(body);
+
+      await checkRateLimit(authPasswordLoginIpKey(ip), { maxAttempts: 10, windowMs: 15 * 60 * 1000 });
+      await checkRateLimit(authLoginEmailKey(ip, data.email), {
+        maxAttempts: 10,
+        windowMs: 15 * 60 * 1000,
+      });
 
       await verifyTurnstileToken(body.turnstileToken, ip);
 
-      const data = loginSchema.parse(body);
       const user = await prisma.user.findFirst({
         where: { email: data.email, deletedAt: null },
         select: { id: true, email: true, name: true, plan: true, passwordHash: true, emailVerifiedAt: true },
@@ -110,8 +119,10 @@ export async function POST(request: NextRequest) {
       }
 
       if (!user.emailVerifiedAt) {
-        await sendEmailVerification(user.id, user.email, user.name);
-        return apiError("Confirmez votre email — un nouveau lien vient d'être envoyé.", 403);
+        return apiError(
+          "Confirmez votre email via le lien reçu à l'inscription (vérifiez les spams).",
+          403
+        );
       }
 
       const token = await createSession(

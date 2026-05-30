@@ -5,7 +5,7 @@ import {
   authEmailOnlyKey,
   authGlobalMagicLinkKey,
   authIpRateLimitKey,
-  authRateLimitKey,
+  authMagicLinkEmailKey,
   checkRateLimit,
 } from "@/lib/rate-limit";
 import { requestMagicLink } from "@/lib/magic-link";
@@ -23,13 +23,13 @@ export async function POST(request: NextRequest) {
 
   try {
     await checkRateLimit(authGlobalMagicLinkKey(), { maxAttempts: 40, windowMs: 60 * 60 * 1000 });
-    await checkRateLimit(authIpRateLimitKey(ip), { maxAttempts: 8, windowMs: 15 * 60 * 1000 });
+    await checkRateLimit(authIpRateLimitKey(ip), { maxAttempts: 15, windowMs: 15 * 60 * 1000 });
 
     const body = bodySchema.parse(await request.json());
     const email = body.email.toLowerCase().trim();
 
-    await checkRateLimit(authEmailOnlyKey(email), { maxAttempts: 2, windowMs: 15 * 60 * 1000 });
-    await checkRateLimit(authRateLimitKey(ip, email), { maxAttempts: 2, windowMs: 15 * 60 * 1000 });
+    await checkRateLimit(authEmailOnlyKey(email), { maxAttempts: 5, windowMs: 15 * 60 * 1000 });
+    await checkRateLimit(authMagicLinkEmailKey(ip, email), { maxAttempts: 5, windowMs: 15 * 60 * 1000 });
 
     await verifyTurnstileToken(body.turnstileToken, ip);
 

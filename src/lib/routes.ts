@@ -17,6 +17,7 @@ export const ROUTES = {
   creerDevis: "/creer-devis",
   creerDevisApercu: "/creer-devis/apercu",
   inscription: "/inscription",
+  inscriptionConfirmation: "/inscription/confirmation",
   connexion: "/connexion",
   offline: "/offline",
   dashboard: "/dashboard",

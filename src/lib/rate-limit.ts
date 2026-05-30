@@ -47,6 +47,22 @@ export function authRateLimitKey(ip: string, email?: string): string {
   return `auth:${ip}:${email?.toLowerCase() ?? "unknown"}`;
 }
 
+export function authRegisterEmailKey(ip: string, email: string): string {
+  return `auth:register:${ip}:${email.toLowerCase().trim()}`;
+}
+
+export function authMagicLinkEmailKey(ip: string, email: string): string {
+  return `auth:magic:${ip}:${email.toLowerCase().trim()}`;
+}
+
+export function authLoginEmailKey(ip: string, email: string): string {
+  return `auth:login:${ip}:${email.toLowerCase().trim()}`;
+}
+
+export function authResendVerificationKey(ip: string, email: string): string {
+  return `auth:resend-verify:${ip}:${email.toLowerCase().trim()}`;
+}
+
 export function authIpRateLimitKey(ip: string): string {
   return `auth:ip:${ip}`;
 }

@@ -6,7 +6,6 @@ import type { SessionUser } from "./auth";
 import { AUTH_RESPONSE_MIN_MS, ensureMinimumElapsed } from "./timing-safe";
 
 const TTL_MS = 15 * 60 * 1000;
-/** Ne pas renvoyer d'email si un token valide a déjà été émis récemment (coût Resend). */
 const RESEND_COOLDOWN_MS = 60 * 1000;
 
 /** Envoie un lien de connexion si le compte existe (réponse uniforme côté API). */
@@ -15,7 +14,7 @@ export async function requestMagicLink(email: string): Promise<void> {
 
   const user = await prisma.user.findFirst({
     where: { email: email.toLowerCase().trim(), deletedAt: null },
-    select: { id: true, email: true, name: true },
+    select: { id: true, email: true, name: true, emailVerifiedAt: true },
   });
 
   if (!user) {
@@ -26,6 +25,7 @@ export async function requestMagicLink(email: string): Promise<void> {
   const recentToken = await prisma.magicLinkToken.findFirst({
     where: {
       userId: user.id,
+      purpose: "MAGIC_LINK",
       usedAt: null,
       expiresAt: { gt: new Date() },
       createdAt: { gt: new Date(Date.now() - RESEND_COOLDOWN_MS) },
@@ -43,11 +43,11 @@ export async function requestMagicLink(email: string): Promise<void> {
   const expiresAt = new Date(Date.now() + TTL_MS);
 
   await prisma.magicLinkToken.deleteMany({
-    where: { userId: user.id, usedAt: null },
+    where: { userId: user.id, purpose: "MAGIC_LINK", usedAt: null },
   });
 
   await prisma.magicLinkToken.create({
-    data: { userId: user.id, tokenHash, expiresAt },
+    data: { userId: user.id, tokenHash, purpose: "MAGIC_LINK", expiresAt },
   });
 
   const verifyUrl = `${env.appUrl}/api/auth/magic-link/verify?token=${encodeURIComponent(rawToken)}`;
@@ -68,6 +68,7 @@ export async function consumeMagicLink(rawToken: string): Promise<SessionUser | 
   const consumed = await prisma.magicLinkToken.updateMany({
     where: {
       tokenHash,
+      purpose: "MAGIC_LINK",
       usedAt: null,
       expiresAt: { gt: now },
     },

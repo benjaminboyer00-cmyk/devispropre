@@ -53,6 +53,7 @@ export function LoginForm({ turnstileSiteKey }: LoginFormProps) {
         ? "Lien invalide. Entrez votre email pour en recevoir un nouveau."
         : "";
 
+  const verifyHint = searchParams.get("verify") === "1";
   const fromDevis = searchParams.get("from") === "devis";
 
   async function handlePasswordLogin(e: React.FormEvent) {
@@ -159,6 +160,12 @@ export function LoginForm({ turnstileSiteKey }: LoginFormProps) {
     <div className="space-y-5">
       {(linkError || error) && <p className="ui-alert-error">{linkError || error}</p>}
       {info && <p className="ui-alert-success">{info}</p>}
+      {verifyHint && !linkError && !error && !info && (
+        <p className="ui-alert-success">
+          Compte créé — confirmez d&apos;abord votre email via le lien reçu à l&apos;inscription, puis
+          connectez-vous ici.
+        </p>
+      )}
 
       {fromDevis && !linkError && !error && (
         <p className="text-body rounded-lg bg-[var(--surface-muted)] px-4 py-3 text-sm">

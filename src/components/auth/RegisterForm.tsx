@@ -128,8 +128,10 @@ export function RegisterForm({ turnstileSiteKey }: RegisterFormProps) {
     }
 
     if ((data as { needsEmailVerification?: boolean }).needsEmailVerification) {
-      toast("Vérifiez votre boîte mail pour activer votre compte.");
-      router.push(`${ROUTES.connexion}?verify=1`);
+      toast("Email de confirmation envoyé — vérifiez votre boîte mail.");
+      router.push(
+        `${ROUTES.inscriptionConfirmation}?email=${encodeURIComponent(parsed.data.email)}`
+      );
       return;
     }
 
