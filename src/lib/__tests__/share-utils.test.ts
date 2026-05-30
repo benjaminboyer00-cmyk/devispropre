@@ -10,24 +10,29 @@ import {
 } from "../share-utils";
 
 describe("share-utils", () => {
-  const sample = buildDevisShareMessage("DEV-2026-0003", "Jean Dupont", "https://devispropre.com/devis/abc123");
+  const sample = buildDevisShareMessage(
+    "DEV-2026-0003",
+    "Jean Dupont",
+    "https://devispropre.com/devis/devis-dev-2026-0003"
+  );
 
   it("masque l’URL dans le message affiché", () => {
     const text = documentShareDisplayText(sample);
-    expect(text).toContain("« devis »");
+    expect(text).toContain("disponible en ligne :");
     expect(text).toContain("\ndevis\n");
-    expect(text).not.toContain("https://devispropre.com/devis/abc123");
+    expect(text).not.toContain("https://devispropre.com/devis/devis-dev-2026-0003");
   });
 
-  it("inclut l’URL pour WhatsApp, SMS et mailto", () => {
+  it("inclut l’URL courte pour WhatsApp, SMS et mailto", () => {
     const text = documentShareExternalText(sample);
-    expect(text).toContain("https://devispropre.com/devis/abc123");
+    expect(text).toContain("https://devispropre.com/devis/devis-dev-2026-0003");
   });
 
   it("génère du HTML avec un lien sur le mot devis", () => {
     const html = documentShareHtml(sample);
-    expect(html).toContain('<a href="https://devispropre.com/devis/abc123">devis</a>');
-    expect(html).not.toContain("abc123</a>");
+    expect(html).toContain(
+      '<a href="https://devispropre.com/devis/devis-dev-2026-0003">devis</a>'
+    );
   });
 
   it("normalise le téléphone pour WhatsApp", () => {

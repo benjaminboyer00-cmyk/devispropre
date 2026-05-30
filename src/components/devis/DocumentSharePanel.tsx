@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { useToast } from "@/components/ui/ToastProvider";
+import { escapeHtml } from "@/lib/html-escape";
 import type { DocumentShareMessage } from "@/lib/share-utils";
 import {
   documentShareDisplayText,
@@ -74,7 +75,12 @@ export function DocumentSharePanel({
           >
             {linkWord}
           </Link>
-          <CopyButton text={shareUrl} label="Copier le lien" toastOnCopy={false} />
+          <CopyButton
+            text={shareUrl}
+            html={`<a href="${escapeHtml(shareUrl)}">${escapeHtml(linkWord)}</a>`}
+            label="Copier le lien"
+            toastOnCopy={false}
+          />
           <Link
             href={shareUrl}
             target="_blank"

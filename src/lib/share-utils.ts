@@ -15,8 +15,7 @@ export function buildDevisShareMessage(
   return {
     beforeLink: `Bonjour ${clientName},
 
-Votre devis n° ${numero} est disponible en ligne.
-Cliquez sur le mot « devis » ci-dessous pour le consulter et le signer :`,
+Votre devis n° ${numero} est disponible en ligne :`,
     linkWord: "devis",
     afterLink: `
 
@@ -33,8 +32,7 @@ export function buildFactureShareMessage(
   return {
     beforeLink: `Bonjour ${clientName},
 
-Votre facture n° ${numero} est disponible en ligne.
-Cliquez sur le mot « facture » ci-dessous pour la consulter :`,
+Votre facture n° ${numero} est disponible en ligne :`,
     linkWord: "facture",
     afterLink: `
 

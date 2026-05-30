@@ -11,7 +11,7 @@ import { sendFactureLinkEmail } from "@/lib/email";
 import { env } from "@/lib/env";
 import { checkRateLimit, factureResendLinkKey } from "@/lib/rate-limit";
 import { ROUTES } from "@/lib/routes";
-import { resolveShareTokenRaw } from "@/lib/share-token-storage";
+import { resolvePublicShareRef } from "@/lib/share-slug";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -53,8 +53,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const shareTokenRaw = resolveShareTokenRaw(facture);
-    if (!shareTokenRaw) {
+    const shareRef = resolvePublicShareRef(facture);
+    if (!shareRef) {
       return Response.json({ error: "Lien de partage indisponible." }, { status: 400 });
     }
 
@@ -63,7 +63,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       select: { raisonSociale: true },
     });
     const companyName = company?.raisonSociale?.trim() || "Votre artisan";
-    const shareUrl = `${env.appUrl}${ROUTES.publicFacture(shareTokenRaw)}`;
+    const shareUrl = `${env.appUrl}${ROUTES.publicFacture(shareRef)}`;
 
     const emailResult = await sendFactureLinkEmail({
       to: clientEmail,

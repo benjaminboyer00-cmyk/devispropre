@@ -5,8 +5,8 @@ import { clientCanSignOnline, requestDevisSignatureOtp } from "@/lib/devis-signa
 import { checkRateLimit } from "@/lib/rate-limit";
 import { PUBLIC_DEVIS_LIMITS } from "@/lib/public-api-limits";
 import { publicJsonResponse } from "@/lib/public-api-response";
-import { isShareLinkExpired, isValidShareTokenFormat } from "@/lib/share-token";
-import { shareTokenLookupWhere } from "@/lib/share-token-storage";
+import { isShareLinkExpired } from "@/lib/share-token";
+import { isValidPublicShareRef, publicShareLookupWhere } from "@/lib/share-slug";
 
 type RouteParams = { params: Promise<{ token: string }> };
 
@@ -19,12 +19,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     await checkRateLimit(`public-devis-otp:${ip}`, PUBLIC_DEVIS_LIMITS.otpRequestPerIp);
 
     const { token } = await params;
-    if (!isValidShareTokenFormat(token)) {
+    if (!isValidPublicShareRef(token)) {
       return publicJsonResponse({ error: "Devis introuvable" }, { status: 404 });
     }
 
     const devis = await prisma.devis.findFirst({
-      where: { ...shareTokenLookupWhere(token), deletedAt: null, status: "ENVOYE" },
+      where: { ...publicShareLookupWhere(token), deletedAt: null, status: "ENVOYE" },
       include: {
         client: true,
         user: { include: { company: true } },

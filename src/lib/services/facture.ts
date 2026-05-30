@@ -28,6 +28,7 @@ import { generateAttestationPdf, generateFacturePdf } from "../pdf-document";
 import { assertBillingNotPastDue } from "../billing-status";
 import { snapshotFromCompany, resolveIssuerCompany } from "../issuer-snapshot";
 import { ROUTES } from "../routes";
+import { ensureUniqueShareSlug } from "../share-slug";
 import { issueShareTokenPair } from "../share-token-storage";
 
 async function assertFacturationAllowed(userId: string) {
@@ -173,6 +174,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
   }
 
   const { raw: shareTokenRaw, hash: shareTokenHash, enc: shareTokenEnc } = issueShareTokenPair();
+  const shareSlug = await ensureUniqueShareSlug(prisma, "facture", facture.numero, shareTokenRaw);
 
   let updated;
   try {
@@ -207,6 +209,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
           previousHash,
           shareTokenHash,
           shareTokenEnc,
+          shareSlug,
           pdfUrl,
           pdfArchivedAt: now,
           issuerSnapshot: issuerSnapshot ?? undefined,
@@ -263,7 +266,7 @@ export async function issueFacture(ctx: AuditContext, factureId: string) {
     contentHash,
   });
 
-  return { ...updated, shareTokenRaw };
+  return { ...updated, shareTokenRaw, shareSlug };
 }
 
 export async function markFacturePaid(ctx: AuditContext, factureId: string) {

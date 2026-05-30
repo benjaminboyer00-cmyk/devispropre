@@ -32,8 +32,9 @@ export const ROUTES = {
   dashboardDevisNew: "/dashboard/devis/nouveau",
   dashboardDevis: (id: string) => `/dashboard/devis/${id}`,
   dashboardFacture: (id: string) => `/dashboard/factures/${id}`,
-  publicDevis: (token: string) => `/devis/${token}`,
-  publicFacture: (token: string) => `/facture/${token}`,
+  /** ref = slug lisible (devis-dev-2026-0003) ou token legacy */
+  publicDevis: (ref: string) => `/devis/${encodeURIComponent(ref)}`,
+  publicFacture: (ref: string) => `/facture/${encodeURIComponent(ref)}`,
   mentionsLegales: "/mentions-legales",
   politiqueConfidentialite: "/politique-confidentialite",
   cgu: "/cgu",

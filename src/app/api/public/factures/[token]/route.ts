@@ -10,9 +10,8 @@ import { publicJsonResponse } from "@/lib/public-api-response";
 import {
   computeShareLinkExpiresAt,
   isShareLinkExpired,
-  isValidShareTokenFormat,
 } from "@/lib/share-token";
-import { shareTokenLookupWhere } from "@/lib/share-token-storage";
+import { isValidPublicShareRef, publicShareLookupWhere } from "@/lib/share-slug";
 
 type RouteParams = { params: Promise<{ token: string }> };
 
@@ -20,7 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const { token } = await params;
 
-    if (!isValidShareTokenFormat(token)) {
+    if (!isValidPublicShareRef(token)) {
       return publicJsonResponse({ error: "Facture introuvable" }, { status: 404 });
     }
 
@@ -31,7 +30,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 
     const facture = await prisma.facture.findFirst({
       where: {
-        ...shareTokenLookupWhere(token),
+        ...publicShareLookupWhere(token),
         deletedAt: null,
         status: { in: ["EMISE", "PAYEE"] },
       },

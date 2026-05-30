@@ -11,14 +11,13 @@ import { publicJsonResponse } from "@/lib/public-api-response";
 import {
   computeShareLinkExpiresAt,
   isShareLinkExpired,
-  isValidShareTokenFormat,
 } from "@/lib/share-token";
 import {
   clientCanSignOnline,
   clientRequiresSignatureOtp,
   maskClientEmail,
 } from "@/lib/devis-signature-otp";
-import { shareTokenLookupWhere } from "@/lib/share-token-storage";
+import { isValidPublicShareRef, publicShareLookupWhere } from "@/lib/share-slug";
 import { validateClientSignatureDataUri } from "@/lib/signature-payload";
 
 const statusSchema = z
@@ -51,14 +50,14 @@ type RouteParams = { params: Promise<{ token: string }> };
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { token } = await params;
 
-  if (!isValidShareTokenFormat(token)) {
+  if (!isValidPublicShareRef(token)) {
     return publicJsonResponse({ error: "Devis introuvable" }, { status: 404 });
   }
 
   await checkRateLimit(`public-devis-read:${getTrustedClientIpOrUnknown(request)}`, PUBLIC_DEVIS_LIMITS.readPerIp);
 
   const devis = await prisma.devis.findFirst({
-    where: { ...shareTokenLookupWhere(token), deletedAt: null },
+    where: { ...publicShareLookupWhere(token), deletedAt: null },
     include: {
       lignes: { orderBy: { ordre: "asc" } },
       client: true,
@@ -152,12 +151,12 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const { token } = await params;
 
-    if (!isValidShareTokenFormat(token)) {
+    if (!isValidPublicShareRef(token)) {
       return publicJsonResponse({ error: "Devis introuvable ou déjà traité" }, { status: 404 });
     }
 
     const devis = await prisma.devis.findFirst({
-      where: { ...shareTokenLookupWhere(token), deletedAt: null, status: "ENVOYE" },
+      where: { ...publicShareLookupWhere(token), deletedAt: null, status: "ENVOYE" },
       include: { client: true },
     });
 

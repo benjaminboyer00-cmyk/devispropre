@@ -217,6 +217,7 @@ model Devis {
   chainHash      String?
   shareTokenHash String?     @unique @map("shareToken")
   shareTokenEnc  String?
+  shareSlug      String?     @unique
   sentAt         DateTime?
   acceptedAt     DateTime?
   refusedAt      DateTime?
@@ -289,6 +290,7 @@ model Facture {
   previousHash String?
   shareTokenHash String?       @unique @map("shareToken")
   shareTokenEnc  String?
+  shareSlug      String?       @unique
   issuedAt     DateTime?
   paidAt       DateTime?
   pdfUrl       String?

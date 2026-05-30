@@ -7,7 +7,7 @@ import { getSession } from "@/lib/auth";
 import { dashboardMetadata } from "@/lib/dashboard-metadata";
 import { prisma } from "@/lib/db";
 import { hasStarter } from "@/lib/plan-features";
-import { resolveShareTokenRaw } from "@/lib/share-token-storage";
+import { resolvePublicShareRef } from "@/lib/share-slug";
 import { DevisActions } from "@/components/devis/DevisActions";
 import { DevisDocumentPreview } from "@/components/devis/DevisDocumentPreview";
 import { ROUTES } from "@/lib/routes";
@@ -32,7 +32,7 @@ export default async function DevisDetailPage({ params }: PageProps) {
 
   if (!devis) notFound();
 
-  const shareToken = resolveShareTokenRaw(devis);
+  const shareToken = resolvePublicShareRef(devis);
 
   const company = await prisma.company.findUnique({
     where: { userId: account.workspaceUserId },

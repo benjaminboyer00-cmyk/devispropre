@@ -30,6 +30,7 @@ import { snapshotFromCompany, resolveIssuerCompany } from "../issuer-snapshot";
 import { resolveLineTva, ensureFranchiseNotes } from "../tva";
 import { ROUTES } from "../routes";
 import { isShareLinkExpired } from "../share-token";
+import { ensureUniqueShareSlug } from "../share-slug";
 import { issueShareTokenPair, shareTokenLookupWhere } from "../share-token-storage";
 
 function startOfCurrentMonth(): Date {
@@ -288,6 +289,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
   const contentHash = computeContentHash(payload);
   const chainHash = computeChainHash(contentHash, null);
   const { raw: shareTokenRaw, hash: shareTokenHash, enc: shareTokenEnc } = issueShareTokenPair();
+  const shareSlug = await ensureUniqueShareSlug(prisma, "devis", devis.numero, shareTokenRaw);
   const now = new Date();
   const issuerForPdf = resolveIssuerCompany(issuerSnapshot, company);
 
@@ -323,6 +325,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
         chainHash,
         shareTokenHash,
         shareTokenEnc,
+        shareSlug,
         pdfUrl,
         pdfArchivedAt: now,
         issuerSnapshot: issuerSnapshot ?? undefined,
@@ -357,7 +360,7 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
       metadata: { channel: "whatsapp", pdfUrl },
     });
 
-    return { ...updated, shareTokenRaw };
+    return { ...updated, shareTokenRaw, shareSlug };
   } catch (err) {
     await deleteArchivedPdf(pdfKey);
     logCriticalAlert("Orphelin R2 après échec sendDevis", {

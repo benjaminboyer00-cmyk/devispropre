@@ -3,6 +3,7 @@ import { assertMutationSecurity, getRequestMeta, handleServiceError, requireAuth
 import { env } from "@/lib/env";
 import { readIdempotencyKey, withIdempotency } from "@/lib/idempotency";
 import { checkRateLimit, devisSendKey } from "@/lib/rate-limit";
+import { ROUTES } from "@/lib/routes";
 import { sendDevis } from "@/lib/services/devis";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -26,8 +27,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     return withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
       const result = await sendDevis(ctx, id);
-      const { shareTokenRaw, ...devis } = result;
-      const shareUrl = shareTokenRaw ? `${env.appUrl}/devis/${shareTokenRaw}` : null;
+      const { shareTokenRaw, shareSlug, ...devis } = result;
+      const shareRef = shareSlug ?? shareTokenRaw;
+      const shareUrl = shareRef ? `${env.appUrl}${ROUTES.publicDevis(shareRef)}` : null;
       return { status: 200, body: { ...devis, shareUrl } };
     });
   } catch (e) {

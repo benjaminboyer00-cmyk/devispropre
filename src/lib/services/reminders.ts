@@ -3,7 +3,8 @@ import { prisma } from "../db";
 import { logAudit, type AuditContext } from "../audit";
 import { logOperationalAlert } from "../critical-alert";
 import { env } from "../env";
-import { resolveShareTokenRaw } from "../share-token-storage";
+import { ROUTES } from "../routes";
+import { resolvePublicShareRef } from "../share-slug";
 import { sendDevisReminderEmail, sendDevisReminderToClient } from "../email";
 
 const REMINDER_DAYS = 3;
@@ -58,9 +59,9 @@ export async function processReminders(systemCtx: AuditContext) {
 
     if (claimed.count === 0) continue;
 
-    const shareRaw = resolveShareTokenRaw(devis);
-    const shareUrl = shareRaw
-      ? `${env.appUrl}/devis/${shareRaw}`
+    const shareRef = resolvePublicShareRef(devis);
+    const shareUrl = shareRef
+      ? `${env.appUrl}${ROUTES.publicDevis(shareRef)}`
       : `${env.appUrl}/dashboard/devis/${devis.id}`;
 
     const companyName = devis.user.company?.raisonSociale ?? devis.user.name;
