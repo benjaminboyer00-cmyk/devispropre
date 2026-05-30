@@ -8,14 +8,15 @@ import { sendDevis } from "@/lib/services/devis";
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function POST(request: NextRequest, { params }: RouteParams) {
-  assertMutationSecurity(request);
-  const auth = await requireAuth();
-  if (auth.error) return auth.error;
-
-  const { id } = await params;
-  const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
-
   try {
+    assertMutationSecurity(request);
+
+    const auth = await requireAuth();
+    if (auth.error) return auth.error;
+
+    const { id } = await params;
+    const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
+
     await checkRateLimit(devisSendKey(auth.workspaceUserId), {
       maxAttempts: 10,
       windowMs: 60 * 60 * 1000,

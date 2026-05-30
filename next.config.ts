@@ -20,6 +20,8 @@ const CACHE_DAY = {
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  /** PDFKit charge des fichiers .afm — ne pas bundler (ENOENT Helvetica.afm en prod). */
+  serverExternalPackages: ["pdfkit", "sharp"],
   turbopack: {
     root: __dirname,
   },
