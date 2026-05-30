@@ -2,12 +2,21 @@ import { NextResponse } from "next/server";
 import { ROUTES } from "@/lib/routes";
 import { getPublicSiteUrl } from "@/lib/seo";
 
-/** Route explicite — fiable en Docker standalone (évite les bugs metadata robots.ts). */
-export const dynamic = "force-static";
-export const revalidate = 86400;
+/** Toujours aligné sur le domaine réellement crawlé (évite un Sitemap .fr figé au build). */
+export const dynamic = "force-dynamic";
 
-export async function GET() {
-  const siteUrl = getPublicSiteUrl();
+function siteUrlFromRequest(request: Request): string {
+  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  if (host) {
+    const proto = request.headers.get("x-forwarded-proto") ?? "https";
+    const apex = host.split(",")[0]?.trim().replace(/^www\./i, "") ?? host;
+    return `${proto}://${apex}`;
+  }
+  return getPublicSiteUrl();
+}
+
+export async function GET(request: Request) {
+  const siteUrl = siteUrlFromRequest(request);
 
   const body = [
     "User-Agent: *",
