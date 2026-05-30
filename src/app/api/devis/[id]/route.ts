@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   apiError,
   assertMutationSecurity,
+  AUTH_DEVIS_WORKFLOW,
   getRequestMeta,
   handleServiceError,
   requireAuth,
@@ -26,7 +27,7 @@ const updateSchema = z.object({
 type RouteParams = { params: Promise<{ id: string }> };
 
 export async function GET(_request: NextRequest, { params }: RouteParams) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(AUTH_DEVIS_WORKFLOW);
   if (auth.error) return auth.error;
 
   const { id } = await params;
@@ -42,7 +43,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
 export async function PATCH(request: NextRequest, { params }: RouteParams) {
   assertMutationSecurity(request);
 
-  const auth = await requireAuth();
+  const auth = await requireAuth(AUTH_DEVIS_WORKFLOW);
   if (auth.error) return auth.error;
 
   const { id } = await params;
@@ -72,7 +73,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   assertMutationSecurity(request);
 
-  const auth = await requireAuth();
+  const auth = await requireAuth(AUTH_DEVIS_WORKFLOW);
   if (auth.error) return auth.error;
 
   const { id } = await params;

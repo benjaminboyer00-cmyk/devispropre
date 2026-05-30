@@ -333,8 +333,10 @@ export function DevisForm({
           }),
         });
         if (!cr.ok) {
-          toast("Impossible de créer le client.", "error");
-          setError("Impossible de créer le client.");
+          const data = (await cr.json().catch(() => ({}))) as { error?: string };
+          const msg = data.error ?? "Impossible de créer le client.";
+          toast(msg, "error");
+          setError(msg);
           setLoading(false);
           return;
         }

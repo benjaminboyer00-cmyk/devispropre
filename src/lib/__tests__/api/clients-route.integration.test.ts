@@ -8,8 +8,11 @@ import {
 
 const getSession = vi.fn();
 const getAccountContext = vi.fn();
+const userNeedsSubscriptionSetup = vi.fn();
 const clientFindMany = vi.fn();
 const clientCount = vi.fn();
+const clientCreate = vi.fn();
+const logAudit = vi.fn();
 
 vi.mock("@/lib/auth", () => ({
   getSession: (...args: unknown[]) => getSession(...args),
@@ -21,7 +24,11 @@ vi.mock("@/lib/account-context", () => ({
 
 vi.mock("@/lib/billing", () => ({
   billingUserId: (_uid: string, wsId: string) => wsId,
-  userNeedsSubscriptionSetup: vi.fn().mockResolvedValue(false),
+  userNeedsSubscriptionSetup: (...args: unknown[]) => userNeedsSubscriptionSetup(...args),
+}));
+
+vi.mock("@/lib/audit", () => ({
+  logAudit: (...args: unknown[]) => logAudit(...args),
 }));
 
 vi.mock("@/lib/db", () => ({
@@ -29,21 +36,26 @@ vi.mock("@/lib/db", () => ({
     client: {
       findMany: (...args: unknown[]) => clientFindMany(...args),
       count: (...args: unknown[]) => clientCount(...args),
+      create: (...args: unknown[]) => clientCreate(...args),
     },
   },
 }));
 
-import { GET } from "@/app/api/clients/route";
+import { GET, POST } from "@/app/api/clients/route";
 
 describe("API /api/clients (intégration route handler)", () => {
   beforeEach(() => {
     getSession.mockReset();
     getAccountContext.mockReset();
+    userNeedsSubscriptionSetup.mockReset();
     clientFindMany.mockReset();
     clientCount.mockReset();
+    clientCreate.mockReset();
+    logAudit.mockReset();
 
     getSession.mockResolvedValue(TEST_SESSION_USER);
     getAccountContext.mockResolvedValue(TEST_ACCOUNT);
+    userNeedsSubscriptionSetup.mockResolvedValue(true);
   });
 
   it("GET pagine les clients (page 1)", async () => {
@@ -92,6 +104,37 @@ describe("API /api/clients (intégration route handler)", () => {
     expect(body.pagination.totalPages).toBe(2);
     expect(clientFindMany).toHaveBeenCalledWith(
       expect.objectContaining({ skip: 20, take: 20 })
+    );
+  });
+
+  it("POST crée un client même sans essai Stripe activé", async () => {
+    clientCreate.mockResolvedValue({
+      id: "client_new",
+      nom: "Dupont",
+      email: null,
+      telephone: null,
+      adresse: null,
+    });
+
+    const response = await POST(
+      buildApiRequest("/api/clients", {
+        method: "POST",
+        body: JSON.stringify({ nom: "Dupont" }),
+      })
+    );
+    const body = await readJson<{ id: string; nom: string }>(response);
+
+    expect(response.status).toBe(201);
+    expect(body).toEqual(
+      expect.objectContaining({ id: "client_new", nom: "Dupont" })
+    );
+    expect(clientCreate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          userId: TEST_ACCOUNT.workspaceUserId,
+          nom: "Dupont",
+        }),
+      })
     );
   });
 });

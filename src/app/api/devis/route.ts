@@ -3,6 +3,7 @@ import { z } from "zod";
 import {
   apiError,
   assertMutationSecurity,
+  AUTH_DEVIS_WORKFLOW,
   getRequestMeta,
   handleServiceError,
   requireAuth,
@@ -16,7 +17,7 @@ import { checkRateLimit, devisCreateKey } from "@/lib/rate-limit";
 import { createDevis } from "@/lib/services/devis";
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(AUTH_DEVIS_WORKFLOW);
   if (auth.error) return auth.error;
 
   const page = parsePageParam(request.nextUrl.searchParams.get("page"));
@@ -47,7 +48,7 @@ export async function POST(request: NextRequest) {
   try {
     assertMutationSecurity(request);
 
-    const auth = await requireAuth();
+    const auth = await requireAuth(AUTH_DEVIS_WORKFLOW);
     if (auth.error) return auth.error;
 
     await checkRateLimit(devisCreateKey(auth.workspaceUserId), {

@@ -16,6 +16,9 @@ import { ObjectStorageError } from "./object-storage";
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
 
+/** Aligné avec proxy.ts : pages /dashboard/devis accessibles sans essai Stripe activé. */
+export const AUTH_DEVIS_WORKFLOW = { skipSubscriptionCheck: true } as const;
+
 export function getRequestMeta(request: NextRequest) {
   return {
     ipAddress: getTrustedClientIp(request),

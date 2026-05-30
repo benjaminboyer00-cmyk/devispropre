@@ -1,6 +1,6 @@
 import { NextRequest } from "next/server";
 import { z } from "zod";
-import { apiError, assertMutationSecurity, getRequestMeta, requireAuth } from "@/lib/api-helpers";
+import { apiError, assertMutationSecurity, getRequestMeta, requireAuth, AUTH_DEVIS_WORKFLOW } from "@/lib/api-helpers";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { paginationBounds, parsePageParam, totalPages } from "@/lib/pagination";
@@ -13,7 +13,7 @@ const schema = z.object({
 });
 
 export async function GET(request: NextRequest) {
-  const auth = await requireAuth();
+  const auth = await requireAuth(AUTH_DEVIS_WORKFLOW);
   if (auth.error) return auth.error;
 
   const page = parsePageParam(request.nextUrl.searchParams.get("page"));
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   assertMutationSecurity(request);
 
-  const auth = await requireAuth();
+  const auth = await requireAuth(AUTH_DEVIS_WORKFLOW);
   if (auth.error) return auth.error;
 
   try {
