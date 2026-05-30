@@ -1,4 +1,7 @@
 # Production VPS — docker compose -f docker-compose.prod.yml up -d
+#
+# ⚠ Ne JAMAIS exécuter « docker compose down -v » : cela efface le volume pgdata
+#    (comptes, devis, factures). Utilisez ./scripts/safe-docker-down.sh
 services:
   postgres:
     image: postgres:16-alpine

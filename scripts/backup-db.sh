@@ -19,7 +19,12 @@ notify_failure() {
 if [ -f "$ROOT/.env.production" ]; then
   set -a
   # shellcheck disable=SC1091
-  source "$ROOT/.env.production"
+  # Ne pas « source » si valeurs avec <> — lire uniquement les clés nécessaires
+  POSTGRES_USER="$(grep -E '^POSTGRES_USER=' "$ROOT/.env.production" | cut -d= -f2- | tr -d '"' | tr -d "'")"
+  POSTGRES_DB="$(grep -E '^POSTGRES_DB=' "$ROOT/.env.production" | cut -d= -f2- | tr -d '"' | tr -d "'")"
+  CRON_SECRET="$(grep -E '^CRON_SECRET=' "$ROOT/.env.production" | cut -d= -f2- | tr -d '"' | tr -d "'")"
+  NEXT_PUBLIC_APP_URL="$(grep -E '^NEXT_PUBLIC_APP_URL=' "$ROOT/.env.production" | cut -d= -f2- | tr -d '"' | tr -d "'")"
+  export POSTGRES_USER POSTGRES_DB CRON_SECRET NEXT_PUBLIC_APP_URL
   set +a
 elif [ -f "$ROOT/.env" ]; then
   set -a
@@ -34,10 +39,10 @@ FILE="$BACKUP_DIR/devispropre-$STAMP.sql.gz"
 
 echo "→ Backup vers $FILE"
 
-if [ -f "$COMPOSE_FILE" ] && docker compose -f "$COMPOSE_FILE" ps postgres -q 2>/dev/null | grep -q .; then
+if [ -f "$COMPOSE_FILE" ] && docker compose --env-file "$ROOT/.env.production" -f "$COMPOSE_FILE" ps postgres -q 2>/dev/null | grep -q .; then
   PGUSER="${POSTGRES_USER:-devispropre}"
   PGDB="${POSTGRES_DB:-devispropre}"
-  docker compose -f "$COMPOSE_FILE" exec -T postgres \
+  docker compose --env-file "$ROOT/.env.production" -f "$COMPOSE_FILE" exec -T postgres \
     pg_dump -U "$PGUSER" "$PGDB" | gzip > "$FILE"
 elif command -v pg_dump >/dev/null 2>&1 && [ -n "${DATABASE_URL:-}" ]; then
   pg_dump "$DATABASE_URL" | gzip > "$FILE"
