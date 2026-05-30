@@ -41,6 +41,34 @@ describe("verifyTurnstileToken", () => {
     await expect(verifyTurnstileToken("bad", "1.2.3.4")).rejects.toBeInstanceOf(TurnstileError);
   });
 
+  it("n'envoie pas remoteip si l'adresse est inconnue", async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      json: async () => ({ success: true }),
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const { verifyTurnstileToken } = await import("../turnstile");
+    await verifyTurnstileToken("token-valid", "unknown");
+
+    const body = fetchMock.mock.calls[0]![1]!.body as URLSearchParams;
+    expect(body.get("remoteip")).toBeNull();
+  });
+
+  it("signale un domaine Turnstile non autorisé", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        json: async () => ({ success: false, "error-codes": ["hostname-mismatch"] }),
+      })
+    );
+
+    const { verifyTurnstileToken } = await import("../turnstile");
+    await expect(verifyTurnstileToken("token", "1.2.3.4")).rejects.toMatchObject({
+      name: "TurnstileError",
+      message: expect.stringContaining("devispropre.com"),
+    });
+  });
+
   it("ignore la vérification si une seule clé Turnstile est configurée", async () => {
     vi.doMock("../env", () => ({
       env: { turnstileSecretKey: "test-secret", turnstileSiteKey: "" },

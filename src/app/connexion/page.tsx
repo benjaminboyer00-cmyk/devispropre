@@ -8,6 +8,8 @@ export const metadata: Metadata = {
 };
 
 export default function ConnexionPage() {
+  const turnstileSiteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+
   return (
     <div className="mx-auto max-w-md px-4 py-20 sm:py-24">
       <h1 className="heading-section text-3xl">Connexion</h1>
@@ -17,7 +19,7 @@ export default function ConnexionPage() {
       </p>
       <div className="ui-card-padded mt-10">
         <Suspense fallback={<p className="text-body text-center">Chargement…</p>}>
-          <LoginForm />
+          <LoginForm turnstileSiteKey={turnstileSiteKey} />
         </Suspense>
       </div>
     </div>

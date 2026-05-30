@@ -37,7 +37,7 @@ export default async function InscriptionPage({
         </p>
       )}
       <div className="ui-card-padded mt-10">
-        <RegisterForm />
+        <RegisterForm turnstileSiteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
       </div>
     </div>
   );

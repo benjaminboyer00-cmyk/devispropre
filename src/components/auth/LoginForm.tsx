@@ -1,17 +1,26 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { claimGuestDraftIfPresent } from "@/lib/claim-guest-draft-client";
 import { ROUTES } from "@/lib/routes";
 import { loginSchema, magicLinkSchema, formatZodError } from "@/lib/schemas/forms";
 import { useToast } from "@/components/ui/ToastProvider";
-import { TurnstileWidget, isTurnstileConfigured } from "@/components/auth/TurnstileWidget";
+import {
+  TurnstileWidget,
+  isTurnstileConfigured,
+  type TurnstileWidgetHandle,
+} from "@/components/auth/TurnstileWidget";
 
-export function LoginForm() {
+interface LoginFormProps {
+  turnstileSiteKey?: string;
+}
+
+export function LoginForm({ turnstileSiteKey }: LoginFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const urlError = searchParams.get("error");
 
   const [showPassword, setShowPassword] = useState(false);
@@ -53,7 +62,7 @@ export function LoginForm() {
       return;
     }
 
-    if (isTurnstileConfigured() && !turnstileToken) {
+    if (isTurnstileConfigured(turnstileSiteKey) && !turnstileToken) {
       const msg = "Veuillez compléter la vérification anti-robot.";
       toast(msg, "error");
       setError(msg);
@@ -77,6 +86,7 @@ export function LoginForm() {
       const msg = data.error ?? "Erreur de connexion";
       toast(msg, "error");
       setError(msg);
+      turnstileRef.current?.reset();
       return;
     }
 
@@ -109,7 +119,7 @@ export function LoginForm() {
       return;
     }
 
-    if (isTurnstileConfigured() && !turnstileToken) {
+    if (isTurnstileConfigured(turnstileSiteKey) && !turnstileToken) {
       const msg = "Veuillez compléter la vérification anti-robot.";
       toast(msg, "error");
       setError(msg);
@@ -129,6 +139,7 @@ export function LoginForm() {
       const msg = data.error ?? "Erreur";
       toast(msg, "error");
       setError(msg);
+      turnstileRef.current?.reset();
       return;
     }
 
@@ -168,6 +179,8 @@ export function LoginForm() {
             />
           </div>
           <TurnstileWidget
+            ref={turnstileRef}
+            siteKey={turnstileSiteKey}
             onToken={handleTurnstileToken}
             onExpire={handleTurnstileExpire}
             className="flex justify-center"
@@ -206,6 +219,8 @@ export function LoginForm() {
             />
           </div>
           <TurnstileWidget
+            ref={turnstileRef}
+            siteKey={turnstileSiteKey}
             onToken={handleTurnstileToken}
             onExpire={handleTurnstileExpire}
             className="flex justify-center"

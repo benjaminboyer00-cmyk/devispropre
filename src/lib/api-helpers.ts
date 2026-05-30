@@ -23,18 +23,19 @@ export function getRequestMeta(request: NextRequest) {
   };
 }
 
-/** IP client — en prod, ne fait confiance qu'à X-Real-IP posé par Nginx (anti-spoofing). */
+/** IP client — en prod, X-Real-IP (Nginx) puis X-Forwarded-For posé par Nginx ($remote_addr). */
 export function getTrustedClientIp(request: NextRequest): string | null {
   const realIp = request.headers.get("x-real-ip")?.trim();
   if (realIp) return realIp.slice(0, 45);
+
+  const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim();
+  if (forwarded) return forwarded.slice(0, 45);
 
   if (process.env.NODE_ENV === "production") {
     return null;
   }
 
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim()?.slice(0, 45) ?? null
-  );
+  return null;
 }
 
 /** Alias pour rate limiting (jamais null en pratique). */

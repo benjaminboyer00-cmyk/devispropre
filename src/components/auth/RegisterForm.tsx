@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { claimGuestDraftIfPresent } from "@/lib/claim-guest-draft-client";
@@ -13,10 +13,19 @@ import {
   validateSiret,
 } from "@/lib/validation";
 import { useToast } from "@/components/ui/ToastProvider";
-import { TurnstileWidget, isTurnstileConfigured } from "@/components/auth/TurnstileWidget";
+import {
+  TurnstileWidget,
+  isTurnstileConfigured,
+  type TurnstileWidgetHandle,
+} from "@/components/auth/TurnstileWidget";
 
-export function RegisterForm() {
+interface RegisterFormProps {
+  turnstileSiteKey?: string;
+}
+
+export function RegisterForm({ turnstileSiteKey }: RegisterFormProps) {
   const router = useRouter();
+  const turnstileRef = useRef<TurnstileWidgetHandle>(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -77,7 +86,7 @@ export function RegisterForm() {
       return;
     }
 
-    if (isTurnstileConfigured() && !turnstileToken) {
+    if (isTurnstileConfigured(turnstileSiteKey) && !turnstileToken) {
       const msg = turnstileReady
         ? "Veuillez compléter la vérification anti-robot."
         : "Chargement de la vérification anti-robot… Réessayez dans quelques secondes.";
@@ -105,6 +114,7 @@ export function RegisterForm() {
       const msg = data.error ?? "Erreur inscription";
       toast(msg, "error");
       setError(msg);
+      turnstileRef.current?.reset();
       return;
     }
 
@@ -210,6 +220,8 @@ export function RegisterForm() {
       )}
 
       <TurnstileWidget
+        ref={turnstileRef}
+        siteKey={turnstileSiteKey}
         onToken={handleTurnstileToken}
         onExpire={handleTurnstileExpire}
         className="flex justify-center"
