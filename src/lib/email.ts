@@ -143,6 +143,34 @@ export async function sendMagicLinkEmail(opts: {
   });
 }
 
+export async function sendFactureLinkEmail(opts: {
+  to: string;
+  clientNom: string;
+  companyName: string;
+  factureNumero: string;
+  shareUrl: string;
+  resend?: boolean;
+}): Promise<{ sent: boolean; reason?: string }> {
+  const subject = opts.resend
+    ? `Rappel — Facture ${opts.factureNumero} de ${opts.companyName}`
+    : `Facture ${opts.factureNumero} — ${opts.companyName}`;
+
+  const intro = opts.resend
+    ? `Voici à nouveau le lien pour consulter la facture <strong>${escapeHtml(opts.factureNumero)}</strong> de <strong>${escapeHtml(opts.companyName)}</strong>.`
+    : `Votre facture <strong>${escapeHtml(opts.factureNumero)}</strong> de <strong>${escapeHtml(opts.companyName)}</strong> est disponible en ligne.`;
+
+  return sendEmail({
+    to: opts.to,
+    subject,
+    html: `
+      <p>Bonjour ${escapeHtml(opts.clientNom)},</p>
+      <p>${intro}</p>
+      <p><a href="${escapeHtml(opts.shareUrl)}" style="display:inline-block;background:#2563eb;color:#fff;padding:12px 24px;border-radius:8px;text-decoration:none;font-weight:600">Consulter la facture</a></p>
+      <p style="color:#64748b;font-size:12px">Document transmis via DevisPropre.</p>
+    `,
+  });
+}
+
 export async function sendDevisSignatureOtpEmail(opts: {
   to: string;
   clientNom: string;

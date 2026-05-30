@@ -114,6 +114,10 @@ export function factureCancelKey(userId: string): string {
   return `facture:cancel:${userId}`;
 }
 
+export function factureResendLinkKey(userId: string): string {
+  return `facture:resend-link:${userId}`;
+}
+
 export function teamInviteKey(userId: string): string {
   return `team:invite:${userId}`;
 }

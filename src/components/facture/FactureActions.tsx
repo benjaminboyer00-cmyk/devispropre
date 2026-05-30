@@ -21,7 +21,7 @@ interface FactureDetailProps {
     contentHash: string | null;
     chainHash: string | null;
     shareToken: string | null;
-    client: { nom: string; telephone: string | null };
+    client: { nom: string; telephone: string | null; email: string | null };
     lignes: { description: string; quantite: number; prixUnitaireHT: number; totalHT: number }[];
     attestation: { numero: string } | null;
   };
@@ -104,10 +104,12 @@ export function FactureActions({ facture, plan }: FactureDetailProps) {
       <div className="space-y-3">
         {shareUrl && (facture.status === "EMISE" || facture.status === "PAYEE") && (
           <FactureSharePanel
+            factureId={facture.id}
             numero={facture.numero}
             clientName={facture.client.nom}
             shareUrl={shareUrl}
             clientPhone={facture.client.telephone}
+            clientEmail={facture.client.email}
           />
         )}
 
