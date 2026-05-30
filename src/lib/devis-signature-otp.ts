@@ -23,13 +23,13 @@ export function maskClientEmail(email: string): string {
   return `${visible}***@${domain}`;
 }
 
-export function clientRequiresSignatureOtp(clientEmail: string | null | undefined): boolean {
-  return true;
+export function clientRequiresSignatureOtp(_clientEmail: string | null | undefined): boolean {
+  return false;
 }
 
-/** Signature en ligne impossible sans email client (OTP requis). */
-export function clientCanSignOnline(clientEmail: string | null | undefined): boolean {
-  return Boolean(clientEmail?.trim());
+/** Signature en ligne — email client optionnel (pas de OTP email). */
+export function clientCanSignOnline(_clientEmail: string | null | undefined): boolean {
+  return true;
 }
 
 function generateOtpCode(): string {

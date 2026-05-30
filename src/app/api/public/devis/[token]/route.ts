@@ -17,7 +17,6 @@ import {
   clientCanSignOnline,
   clientRequiresSignatureOtp,
   maskClientEmail,
-  verifyDevisSignatureOtp,
 } from "@/lib/devis-signature-otp";
 import { shareTokenLookupWhere } from "@/lib/share-token-storage";
 import { validateClientSignatureDataUri } from "@/lib/signature-payload";
@@ -185,41 +184,9 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     if (status === "ACCEPTE") {
       if (!clientCanSignOnline(devis.client.email)) {
         return publicJsonResponse(
-          { error: "Signature en ligne impossible — l'artisan doit enregistrer l'email du client." },
+          { error: "Signature en ligne impossible pour ce devis." },
           { status: 400 }
         );
-      }
-      if (clientRequiresSignatureOtp(devis.client.email)) {
-      if (!otpCode?.trim()) {
-        return publicJsonResponse(
-          { error: "Code de vérification requis. Demandez-le par email avant de signer." },
-          { status: 401 }
-        );
-      }
-
-      await checkRateLimit(`public-devis-otp-verify:${devis.id}`, PUBLIC_DEVIS_LIMITS.otpVerifyPerDevis);
-
-      const otpResult = await verifyDevisSignatureOtp(devis.id, otpCode);
-      if (otpResult === "locked") {
-        const { logOperationalAlert } = await import("@/lib/critical-alert");
-        logOperationalAlert("warning", "Signature OTP verrouillée (bruteforce)", {
-          devisId: devis.id,
-          ip,
-        });
-        return publicJsonResponse(
-          {
-            error:
-              "Trop de tentatives incorrectes. Demandez un nouveau code par email avant de signer.",
-          },
-          { status: 429 }
-        );
-      }
-      if (otpResult !== "ok") {
-        return publicJsonResponse(
-          { error: "Code invalide ou expiré. Demandez un nouveau code." },
-          { status: 401 }
-        );
-      }
       }
     }
 

@@ -12,16 +12,15 @@ describe("devis-signature-otp helpers", () => {
     expect(maskClientEmail("a@b.fr")).toBe("a***@b.fr");
   });
 
-  it("exige OTP pour toute signature en ligne", () => {
-    expect(clientRequiresSignatureOtp("client@example.com")).toBe(true);
-    expect(clientRequiresSignatureOtp("  ")).toBe(true);
-    expect(clientRequiresSignatureOtp(null)).toBe(true);
+  it("n'exige plus de OTP email pour la signature en ligne", () => {
+    expect(clientRequiresSignatureOtp("client@example.com")).toBe(false);
+    expect(clientRequiresSignatureOtp(null)).toBe(false);
   });
 
-  it("bloque la signature en ligne sans email client", () => {
+  it("autorise la signature en ligne sans email client", () => {
     expect(clientCanSignOnline("client@example.com")).toBe(true);
-    expect(clientCanSignOnline("  ")).toBe(false);
-    expect(clientCanSignOnline(null)).toBe(false);
+    expect(clientCanSignOnline("  ")).toBe(true);
+    expect(clientCanSignOnline(null)).toBe(true);
   });
 
   it("limite le bruteforce à 3 tentatives", () => {

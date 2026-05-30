@@ -31,20 +31,9 @@ export function PublicDevisView({ token }: { token: string }) {
       .finally(() => setLoading(false));
   }, [token]);
 
-  async function requestOtp(): Promise<{ ok: boolean; error?: string; emailHint?: string }> {
-    try {
-      const res = await fetch(`/api/public/devis/${token}/otp`, { method: "POST" });
-      const data = await res.json();
-      if (!res.ok) return { ok: false, error: data.error ?? "Erreur" };
-      return { ok: true, emailHint: data.emailHint };
-    } catch {
-      return { ok: false, error: "Erreur réseau — réessayez." };
-    }
-  }
-
   async function respond(
     status: "ACCEPTE" | "REFUSE",
-    extra?: { acceptanceText?: string; signatureData?: string; otpCode?: string }
+    extra?: { acceptanceText?: string; signatureData?: string }
   ) {
     setActionLoading(true);
     setError("");
@@ -102,11 +91,8 @@ export function PublicDevisView({ token }: { token: string }) {
         {devis.status === "ENVOYE" && devis.canAccept !== false && (
           <DevisClientAcceptPanel
             loading={actionLoading}
-            signatureOtpRequired={devis.signatureOtpRequired}
-            clientEmailHint={devis.clientEmailHint}
-            onRequestOtp={devis.signatureOtpRequired ? requestOtp : undefined}
-            onAccept={({ acceptanceText, signatureData, otpCode }) =>
-              respond("ACCEPTE", { acceptanceText, signatureData, otpCode })
+            onAccept={({ acceptanceText, signatureData }) =>
+              respond("ACCEPTE", { acceptanceText, signatureData })
             }
             onRefuse={() => respond("REFUSE")}
           />

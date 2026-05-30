@@ -171,28 +171,7 @@ describe("API /api/public/devis/[token]", () => {
     expect(transitionDevisStatusFromPublic).not.toHaveBeenCalled();
   });
 
-  it("POST refuse l'acceptation sans OTP quand email client présent", async () => {
-    devisFindFirst.mockResolvedValue(mockEnvoieDevis());
-
-    const res = await POST(
-      buildApiRequest(`/api/public/devis/${VALID_TOKEN}`, {
-        method: "POST",
-        body: JSON.stringify({
-          status: "ACCEPTE",
-          acceptanceText: "Bon pour accord",
-          signatureData: PNG_SIGNATURE,
-        }),
-      }),
-      { params: Promise.resolve({ token: VALID_TOKEN }) }
-    );
-
-    expect(res.status).toBe(401);
-    expect(consumeDevisSignatureOtp).not.toHaveBeenCalled();
-    expect(verifyDevisSignatureOtp).not.toHaveBeenCalled();
-    expect(transitionDevisStatusFromPublic).not.toHaveBeenCalled();
-  });
-
-  it("POST accepte avec signature et OTP valides", async () => {
+  it("POST accepte avec signature sans OTP email", async () => {
     devisFindFirst.mockResolvedValue(mockEnvoieDevis());
     transitionDevisStatusFromPublic.mockResolvedValue({ status: "ACCEPTE" });
 
@@ -203,19 +182,19 @@ describe("API /api/public/devis/[token]", () => {
           status: "ACCEPTE",
           acceptanceText: "Bon pour accord",
           signatureData: PNG_SIGNATURE,
-          otpCode: "123456",
         }),
       }),
       { params: Promise.resolve({ token: VALID_TOKEN }) }
     );
 
     expect(res.status).toBe(200);
-    expect(verifyDevisSignatureOtp).toHaveBeenCalledWith("devis_1", "123456");
+    expect(verifyDevisSignatureOtp).not.toHaveBeenCalled();
     expect(transitionDevisStatusFromPublic).toHaveBeenCalled();
   });
 
-  it("POST refuse la signature si le client n'a pas d'email", async () => {
+  it("POST accepte la signature même sans email client", async () => {
     devisFindFirst.mockResolvedValue(mockEnvoieDevis({ client: { nom: "Client", email: null } }));
+    transitionDevisStatusFromPublic.mockResolvedValue({ status: "ACCEPTE" });
 
     const res = await POST(
       buildApiRequest(`/api/public/devis/${VALID_TOKEN}`, {
@@ -229,30 +208,8 @@ describe("API /api/public/devis/[token]", () => {
       { params: Promise.resolve({ token: VALID_TOKEN }) }
     );
 
-    expect(res.status).toBe(400);
-    expect(transitionDevisStatusFromPublic).not.toHaveBeenCalled();
-    expect(verifyDevisSignatureOtp).not.toHaveBeenCalled();
-  });
-
-  it("POST refuse après verrouillage OTP (429)", async () => {
-    devisFindFirst.mockResolvedValue(mockEnvoieDevis());
-    verifyDevisSignatureOtp.mockResolvedValue("locked");
-
-    const res = await POST(
-      buildApiRequest(`/api/public/devis/${VALID_TOKEN}`, {
-        method: "POST",
-        body: JSON.stringify({
-          status: "ACCEPTE",
-          acceptanceText: "Bon pour accord",
-          signatureData: PNG_SIGNATURE,
-          otpCode: "000000",
-        }),
-      }),
-      { params: Promise.resolve({ token: VALID_TOKEN }) }
-    );
-
-    expect(res.status).toBe(429);
-    expect(transitionDevisStatusFromPublic).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
+    expect(transitionDevisStatusFromPublic).toHaveBeenCalled();
   });
 
   it("POST rejette une requête cross-site (CSRF)", async () => {
