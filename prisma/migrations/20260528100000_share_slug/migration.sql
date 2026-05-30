@@ -1,9 +1,9 @@
 -- Slug public lisible (devis-dev-2026-0003) en complément du token opaque
-ALTER TABLE "Devis" ADD COLUMN "shareSlug" TEXT;
-ALTER TABLE "Facture" ADD COLUMN "shareSlug" TEXT;
+ALTER TABLE "Devis" ADD COLUMN IF NOT EXISTS "shareSlug" TEXT;
+ALTER TABLE "Facture" ADD COLUMN IF NOT EXISTS "shareSlug" TEXT;
 
-CREATE UNIQUE INDEX "Devis_shareSlug_key" ON "Devis"("shareSlug");
-CREATE UNIQUE INDEX "Facture_shareSlug_key" ON "Facture"("shareSlug");
+CREATE UNIQUE INDEX IF NOT EXISTS "Devis_shareSlug_key" ON "Devis"("shareSlug");
+CREATE UNIQUE INDEX IF NOT EXISTS "Facture_shareSlug_key" ON "Facture"("shareSlug");
 
 WITH base AS (
   SELECT
@@ -13,7 +13,7 @@ WITH base AS (
   WHERE "shareToken" IS NOT NULL AND trim("numero") <> ''
 ),
 ranked AS (
-  SELECT id, slug, row_number() OVER (PARTITION BY slug ORDER BY "sentAt" NULLS LAST, id) AS rn
+  SELECT id, slug, row_number() OVER (PARTITION BY slug ORDER BY id) AS rn
   FROM base
   WHERE slug <> 'devis-' AND slug <> 'devis'
 )
@@ -30,7 +30,7 @@ WITH base AS (
   WHERE "shareToken" IS NOT NULL AND trim("numero") <> ''
 ),
 ranked AS (
-  SELECT id, slug, row_number() OVER (PARTITION BY slug ORDER BY "issuedAt" NULLS LAST, id) AS rn
+  SELECT id, slug, row_number() OVER (PARTITION BY slug ORDER BY id) AS rn
   FROM base
   WHERE slug <> 'facture-' AND slug <> 'facture'
 )
