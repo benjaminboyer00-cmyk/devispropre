@@ -11,7 +11,7 @@ export async function TurnstileScript({ siteKey }: { siteKey?: string }) {
   return (
     <Script
       id="cloudflare-turnstile"
-      src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+      src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
       strategy="afterInteractive"
       nonce={nonce}
     />

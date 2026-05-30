@@ -7,8 +7,9 @@ export class TurnstileError extends Error {
   }
 }
 
-/** Turnstile actif uniquement si clé secrète ET clé site publique sont configurées. */
+/** Turnstile actif si clés présentes et TURNSTILE_ENFORCE !== false. */
 export function isTurnstileEnforced(): boolean {
+  if (process.env.TURNSTILE_ENFORCE === "false") return false;
   return Boolean(env.turnstileSecretKey && env.turnstileSiteKey);
 }
 

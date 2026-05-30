@@ -28,8 +28,10 @@ export function validateEnv(): void {
   if (allowedOrigins.includes("*")) {
     throw new Error("ALLOWED_ORIGINS ne doit pas contenir de wildcard (*) en production.");
   }
-  requireEnv("TURNSTILE_SECRET_KEY");
-  requireEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY");
+  if (process.env.TURNSTILE_ENFORCE !== "false") {
+    requireEnv("TURNSTILE_SECRET_KEY");
+    requireEnv("NEXT_PUBLIC_TURNSTILE_SITE_KEY");
+  }
   requireEnv("CRON_SECRET");
   requireEnv("RESEND_API_KEY");
   requireEnv("STRIPE_SECRET_KEY");

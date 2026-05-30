@@ -13,17 +13,18 @@ export function buildContentSecurityPolicy(nonce: string): string {
   return [
     "default-src 'self'",
     "object-src 'none'",
-    // unsafe-eval requis par Cloudflare Turnstile (analyse comportementale côté client)
-    `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' 'strict-dynamic' https://challenges.cloudflare.com https://js.stripe.com https://plausible.io https://eu-assets.i.posthog.com`,
+    // unsafe-eval requis par Cloudflare Turnstile — pas de strict-dynamic (conflits avec l'iframe)
+    `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' https://challenges.cloudflare.com https://js.stripe.com https://plausible.io https://eu-assets.i.posthog.com`,
     // style-src-elem : feuilles <link> + balises <style> (Next.js)
     `style-src-elem 'self' 'unsafe-inline' 'nonce-${nonce}'`,
     // style-src-attr : style="" sur les éléments (legacy)
     "style-src-attr 'unsafe-inline'",
     `style-src 'self' 'unsafe-inline' 'nonce-${nonce}'`,
-    "img-src 'self' data: blob: https://eu.i.posthog.com",
+    "img-src 'self' data: blob: https://challenges.cloudflare.com https://eu.i.posthog.com",
     "font-src 'self'",
     "connect-src 'self' https://api.stripe.com https://m.stripe.network https://challenges.cloudflare.com https://plausible.io https://eu.i.posthog.com https://eu.posthog.com",
-    "frame-src https://challenges.cloudflare.com https://js.stripe.com https://hooks.stripe.com",
+    "frame-src 'self' https://challenges.cloudflare.com https://js.stripe.com https://hooks.stripe.com",
+    "child-src 'self' https://challenges.cloudflare.com",
     "worker-src 'self' blob:",
     "frame-ancestors 'none'",
     "base-uri 'self'",

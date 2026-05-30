@@ -20,6 +20,8 @@ describe("buildContentSecurityPolicy", () => {
     const csp = buildContentSecurityPolicy("n");
     expect(csp).toContain("https://challenges.cloudflare.com");
     expect(csp).toContain("'unsafe-eval'");
+    expect(csp).not.toContain("strict-dynamic");
+    expect(csp).toContain("child-src 'self' https://challenges.cloudflare.com");
   });
 
   it("autorise les outils analytics", () => {

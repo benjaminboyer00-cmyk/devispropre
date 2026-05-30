@@ -42,6 +42,16 @@ describe("validateEnv", () => {
     expect(() => validateEnv()).toThrow(/TURNSTILE_SECRET_KEY/);
   });
 
+  it("n'exige pas Turnstile si TURNSTILE_ENFORCE=false", async () => {
+    stubCompleteProdEnv({
+      TURNSTILE_ENFORCE: "false",
+      TURNSTILE_SECRET_KEY: "",
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
+    });
+    const { validateEnv } = await import("../env");
+    expect(() => validateEnv()).not.toThrow();
+  });
+
   it("exige Stripe et Resend en production", async () => {
     stubCompleteProdEnv({ STRIPE_SECRET_KEY: "" });
     const { validateEnv } = await import("../env");
