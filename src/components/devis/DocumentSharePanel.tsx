@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { useToast } from "@/components/ui/ToastProvider";
+import type { DocumentShareMessage } from "@/lib/share-utils";
 import {
+  documentShareDisplayText,
+  documentShareExternalText,
+  documentShareHtml,
   mailShareHref,
   normalizePhone,
   openShareHref,
@@ -15,7 +19,7 @@ interface DocumentSharePanelProps {
   title: string;
   subtitle?: string;
   shareUrl: string;
-  message: string;
+  shareMessage: DocumentShareMessage;
   clientPhone: string | null;
   emailSubject: string;
   variant?: "devis" | "facture";
@@ -31,16 +35,19 @@ export function DocumentSharePanel({
   title,
   subtitle,
   shareUrl,
-  message,
+  shareMessage,
   clientPhone,
   emailSubject,
   variant = "devis",
 }: DocumentSharePanelProps) {
   const { toast } = useToast();
   const phone = normalizePhone(clientPhone);
-  const whatsAppHref = phone ? whatsAppShareHref(phone, message) : null;
-  const smsHref = phone ? smsShareHref(phone, message) : null;
-  const mailHref = mailShareHref(emailSubject, message);
+  const displayText = documentShareDisplayText(shareMessage);
+  const externalText = documentShareExternalText(shareMessage);
+  const displayHtml = documentShareHtml(shareMessage);
+  const whatsAppHref = phone ? whatsAppShareHref(phone, externalText) : null;
+  const smsHref = phone ? smsShareHref(phone, externalText) : null;
+  const mailHref = mailShareHref(emailSubject, externalText);
   const linkWord = variant === "facture" ? "facture" : "devis";
 
   const accent =
@@ -67,7 +74,7 @@ export function DocumentSharePanel({
           >
             {linkWord}
           </Link>
-          <CopyButton text={shareUrl} label="Copier le lien" />
+          <CopyButton text={shareUrl} label="Copier le lien" toastOnCopy={false} />
           <Link
             href={shareUrl}
             target="_blank"
@@ -81,9 +88,26 @@ export function DocumentSharePanel({
 
       <div className="rounded bg-white p-3 text-sm dark:bg-slate-900">
         <p className="text-subtle mb-1 text-xs">Message suggéré (WhatsApp, SMS, email)</p>
-        <p className="text-body whitespace-pre-wrap">{message}</p>
+        <div className="text-body whitespace-pre-wrap">
+          <span>{shareMessage.beforeLink}</span>
+          {"\n"}
+          <Link
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-semibold text-[var(--accent)] underline underline-offset-2"
+          >
+            {shareMessage.linkWord}
+          </Link>
+          <span>{shareMessage.afterLink}</span>
+        </div>
         <div className="mt-3 flex flex-wrap gap-2">
-          <CopyButton text={message} label="Copier le message" className="ui-btn-outline text-sm" />
+          <CopyButton
+            text={displayText}
+            html={displayHtml}
+            label="Copier le message"
+            className="ui-btn-outline text-sm"
+          />
         </div>
       </div>
 

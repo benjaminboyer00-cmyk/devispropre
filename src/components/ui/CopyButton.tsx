@@ -5,12 +5,14 @@ import { useToast } from "@/components/ui/ToastProvider";
 
 export function CopyButton({
   text,
+  html,
   label = "Copier",
   copiedLabel = "Copié !",
   className = "ui-btn-outline text-sm",
   toastOnCopy = true,
 }: {
   text: string;
+  html?: string;
   label?: string;
   copiedLabel?: string;
   className?: string;
@@ -21,7 +23,16 @@ export function CopyButton({
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(text);
+      if (html && typeof ClipboardItem !== "undefined") {
+        await navigator.clipboard.write([
+          new ClipboardItem({
+            "text/html": new Blob([html], { type: "text/html" }),
+            "text/plain": new Blob([text], { type: "text/plain" }),
+          }),
+        ]);
+      } else {
+        await navigator.clipboard.writeText(text);
+      }
       setCopied(true);
       if (toastOnCopy) toast("Copié dans le presse-papier");
       setTimeout(() => setCopied(false), 2000);

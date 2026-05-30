@@ -1,7 +1,7 @@
 "use client";
 
 import { DocumentSharePanel } from "@/components/devis/DocumentSharePanel";
-import { devisShareMessage } from "@/lib/format";
+import { buildDevisShareMessage } from "@/lib/share-utils";
 
 interface DevisSharePanelProps {
   numero: string;
@@ -11,7 +11,7 @@ interface DevisSharePanelProps {
 }
 
 export function DevisSharePanel({ numero, clientName, shareUrl, clientPhone }: DevisSharePanelProps) {
-  const message = devisShareMessage(numero, clientName, shareUrl);
+  const shareMessage = buildDevisShareMessage(numero, clientName, shareUrl);
 
   return (
     <DocumentSharePanel
@@ -19,7 +19,7 @@ export function DevisSharePanel({ numero, clientName, shareUrl, clientPhone }: D
       title="Lien client prêt — partagez votre devis"
       subtitle="Partagez le mot « devis » (lien cliquable) — le client pourra consulter et signer en ligne."
       shareUrl={shareUrl}
-      message={message}
+      shareMessage={shareMessage}
       clientPhone={clientPhone}
       emailSubject={`Devis n° ${numero} — ${clientName}`}
     />

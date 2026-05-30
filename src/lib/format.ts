@@ -19,22 +19,11 @@ export function whatsAppShareUrl(phone: string, message: string): string {
   return `https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`;
 }
 
-export function devisShareMessage(numero: string, clientName: string, shareUrl: string): string {
-  return `Bonjour ${clientName},
-
-Votre devis n° ${numero} est disponible en ligne.
-Cliquez sur le lien « devis » ci-dessous pour le consulter et le signer :
-${shareUrl}
-
-Merci de votre confiance !`;
-}
-
-export function factureShareMessage(numero: string, clientName: string, shareUrl: string): string {
-  return `Bonjour ${clientName},
-
-Votre facture n° ${numero} est disponible en ligne.
-Cliquez sur le lien « facture » ci-dessous pour la consulter :
-${shareUrl}
-
-Merci de votre confiance !`;
-}
+export type { DocumentShareMessage } from "./share-utils";
+export {
+  buildDevisShareMessage,
+  buildFactureShareMessage,
+  documentShareDisplayText,
+  documentShareExternalText,
+  documentShareHtml,
+} from "./share-utils";

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { DocumentSharePanel } from "@/components/devis/DocumentSharePanel";
 import { useToast } from "@/components/ui/ToastProvider";
-import { factureShareMessage } from "@/lib/format";
+import { buildFactureShareMessage } from "@/lib/share-utils";
 
 interface FactureSharePanelProps {
   factureId: string;
@@ -25,7 +25,7 @@ export function FactureSharePanel({
   const { toast } = useToast();
   const [resendLoading, setResendLoading] = useState(false);
   const [resendSent, setResendSent] = useState(false);
-  const message = factureShareMessage(numero, clientName, shareUrl);
+  const shareMessage = buildFactureShareMessage(numero, clientName, shareUrl);
   const email = clientEmail?.trim() ?? "";
 
   async function handleResendLink() {
@@ -50,7 +50,7 @@ export function FactureSharePanel({
         title="Facture émise — partagez le lien client"
         subtitle="Partagez le mot « facture » (lien cliquable) — le client consultera le document complet en ligne."
         shareUrl={shareUrl}
-        message={message}
+        shareMessage={shareMessage}
         clientPhone={clientPhone}
         emailSubject={`Facture n° ${numero} — ${clientName}`}
       />
