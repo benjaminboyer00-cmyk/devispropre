@@ -8,6 +8,13 @@ COPY prisma ./prisma
 COPY prisma.config.ts ./prisma.config.ts
 RUN npm ci
 
+FROM base AS prisma-cli
+WORKDIR /prisma-cli
+COPY prisma ./prisma
+COPY prisma.config.ts ./prisma.config.ts
+RUN npm init -y \
+  && npm install --no-save prisma@7.8.0 dotenv@17.4.2 --ignore-scripts
+
 FROM base AS builder
 ARG NEXT_PUBLIC_APP_URL=https://devispropre.com
 ARG NEXT_PUBLIC_TURNSTILE_SITE_KEY=
@@ -34,14 +41,9 @@ RUN addgroup --system --gid 1001 nodejs && adduser --system --uid 1001 nextjs
 COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/src/generated ./src/generated
-COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
-COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
-COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
-COPY --from=builder /app/node_modules/effect ./node_modules/effect
+COPY --from=prisma-cli --chown=nextjs:nodejs /prisma-cli ./prisma-cli
 COPY scripts/docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN mkdir -p /app/storage/logos /app/storage/pdfs && chown -R nextjs:nodejs /app/storage && chmod +x docker-entrypoint.sh
