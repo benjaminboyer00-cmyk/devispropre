@@ -3,7 +3,13 @@
 import Link from "next/link";
 import { CopyButton } from "@/components/ui/CopyButton";
 import { useToast } from "@/components/ui/ToastProvider";
-import { mailShareHref, normalizePhone, smsShareHref, whatsAppShareHref } from "@/lib/share-utils";
+import {
+  mailShareHref,
+  normalizePhone,
+  openShareHref,
+  smsShareHref,
+  whatsAppShareHref,
+} from "@/lib/share-utils";
 
 interface DocumentSharePanelProps {
   title: string;
@@ -14,6 +20,11 @@ interface DocumentSharePanelProps {
   emailSubject: string;
   variant?: "devis" | "facture";
 }
+
+const LINK_HINT: Record<"devis" | "facture", string> = {
+  devis: "Cliquez sur « devis » pour consulter et signer le document.",
+  facture: "Cliquez sur « facture » pour consulter le document.",
+};
 
 /** Panneau partage unifié — lien, message, WhatsApp, SMS, email. */
 export function DocumentSharePanel({
@@ -30,6 +41,7 @@ export function DocumentSharePanel({
   const whatsAppHref = phone ? whatsAppShareHref(phone, message) : null;
   const smsHref = phone ? smsShareHref(phone, message) : null;
   const mailHref = mailShareHref(emailSubject, message);
+  const linkWord = variant === "facture" ? "facture" : "devis";
 
   const accent =
     variant === "facture"
@@ -43,23 +55,32 @@ export function DocumentSharePanel({
         {subtitle && <p className="text-body mt-1 text-sm">{subtitle}</p>}
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
-        <code className="text-body max-w-full min-w-0 flex-1 truncate rounded bg-white px-3 py-2 text-xs dark:bg-slate-900">
-          {shareUrl}
-        </code>
-        <CopyButton text={shareUrl} label="Copier le lien" />
-        <Link
-          href={shareUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ui-btn-outline text-sm"
-        >
-          Aperçu client
-        </Link>
+      <div className="rounded bg-white p-4 dark:bg-slate-900">
+        <p className="text-subtle text-xs font-medium uppercase tracking-wide">Lien client</p>
+        <p className="text-body mt-2 text-sm">{LINK_HINT[variant]}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-3">
+          <Link
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-lg font-semibold text-[var(--accent)] underline underline-offset-2"
+          >
+            {linkWord}
+          </Link>
+          <CopyButton text={shareUrl} label="Copier le lien" />
+          <Link
+            href={shareUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="ui-btn-outline text-sm"
+          >
+            Aperçu client
+          </Link>
+        </div>
       </div>
 
       <div className="rounded bg-white p-3 text-sm dark:bg-slate-900">
-        <p className="text-subtle mb-1 text-xs">Message suggéré</p>
+        <p className="text-subtle mb-1 text-xs">Message suggéré (WhatsApp, SMS, email)</p>
         <p className="text-body whitespace-pre-wrap">{message}</p>
         <div className="mt-3 flex flex-wrap gap-2">
           <CopyButton text={message} label="Copier le message" className="ui-btn-outline text-sm" />
@@ -83,17 +104,27 @@ export function DocumentSharePanel({
           </p>
         )}
         {smsHref && (
-          <a
-            href={smsHref}
-            onClick={() => toast("Ouverture de l'application SMS…", "info")}
+          <button
+            type="button"
+            onClick={() => {
+              openShareHref(smsHref);
+              toast("Ouverture de l'application SMS…", "info");
+            }}
             className="ui-btn-outline py-3 text-center text-sm font-semibold"
           >
             SMS
-          </a>
+          </button>
         )}
-        <a href={mailHref} className="ui-btn-outline py-3 text-center text-sm font-semibold sm:col-span-2">
+        <button
+          type="button"
+          onClick={() => {
+            openShareHref(mailHref);
+            toast("Ouverture de votre messagerie…", "info");
+          }}
+          className="ui-btn-outline py-3 text-center text-sm font-semibold sm:col-span-2"
+        >
           Email (message pré-rempli)
-        </a>
+        </button>
       </div>
     </div>
   );

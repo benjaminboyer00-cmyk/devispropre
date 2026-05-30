@@ -17,7 +17,7 @@ export function DevisSharePanel({ numero, clientName, shareUrl, clientPhone }: D
     <DocumentSharePanel
       variant="devis"
       title="Lien client prêt — partagez votre devis"
-      subtitle="Copiez le lien, ou envoyez le message par WhatsApp, SMS ou email."
+      subtitle="Partagez le mot « devis » (lien cliquable) — le client pourra consulter et signer en ligne."
       shareUrl={shareUrl}
       message={message}
       clientPhone={clientPhone}

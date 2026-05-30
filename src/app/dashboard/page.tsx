@@ -22,7 +22,7 @@ export default async function DashboardPage() {
   const wsId = account.workspaceUserId;
   const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
-  const [devis, factures, devisThisMonth, accepted, pending, caMois] = await Promise.all([
+  const [devis, factures, devisThisMonth, accepted, pending, refused, caMois] = await Promise.all([
     prisma.devis.findMany({
       where: { userId: wsId, deletedAt: null },
       select: devisListSelect,
@@ -36,8 +36,11 @@ export default async function DashboardPage() {
       take: 5,
     }),
     getDevisCountThisMonth(wsId),
-    prisma.devis.count({ where: { userId: wsId, status: "ACCEPTE", deletedAt: null } }),
+    prisma.devis.count({
+      where: { userId: wsId, status: { in: ["ACCEPTE", "FACTURE"] }, deletedAt: null },
+    }),
     prisma.devis.count({ where: { userId: wsId, status: "ENVOYE", deletedAt: null } }),
+    prisma.devis.count({ where: { userId: wsId, status: "REFUSE", deletedAt: null } }),
     prisma.facture.aggregate({
       where: {
         userId: wsId,
@@ -49,10 +52,8 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  const sentTotal = await prisma.devis.count({
-    where: { userId: wsId, status: { in: ["ENVOYE", "ACCEPTE", "REFUSE", "FACTURE"] }, deletedAt: null },
-  });
-  const acceptRate = sentTotal > 0 ? Math.round((accepted / sentTotal) * 100) : 0;
+  const decidedTotal = accepted + refused;
+  const acceptRate = decidedTotal > 0 ? Math.round((accepted / decidedTotal) * 100) : 0;
   const isPro = hasPro(account.plan);
 
   return (

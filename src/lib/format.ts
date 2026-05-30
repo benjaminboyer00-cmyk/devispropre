@@ -20,9 +20,21 @@ export function whatsAppShareUrl(phone: string, message: string): string {
 }
 
 export function devisShareMessage(numero: string, clientName: string, shareUrl: string): string {
-  return `Bonjour ${clientName}, voici votre devis n° ${numero} : ${shareUrl}\nMerci de votre confiance !`;
+  return `Bonjour ${clientName},
+
+Votre devis n° ${numero} est disponible en ligne.
+Cliquez sur le lien « devis » ci-dessous pour le consulter et le signer :
+${shareUrl}
+
+Merci de votre confiance !`;
 }
 
 export function factureShareMessage(numero: string, clientName: string, shareUrl: string): string {
-  return `Bonjour ${clientName}, voici votre facture n° ${numero} : ${shareUrl}\nMerci de votre confiance !`;
+  return `Bonjour ${clientName},
+
+Votre facture n° ${numero} est disponible en ligne.
+Cliquez sur le lien « facture » ci-dessous pour la consulter :
+${shareUrl}
+
+Merci de votre confiance !`;
 }

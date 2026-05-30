@@ -17,3 +17,8 @@ export function smsShareHref(phone: string, message: string): string {
 export function mailShareHref(subject: string, body: string): string {
   return `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
+
+/** Ouvre WhatsApp, mail, SMS… sans quitter la page DevisPropre. */
+export function openShareHref(href: string): void {
+  window.open(href, "_blank", "noopener,noreferrer");
+}

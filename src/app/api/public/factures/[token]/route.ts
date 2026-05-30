@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { getTrustedClientIpOrUnknown, handleServiceError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
 import { verifyDocumentIntegrity, buildFacturePayload } from "@/lib/document-hash";
+import { companyToLegal } from "@/lib/devis-legal";
 import { resolveIssuerCompany } from "@/lib/issuer-snapshot";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { PUBLIC_DEVIS_LIMITS } from "@/lib/public-api-limits";
@@ -54,8 +55,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
       return publicJsonResponse({ error: "Ce lien de facture a expiré." }, { status: 410 });
     }
 
-    const company = resolveIssuerCompany(facture.issuerSnapshot, facture.user.company);
-    const payload = buildFacturePayload(facture, company);
+    const companyRaw = resolveIssuerCompany(facture.issuerSnapshot, facture.user.company);
+    const company = companyRaw ? companyToLegal(companyRaw) : null;
+    const payload = buildFacturePayload(facture, facture.user.company);
     const integrityOk = facture.contentHash
       ? verifyDocumentIntegrity(facture.contentHash, payload)
       : false;
@@ -68,19 +70,29 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     return publicJsonResponse({
       numero: facture.numero,
       status: facture.status,
+      totalHT: facture.totalHT,
+      totalTVA: facture.totalTVA,
       totalTTC: facture.totalTTC,
-      issuedAt: facture.issuedAt,
-      paidAt: facture.paidAt,
+      notes: facture.notes,
+      issuedAt: facture.issuedAt?.toISOString() ?? null,
+      paidAt: facture.paidAt?.toISOString() ?? null,
+      dateEcheance: facture.dateEcheance?.toISOString().slice(0, 10) ?? null,
       shareLinkExpiresAt: shareLinkExpiresAt?.toISOString() ?? null,
-      client: { nom: facture.client.nom },
-      company: company ? { raisonSociale: company.raisonSociale } : null,
       integrityOk,
-      lockedAt: facture.lockedAt,
+      lockedAt: facture.lockedAt?.toISOString() ?? null,
+      client: {
+        nom: facture.client.nom,
+        adresse: facture.client.adresse,
+        telephone: facture.client.telephone,
+        email: facture.client.email,
+      },
+      company,
       lignes: facture.lignes.map((l) => ({
         description: l.description,
         quantite: l.quantite,
         prixUnitaireHT: l.prixUnitaireHT,
         totalHT: l.totalHT,
+        tva: l.tva,
       })),
     });
   } catch (e) {

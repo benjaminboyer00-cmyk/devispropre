@@ -17,7 +17,7 @@ export function FactureSharePanel({ numero, clientName, shareUrl, clientPhone }:
     <DocumentSharePanel
       variant="facture"
       title="Facture émise — partagez le lien client"
-      subtitle="Même principe que le devis : lien sécurisé, message pré-rempli, conformité TVA 2018."
+      subtitle="Partagez le mot « facture » (lien cliquable) — le client consultera le document complet en ligne."
       shareUrl={shareUrl}
       message={message}
       clientPhone={clientPhone}

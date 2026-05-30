@@ -62,7 +62,7 @@ export async function getAdvancedStats(userId: string, plan: Plan) {
       where: {
         userId,
         deletedAt: null,
-        status: "ACCEPTE",
+        status: { in: ["ACCEPTE", "FACTURE"] },
         sentAt: { not: null },
         acceptedAt: { not: null },
       },
