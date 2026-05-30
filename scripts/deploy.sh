@@ -15,6 +15,11 @@ fi
 echo "→ Build image (sans cache pour garantir le code à jour)…"
 $COMPOSE build --pull --no-cache
 
+if [ -f "src/app/icon.tsx" ]; then
+  echo "✗ Supprimez src/app/icon.tsx — il écrase icon.png et casse la favicon." >&2
+  exit 1
+fi
+
 echo "→ Démarrage services…"
 $COMPOSE up -d
 
