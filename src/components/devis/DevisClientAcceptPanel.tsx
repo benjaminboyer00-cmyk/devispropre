@@ -17,8 +17,8 @@ export function DevisClientAcceptPanel({ loading, onAccept, onRefuse }: DevisCli
   const [acceptanceText, setAcceptanceText] = useState(DEFAULT_TEXT);
   const [signatureData, setSignatureData] = useState<string | null>(null);
   const [error, setError] = useState("");
-  const [confirmSign, setConfirmSign] = useState(false);
-  const [confirmRefuse, setConfirmRefuse] = useState(false);
+  const [signConfirmOpen, setSignConfirmOpen] = useState(false);
+  const [refuseConfirmOpen, setRefuseConfirmOpen] = useState(false);
 
   const today = new Date().toLocaleDateString("fr-FR", {
     day: "numeric",
@@ -41,20 +41,20 @@ export function DevisClientAcceptPanel({ loading, onAccept, onRefuse }: DevisCli
 
   function openSignConfirm() {
     if (!validateAccept()) return;
-    setConfirmSign(true);
+    setSignConfirmOpen(true);
   }
 
-  function confirmSign() {
+  function handleConfirmSign() {
     if (!signatureData) return;
-    setConfirmSign(false);
+    setSignConfirmOpen(false);
     onAccept({
       acceptanceText: acceptanceText.trim(),
       signatureData,
     });
   }
 
-  function confirmRefuse() {
-    setConfirmRefuse(false);
+  function handleConfirmRefuse() {
+    setRefuseConfirmOpen(false);
     onRefuse();
   }
 
@@ -103,7 +103,7 @@ export function DevisClientAcceptPanel({ loading, onAccept, onRefuse }: DevisCli
           </button>
           <button
             type="button"
-            onClick={() => setConfirmRefuse(true)}
+            onClick={() => setRefuseConfirmOpen(true)}
             disabled={loading}
             className="ui-btn-outline flex-1 border-red-600 py-3 text-red-700 dark:border-red-400 dark:text-red-300"
           >
@@ -113,26 +113,26 @@ export function DevisClientAcceptPanel({ loading, onAccept, onRefuse }: DevisCli
       </div>
 
       <ConfirmDialog
-        open={confirmSign}
+        open={signConfirmOpen}
         title="Confirmer la signature"
         message="Êtes-vous sûr de vouloir signer ce devis ? Cette action est définitive."
         confirmLabel="Oui, signer le devis"
         cancelLabel="Annuler"
         loading={loading}
-        onConfirm={confirmSign}
-        onCancel={() => setConfirmSign(false)}
+        onConfirm={handleConfirmSign}
+        onCancel={() => setSignConfirmOpen(false)}
       />
 
       <ConfirmDialog
-        open={confirmRefuse}
+        open={refuseConfirmOpen}
         title="Confirmer le refus"
         message="Êtes-vous sûr de vouloir refuser ce devis ?"
         confirmLabel="Oui, refuser le devis"
         cancelLabel="Annuler"
         variant="danger"
         loading={loading}
-        onConfirm={confirmRefuse}
-        onCancel={() => setConfirmRefuse(false)}
+        onConfirm={handleConfirmRefuse}
+        onCancel={() => setRefuseConfirmOpen(false)}
       />
     </>
   );
