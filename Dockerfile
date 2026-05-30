@@ -41,6 +41,7 @@ COPY --from=builder /app/src/generated ./src/generated
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/node_modules/dotenv ./node_modules/dotenv
+COPY --from=builder /app/node_modules/effect ./node_modules/effect
 COPY scripts/docker-entrypoint.sh ./docker-entrypoint.sh
 
 RUN mkdir -p /app/storage/logos /app/storage/pdfs && chown -R nextjs:nodejs /app/storage && chmod +x docker-entrypoint.sh
