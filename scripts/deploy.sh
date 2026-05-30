@@ -12,8 +12,8 @@ if [ ! -f ".env.production" ]; then
   exit 1
 fi
 
-echo "→ Build image…"
-$COMPOSE build --pull
+echo "→ Build image (sans cache pour garantir le code à jour)…"
+$COMPOSE build --pull --no-cache
 
 echo "→ Démarrage services…"
 $COMPOSE up -d
