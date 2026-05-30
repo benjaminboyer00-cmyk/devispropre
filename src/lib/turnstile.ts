@@ -1,4 +1,5 @@
 import { env } from "./env";
+import { isTurnstileEnforceRequested } from "./turnstile-config";
 
 export class TurnstileError extends Error {
   constructor(message = "Vérification anti-bot échouée.") {
@@ -7,9 +8,9 @@ export class TurnstileError extends Error {
   }
 }
 
-/** Turnstile actif si clés présentes et TURNSTILE_ENFORCE !== false. */
+/** Turnstile actif uniquement si TURNSTILE_ENFORCE=true et clés présentes. */
 export function isTurnstileEnforced(): boolean {
-  if (process.env.TURNSTILE_ENFORCE === "false") return false;
+  if (!isTurnstileEnforceRequested()) return false;
   return Boolean(env.turnstileSecretKey && env.turnstileSiteKey);
 }
 

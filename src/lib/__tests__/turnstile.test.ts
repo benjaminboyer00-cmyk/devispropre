@@ -10,6 +10,7 @@ vi.mock("../env", () => ({
 describe("verifyTurnstileToken", () => {
   beforeEach(() => {
     vi.restoreAllMocks();
+    vi.stubEnv("TURNSTILE_ENFORCE", "true");
   });
 
   it("appelle l'API siteverify Cloudflare avec la clé secrète", async () => {

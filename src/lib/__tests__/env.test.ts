@@ -36,10 +36,19 @@ describe("validateEnv", () => {
     expect(() => validateEnv()).not.toThrow();
   });
 
-  it("exige Turnstile en production", async () => {
-    stubCompleteProdEnv({ TURNSTILE_SECRET_KEY: "" });
+  it("exige Turnstile si TURNSTILE_ENFORCE=true", async () => {
+    stubCompleteProdEnv({ TURNSTILE_ENFORCE: "true", TURNSTILE_SECRET_KEY: "" });
     const { validateEnv } = await import("../env");
     expect(() => validateEnv()).toThrow(/TURNSTILE_SECRET_KEY/);
+  });
+
+  it("n'exige pas Turnstile par défaut", async () => {
+    stubCompleteProdEnv({
+      TURNSTILE_SECRET_KEY: "",
+      NEXT_PUBLIC_TURNSTILE_SITE_KEY: "",
+    });
+    const { validateEnv } = await import("../env");
+    expect(() => validateEnv()).not.toThrow();
   });
 
   it("n'exige pas Turnstile si TURNSTILE_ENFORCE=false", async () => {
