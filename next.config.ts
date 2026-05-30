@@ -39,7 +39,7 @@ const nextConfig: NextConfig = {
       { source: "/icons/:path*", headers: [CACHE_IMMUTABLE] },
       { source: "/sw.js", headers: [{ key: "Cache-Control", value: "public, max-age=0, must-revalidate" }, { key: "Service-Worker-Allowed", value: "/" }] },
       { source: "/manifest.webmanifest", headers: [CACHE_DAY] },
-      { source: "/robots.txt", headers: [CACHE_DAY] },
+      { source: "/robots.txt", headers: [{ key: "Cache-Control", value: "no-store, no-cache, must-revalidate" }] },
       { source: "/sitemap.xml", headers: [CACHE_DAY] },
       { source: "/opengraph-image", headers: [CACHE_IMMUTABLE] },
       { source: "/devis-artisan/:path*/opengraph-image", headers: [CACHE_IMMUTABLE] },

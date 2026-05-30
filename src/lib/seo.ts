@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
 import { env } from "./env";
 
-/** URL publique canonique (robots, sitemap, JSON-LD). Fallback .com — jamais .fr. */
+/** Domaine canonique — hardcodé pour éviter tout résidu .fr au build Next.js. */
+export const CANONICAL_PUBLIC_ORIGIN = "https://devispropre.com";
+
+/** URL publique canonique (robots, sitemap, JSON-LD). */
 export function getPublicSiteUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "https://devispropre.com";
+  if (process.env.NODE_ENV === "production") {
+    return CANONICAL_PUBLIC_ORIGIN;
+  }
+  return process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") || "http://localhost:3000";
 }
 
 const APP_URL = getPublicSiteUrl();

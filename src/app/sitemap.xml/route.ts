@@ -2,8 +2,7 @@ import { NextResponse } from "next/server";
 import { buildSitemapEntries, renderSitemapXml } from "@/lib/sitemap-data";
 
 /** Route explicite — fiable en Docker standalone (évite les bugs metadata sitemap.ts). */
-export const dynamic = "force-static";
-export const revalidate = 86400;
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const xml = renderSitemapXml(buildSitemapEntries());
