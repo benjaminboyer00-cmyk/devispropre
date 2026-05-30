@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { cookies } from "next/headers";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { prisma } from "./db";
 import { env } from "./env";
 import {
@@ -122,15 +123,23 @@ export function sessionMetaFromRequest(request: NextRequest): SessionMeta {
   };
 }
 
+const SESSION_COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: env.isProd,
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: 60 * 60 * 24 * 7,
+};
+
+/** Pose le cookie session sur une NextResponse (obligatoire avant redirect). */
+export function applySessionCookie(response: NextResponse, token: string): NextResponse {
+  response.cookies.set(COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
+  return response;
+}
+
 export async function setSessionCookie(token: string) {
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: env.isProd,
-    sameSite: "strict",
-    path: "/",
-    maxAge: 60 * 60 * 24 * 7,
-  });
+  cookieStore.set(COOKIE_NAME, token, SESSION_COOKIE_OPTIONS);
 }
 
 export async function clearSessionCookie() {

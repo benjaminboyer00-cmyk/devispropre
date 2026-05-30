@@ -19,6 +19,7 @@ export const ROUTES = {
   inscription: "/inscription",
   inscriptionConfirmation: "/inscription/confirmation",
   connexion: "/connexion",
+  connexionMagicLink: "/connexion/magic-link",
   offline: "/offline",
   dashboard: "/dashboard",
   dashboardDevisList: "/dashboard/devis",

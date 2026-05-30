@@ -50,7 +50,7 @@ export async function requestMagicLink(email: string): Promise<void> {
     data: { userId: user.id, tokenHash, purpose: "MAGIC_LINK", expiresAt },
   });
 
-  const verifyUrl = `${env.appUrl}/api/auth/magic-link/verify?token=${encodeURIComponent(rawToken)}`;
+  const verifyUrl = `${env.appUrl}/connexion/magic-link?token=${encodeURIComponent(rawToken)}`;
   await sendMagicLinkEmail({
     to: user.email,
     name: user.name,
