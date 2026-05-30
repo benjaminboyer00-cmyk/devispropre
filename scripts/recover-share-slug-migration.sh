@@ -14,6 +14,14 @@ if [ ! -f ".env.production" ]; then
   exit 1
 fi
 
+if grep -q '"sentAt"' prisma/migrations/20260528100000_share_slug/migration.sql; then
+  echo "✗ Migration SQL obsolète (sentAt) — git pull puis réessayez." >&2
+  exit 1
+fi
+
+echo "→ Rebuild image app (Prisma embarque les migrations au build Docker)…"
+$COMPOSE build --no-cache app
+
 # Ne pas `source .env.production` (valeurs multilignes / <> cassent bash)
 PGUSER="$(grep -E '^POSTGRES_USER=' .env.production | cut -d= -f2- | tr -d '"' | tr -d "'")"
 PGDB="$(grep -E '^POSTGRES_DB=' .env.production | cut -d= -f2- | tr -d '"' | tr -d "'")"
