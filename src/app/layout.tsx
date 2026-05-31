@@ -1,11 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Suspense } from "react";
 import { Geist } from "next/font/google";
-import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
-import { GoogleTagManagerBody, GoogleTagManagerHead } from "@/components/analytics/GoogleTagManager";
-import { GtmPageView } from "@/components/analytics/GtmPageView";
-import { PlausibleScript } from "@/components/analytics/PlausibleScript";
+import { ConsentAwareAnalytics } from "@/components/consent/ConsentAwareAnalytics";
+import { CookieConsentProvider } from "@/components/consent/CookieConsentContext";
 import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
@@ -57,9 +54,6 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="dns-prefetch" href="https://plausible.io" />
         <link rel="dns-prefetch" href="https://eu.i.posthog.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
-        <GoogleTagManagerHead nonce={nonce} />
-        <GoogleAnalytics nonce={nonce} />
-        <PlausibleScript />
         <Script
           id="theme-init"
           strategy="beforeInteractive"
@@ -77,20 +71,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         />
       </head>
       <body className="min-h-full flex flex-col bg-background font-sans antialiased text-foreground">
-        <GoogleTagManagerBody />
-        <UiProviders>
-          <SiteAnalytics>
-            <Suspense fallback={null}>
-              <GtmPageView />
-            </Suspense>
-            <SkipLink />
-            <SiteChrome header={<Header />} footer={<Footer />}>
-              <main id="main-content" className="flex-1">
-                {children}
-              </main>
-            </SiteChrome>
-          </SiteAnalytics>
-        </UiProviders>
+        <CookieConsentProvider>
+          <ConsentAwareAnalytics nonce={nonce} />
+          <UiProviders>
+            <SiteAnalytics>
+              <SkipLink />
+              <SiteChrome header={<Header />} footer={<Footer />}>
+                <main id="main-content" className="flex-1">
+                  {children}
+                </main>
+              </SiteChrome>
+            </SiteAnalytics>
+          </UiProviders>
+        </CookieConsentProvider>
       </body>
     </html>
   );

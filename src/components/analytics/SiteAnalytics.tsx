@@ -2,19 +2,22 @@
 
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { useCookieConsent } from "@/components/consent/CookieConsentContext";
 import { primaryAnalyticsProvider, googleAnalyticsEnabled } from "@/lib/analytics";
 import { PostHogProvider } from "@/components/analytics/PostHogProvider";
 import { WebVitals } from "@/components/analytics/WebVitals";
 
-/** Un seul stack analytics actif — voir primaryAnalyticsProvider() et .env.example. */
+/** Analytics actifs uniquement après consentement cookies. */
 export function SiteAnalytics({ children }: { children: React.ReactNode }) {
+  const { analyticsAllowed } = useCookieConsent();
   const provider = primaryAnalyticsProvider();
+  const measure = analyticsAllowed && (provider !== null || googleAnalyticsEnabled());
 
   const body = (
     <>
       {children}
-      {(provider || googleAnalyticsEnabled()) && <WebVitals />}
-      {provider === "vercel" && (
+      {measure && <WebVitals />}
+      {analyticsAllowed && provider === "vercel" && (
         <>
           <Analytics />
           <SpeedInsights />
@@ -23,7 +26,7 @@ export function SiteAnalytics({ children }: { children: React.ReactNode }) {
     </>
   );
 
-  if (provider === "posthog") {
+  if (analyticsAllowed && provider === "posthog") {
     return <PostHogProvider>{body}</PostHogProvider>;
   }
 

@@ -32,12 +32,16 @@ export default function PolitiqueConfidentialitePage() {
       </p>
       <h2>Mesure d&apos;audience</h2>
       <p>
-        Le site marketing utilise Google Tag Manager et Google Analytics 4 (mesure d&apos;audience
-        avec cookies analytiques — vous pouvez refuser via les paramètres de votre navigateur ou
-        l&apos;extension de désactivation Google). Plausible Analytics (statistiques anonymisées) et
-        PostHog (analyse UX) peuvent compléter ces outils lorsqu&apos;ils sont configurés. Ces
-        services ne sont actifs qu&apos;en production. Contact : {LEGAL.editor.email} pour exercer
-        vos droits.
+        Lors de votre première visite, une bannière vous permet d&apos;accepter ou de refuser les
+        cookies analytiques (Google Tag Manager / Google Analytics 4). Tant que vous refusez, aucun
+        traceur marketing n&apos;est chargé. Les cookies strictement nécessaires à la connexion
+        restent actifs. Vous pouvez modifier votre choix à tout moment via « Gérer les cookies » en
+        pied de page.
+      </p>
+      <p>
+        Plausible Analytics (statistiques anonymisées) et PostHog (analyse UX) peuvent compléter
+        ces outils lorsqu&apos;ils sont configurés — uniquement après acceptation. Contact :{" "}
+        {LEGAL.editor.email} pour exercer vos droits.
       </p>
     </article>
   );

@@ -1,23 +1,11 @@
 import { generateShareToken, sha256 } from "./crypto";
 import { prisma } from "./db";
 import { env } from "./env";
-import { sendEmail } from "./email";
+import { sendEmailVerificationEmail } from "./email";
 import { AUTH_RESPONSE_MIN_MS, ensureMinimumElapsed } from "./timing-safe";
 
 const TTL_MS = 24 * 60 * 60 * 1000;
 const RESEND_COOLDOWN_MS = 60 * 1000;
-
-async function sendEmailVerificationEmail(opts: {
-  to: string;
-  name: string;
-  verifyUrl: string;
-}): Promise<void> {
-  await sendEmail({
-    to: opts.to,
-    subject: "Confirmez votre email — DevisPropre",
-    html: `<p>Bonjour ${opts.name},</p><p>Confirmez votre adresse email pour activer votre compte DevisPropre :</p><p><a href="${opts.verifyUrl}">Confirmer mon email</a></p><p>Ce lien expire dans 24 h. Après confirmation, vous serez connecté automatiquement.</p>`,
-  });
-}
 
 export async function sendEmailVerification(userId: string, email: string, name: string): Promise<void> {
   const recent = await prisma.magicLinkToken.findFirst({

@@ -1,4 +1,9 @@
+"use client";
+
+"use client";
+
 import Link from "next/link";
+import { openCookiePreferences } from "@/lib/cookie-consent";
 import { ROUTES } from "@/lib/routes";
 import { SITE, siteHostname } from "@/lib/seo";
 
@@ -128,6 +133,11 @@ export function Footer() {
                 <Link href="/politique-confidentialite" className="link-underline">
                   Confidentialité
                 </Link>
+              </li>
+              <li>
+                <button type="button" onClick={openCookiePreferences} className="link-underline text-left">
+                  Gérer les cookies
+                </button>
               </li>
               <li>
                 <Link href="/cgu" className="link-underline">

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { MagicLinkCompleteForm } from "@/components/auth/MagicLinkCompleteForm";
+import { AuthEmailPanel, AuthKeyIcon } from "@/components/auth/AuthEmailPanel";
 
 export const metadata: Metadata = {
   title: "Finaliser la connexion",
@@ -15,14 +16,12 @@ export default async function ConnexionMagicLinkPage({
   const token = params.token?.trim() ?? "";
 
   return (
-    <div className="mx-auto max-w-md px-4 py-20 sm:py-24">
-      <h1 className="heading-section text-3xl">Finaliser la connexion</h1>
-      <p className="text-lead mt-3 font-light">
-        Un dernier clic pour accéder à vos devis et factures.
-      </p>
-      <div className="ui-card-padded mt-10">
-        <MagicLinkCompleteForm token={token} />
-      </div>
-    </div>
+    <AuthEmailPanel
+      title="Finaliser la connexion"
+      subtitle="Un dernier clic pour accéder à vos devis et factures."
+      icon={<AuthKeyIcon />}
+    >
+      <MagicLinkCompleteForm token={token} />
+    </AuthEmailPanel>
   );
 }

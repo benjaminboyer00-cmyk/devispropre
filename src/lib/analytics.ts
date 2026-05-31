@@ -1,5 +1,7 @@
 /** Configuration analytics — un seul fournisseur actif à la fois (priorité : Plausible > PostHog > Vercel). */
 
+import { hasAnalyticsConsent } from "./cookie-consent";
+
 export const ANALYTICS = {
   gtmId: process.env.NEXT_PUBLIC_GTM_ID?.trim() || null,
   gaMeasurementId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() || null,
@@ -47,10 +49,12 @@ export function trackEvent(name: string, props?: Record<string, string | number>
   if (typeof window === "undefined" || process.env.NODE_ENV !== "production") return;
 
   if (ANALYTICS.gtmId || ANALYTICS.gaMeasurementId) {
+    if (!hasAnalyticsConsent()) return;
     pushDataLayer({ event: name, ...(props ?? {}) });
   }
 
   const provider = primaryAnalyticsProvider();
+  if (!hasAnalyticsConsent() && provider) return;
 
   if (provider === "plausible" && window.plausible) {
     window.plausible(name, props ? { props } : undefined);
