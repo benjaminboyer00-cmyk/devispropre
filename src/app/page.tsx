@@ -3,7 +3,7 @@ import { TrackLink } from "@/components/analytics/TrackLink";
 import { IconDocument, IconEdit, IconShare, IconShield } from "@/components/icons/Icons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { ROUTES } from "@/lib/routes";
-import { pageMetadata, jsonLdFaq, jsonLdSoftwareApplication, HOME_FAQ, SITE } from "@/lib/seo";
+import { pageMetadata, jsonLdFaq, jsonLdSoftwareApplication, HOME_FAQ, SITE, SITE_TESTIMONIALS } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Devis facile artisans — pro en 2 min, TVA 2018",
@@ -13,20 +13,10 @@ export const metadata = pageMetadata({
   keywords: ["devis facile", "comment faire un devis", "devis artisan", "logiciel devis BTP"],
 });
 
-const REVIEWS = [
-  {
-    author: "Karim L., plombier — Paris",
-    quote: "Mes clients parisiens veulent un PDF, pas un SMS. DevisPropre me fait gagner un créneau par jour.",
-  },
-  {
-    author: "Thomas B., chauffagiste — Lyon",
-    quote: "Pendant la saison de chauffe, je n'ai pas le temps d'Excel. Client, prix, envoi — c'est tout.",
-  },
-  {
-    author: "Antoine R., électricien — Marseille",
-    quote: "Entre deux chantiers, je fais le devis dans la camionnette. Le client reçoit le lien avant que je reparte.",
-  },
-] as const;
+const REVIEWS = SITE_TESTIMONIALS.map((t) => ({
+  author: `${t.author}, ${t.role}`,
+  quote: t.quote,
+}));
 
 const STEPS = [
   {

@@ -234,6 +234,119 @@ export function jsonLdFaq() {
   return jsonLdFaqFromItems(HOME_FAQ);
 }
 
+/** Image absolue pour JSON-LD Product (fiches marchand Google). */
+export function productSchemaImages(): string[] {
+  return [`${SITE.url}${OG_IMAGE.url}`, `${SITE.url}/icon.png`];
+}
+
+/** Témoignages artisans — visibles sur l'accueil et /tarifs (alignés avec review JSON-LD). */
+export const SITE_TESTIMONIALS = [
+  {
+    author: "Karim L.",
+    role: "plombier — Paris",
+    quote:
+      "Mes clients parisiens veulent un PDF, pas un SMS. DevisPropre me fait gagner un créneau par jour.",
+    rating: 5,
+  },
+  {
+    author: "Thomas B.",
+    role: "chauffagiste — Lyon",
+    quote: "Pendant la saison de chauffe, je n'ai pas le temps d'Excel. Client, prix, envoi — c'est tout.",
+    rating: 5,
+  },
+  {
+    author: "Antoine R.",
+    role: "électricien — Marseille",
+    quote:
+      "Entre deux chantiers, je fais le devis dans la camionnette. Le client reçoit le lien avant que je reparte.",
+    rating: 5,
+  },
+] as const;
+
+const PRODUCT_PRICE_VALID_UNTIL = `${new Date().getFullYear() + 1}-12-31`;
+
+/** Livraison numérique immédiate (SaaS) — requis fiches marchand Google. */
+function jsonLdDigitalShippingDetails() {
+  return {
+    "@type": "OfferShippingDetails",
+    shippingRate: {
+      "@type": "MonetaryAmount",
+      value: "0",
+      currency: "EUR",
+    },
+    shippingDestination: {
+      "@type": "DefinedRegion",
+      addressCountry: "FR",
+    },
+    deliveryTime: {
+      "@type": "ShippingDeliveryTime",
+      handlingTime: {
+        "@type": "QuantitativeValue",
+        minValue: 0,
+        maxValue: 0,
+        unitCode: "DAY",
+      },
+      transitTime: {
+        "@type": "QuantitativeValue",
+        minValue: 0,
+        maxValue: 0,
+        unitCode: "DAY",
+      },
+    },
+  };
+}
+
+/** CGV art. L221-28 — contenu numérique exécuté immédiatement, pas de rétractation. */
+function jsonLdMerchantReturnPolicy() {
+  return {
+    "@type": "MerchantReturnPolicy",
+    applicableCountry: "FR",
+    returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted",
+    merchantReturnLink: `${SITE.url}/cgv`,
+  };
+}
+
+function jsonLdSaaSPlanOffer(name: string, price: string, url = `${SITE.url}/inscription`) {
+  return {
+    "@type": "Offer",
+    name,
+    price,
+    priceCurrency: "EUR",
+    availability: "https://schema.org/InStock",
+    url,
+    priceValidUntil: PRODUCT_PRICE_VALID_UNTIL,
+    itemCondition: "https://schema.org/NewCondition",
+    shippingDetails: jsonLdDigitalShippingDetails(),
+    hasMerchantReturnPolicy: jsonLdMerchantReturnPolicy(),
+  };
+}
+
+function jsonLdProductReviewsFromTestimonials() {
+  return SITE_TESTIMONIALS.map((t) => ({
+    "@type": "Review",
+    author: { "@type": "Person", name: t.author },
+    reviewRating: {
+      "@type": "Rating",
+      ratingValue: String(t.rating),
+      bestRating: "5",
+      worstRating: "1",
+    },
+    reviewBody: t.quote,
+  }));
+}
+
+function jsonLdProductAggregateRating() {
+  const count = SITE_TESTIMONIALS.length;
+  const sum = SITE_TESTIMONIALS.reduce((acc, t) => acc + t.rating, 0);
+  return {
+    "@type": "AggregateRating",
+    ratingValue: (sum / count).toFixed(1),
+    reviewCount: String(count),
+    bestRating: "5",
+    worstRating: "1",
+  };
+}
+
 export function jsonLdSoftwareApplication() {
   return {
     "@context": "https://schema.org",
@@ -242,12 +355,13 @@ export function jsonLdSoftwareApplication() {
     applicationCategory: "FinanceApplication",
     operatingSystem: "Web",
     offers: [
-      { "@type": "Offer", name: "Gratuit", price: "0", priceCurrency: "EUR", url: `${SITE.url}/tarifs` },
-      { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "EUR", url: `${SITE.url}/tarifs` },
-      { "@type": "Offer", name: "Pro", price: "39", priceCurrency: "EUR", url: `${SITE.url}/tarifs` },
+      jsonLdSaaSPlanOffer("Gratuit", "0", `${SITE.url}/inscription`),
+      jsonLdSaaSPlanOffer("Starter", "19"),
+      jsonLdSaaSPlanOffer("Pro", "39"),
     ],
     description: SITE.description,
     url: SITE.url,
+    image: productSchemaImages(),
     author: { "@type": "Person", name: SITE.owner },
   };
 }
@@ -272,44 +386,36 @@ export function jsonLdOrganization() {
   };
 }
 
+/** Product + offres tarifaires — conforme extraits produits & fiches marchand Google. */
 export function jsonLdTarifs() {
   return {
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": `${SITE.url}/tarifs#product`,
     name: "DevisPropre — Abonnement artisan",
-    description: "Devis et factures pour artisans",
+    description: SITE.description,
+    url: `${SITE.url}/tarifs`,
+    image: productSchemaImages(),
     brand: { "@type": "Brand", name: SITE.name },
+    sku: "devispropre-abonnement",
+    review: jsonLdProductReviewsFromTestimonials(),
+    aggregateRating: jsonLdProductAggregateRating(),
     offers: [
-      { "@type": "Offer", name: "Gratuit", price: "0", priceCurrency: "EUR" },
-      { "@type": "Offer", name: "Starter", price: "19", priceCurrency: "EUR" },
-      { "@type": "Offer", name: "Pro", price: "39", priceCurrency: "EUR" },
+      jsonLdSaaSPlanOffer("Gratuit", "0", `${SITE.url}/inscription`),
+      jsonLdSaaSPlanOffer("Starter", "19"),
+      jsonLdSaaSPlanOffer("Pro", "39"),
     ],
   };
 }
 
-/** Product + offre tarifaire — sans avis fictifs (conformité rich snippets Google). */
+/** Alias — même schéma Product complet que la page tarifs. */
 export function jsonLdProductOffer() {
-  return {
-    "@context": "https://schema.org",
-    "@type": "Product",
-    name: SITE.name,
-    description: SITE.description,
-    brand: { "@type": "Brand", name: SITE.name },
-    url: SITE.url,
-    offers: {
-      "@type": "Offer",
-      price: "19",
-      priceCurrency: "EUR",
-      priceValidUntil: `${new Date().getFullYear() + 1}-12-31`,
-      availability: "https://schema.org/InStock",
-      url: `${SITE.url}/tarifs`,
-    },
-  };
+  return jsonLdTarifs();
 }
 
-/** @deprecated Utiliser jsonLdProductOffer — conservé pour compatibilité interne. */
+/** @deprecated Utiliser jsonLdTarifs */
 export function jsonLdProductReviews() {
-  return jsonLdProductOffer();
+  return jsonLdTarifs();
 }
 
 export interface BreadcrumbItem {

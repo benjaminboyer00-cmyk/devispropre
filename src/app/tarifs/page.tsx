@@ -4,7 +4,7 @@ import { IconCheck } from "@/components/icons/Icons";
 import { JsonLd } from "@/components/seo/JsonLd";
 import { COMPARISON_ROWS, TARIFS_FAQ } from "@/lib/plan-catalog";
 import { ROUTES } from "@/lib/routes";
-import { jsonLdFaqFromItems, jsonLdTarifs, pageMetadata } from "@/lib/seo";
+import { jsonLdFaqFromItems, jsonLdTarifs, pageMetadata, SITE_TESTIMONIALS } from "@/lib/seo";
 
 export const metadata = pageMetadata({
   title: "Tarifs — À partir de 19€/mois sans engagement",
@@ -83,6 +83,20 @@ export default function TarifsPage() {
               </div>
             ))}
           </dl>
+        </section>
+
+        <section className="mt-20">
+          <h2 className="heading-section text-center text-xl sm:text-2xl">Avis d&apos;artisans</h2>
+          <ul className="mt-8 grid gap-6 sm:grid-cols-3">
+            {SITE_TESTIMONIALS.map((t) => (
+              <li key={t.author} className="ui-card-padded">
+                <p className="text-body text-sm italic leading-relaxed">&ldquo;{t.quote}&rdquo;</p>
+                <p className="text-subtle mt-3 text-xs font-medium">
+                  {t.author}, {t.role}
+                </p>
+              </li>
+            ))}
+          </ul>
         </section>
 
         <div className="mt-14 text-center">
