@@ -48,6 +48,10 @@ export function getSiteSameAs(): string[] {
 }
 
 export const KEYWORDS = [
+  "devis facile",
+  "comment faire un devis",
+  "faire un devis artisan",
+  "logiciel devis facile",
   "devis artisan",
   "facture artisan",
   "logiciel devis BTP",
@@ -138,7 +142,7 @@ export function pageMetadata(opts: {
 export const defaultMetadata: Metadata = {
   metadataBase: new URL(SITE.url),
   title: {
-    default: "Devis artisans en 2 min | DevisPropre",
+    default: "Devis facile artisans | DevisPropre",
     template: "%s | DevisPropre",
   },
   description: SITE.description,
@@ -192,6 +196,14 @@ export function jsonLdWebSite() {
 }
 
 export const HOME_FAQ = [
+  {
+    q: "Comment faire un devis quand on est artisan ?",
+    a: "Identifiez le client, listez les prestations ligne par ligne (quantité, prix HT, TVA), ajoutez vos coordonnées légales (SIRET, validité), puis envoyez un PDF. DevisPropre automatise tout ça en 2 minutes depuis le téléphone.",
+  },
+  {
+    q: "Existe-t-il un logiciel de devis facile pour artisans ?",
+    a: "Oui — DevisPropre est pensé pour le terrain : pas de formation, pas d'Excel. Vous tapez, le PDF pro part par WhatsApp, la facture conforme TVA 2018 suit en 1 clic.",
+  },
   {
     q: "DevisPropre est-il conforme à la loi anti-fraude TVA 2018 ?",
     a: "Oui. Verrouillage des factures, empreinte SHA-256, chaînage et attestation individuelle.",
@@ -354,6 +366,80 @@ export function jsonLdHowToCreateDevis() {
     ],
   };
 }
+
+/** HowTo éditorial — requête « comment faire un devis ». */
+export function jsonLdHowToFaireUnDevis() {
+  return {
+    "@context": "https://schema.org",
+    "@type": "HowTo",
+    name: "Comment faire un devis professionnel pour artisan",
+    description:
+      "Guide pas à pas : identifier le client, détailler les prestations, calculer la TVA, rédiger le PDF et envoyer le devis au client.",
+    totalTime: "PT15M",
+    step: [
+      {
+        "@type": "HowToStep",
+        position: 1,
+        name: "Recueillir les informations client",
+        text: "Nom, adresse d'intervention, coordonnées et contexte du chantier (rénovation, dépannage, neuf).",
+      },
+      {
+        "@type": "HowToStep",
+        position: 2,
+        name: "Lister les prestations",
+        text: "Une ligne par poste : description, quantité, prix unitaire HT. Séparez fournitures, main-d'œuvre et déplacement.",
+      },
+      {
+        "@type": "HowToStep",
+        position: 3,
+        name: "Appliquer la TVA",
+        text: "Franchise en base (mention art. 293 B) ou taux 5,5 %, 10 % ou 20 % selon les travaux. Vérifiez le total TTC.",
+      },
+      {
+        "@type": "HowToStep",
+        position: 4,
+        name: "Ajouter vos mentions légales",
+        text: "SIRET, raison sociale, adresse, durée de validité du devis et conditions de paiement.",
+      },
+      {
+        "@type": "HowToStep",
+        position: 5,
+        name: "Générer et envoyer le PDF",
+        text: "Exportez un PDF lisible sur mobile et envoyez-le par email ou WhatsApp. Conservez une trace de l'envoi.",
+      },
+    ],
+  };
+}
+
+export const DEVIS_FACILE_FAQ = [
+  {
+    q: "DevisPropre est-il vraiment plus simple qu'Excel ou Word ?",
+    a: "Oui. Pas de modèle à maintenir, pas de formules TVA à refaire : vous tapez client et prestations, le PDF pro sort en 2 minutes depuis votre téléphone.",
+  },
+  {
+    q: "Un devis facile peut-il rester conforme pour un artisan BTP ?",
+    a: "Oui — mentions légales, SIRET, TVA et PDF verrouillé à l'envoi. La facture qui suit est conforme loi anti-fraude TVA 2018.",
+  },
+  {
+    q: "Puis-je essayer gratuitement ?",
+    a: "Oui : créez un devis sans compte, puis 15 jours d'essai complet avec PDF, WhatsApp et facturation.",
+  },
+] as const;
+
+export const COMMENT_FAIRE_DEVIS_FAQ = [
+  {
+    q: "Faut-il un modèle Word pour faire un devis ?",
+    a: "Un modèle Word fonctionne au début, mais les erreurs de TVA et la ressaisie facture coûtent cher. Un logiciel dédié artisan évite ces pièges.",
+  },
+  {
+    q: "Combien de temps pour faire un premier devis ?",
+    a: "À la main : 20 à 45 minutes. Avec DevisPropre : environ 2 minutes une fois votre profil artisan renseigné.",
+  },
+  {
+    q: "Un auto-entrepreneur peut-il faire un devis sans TVA ?",
+    a: "En franchise en base, vous ne facturez pas la TVA mais devez le mentionner explicitement sur le devis et la facture.",
+  },
+] as const;
 
 export const CREER_DEVIS_FAQ = [
   {

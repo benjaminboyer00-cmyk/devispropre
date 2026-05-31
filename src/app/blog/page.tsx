@@ -11,6 +11,8 @@ export const metadata = pageMetadata({
   path: "/blog",
   keywords: [
     "devis plombier",
+    "comment faire un devis",
+    "devis facile artisan",
     "facture auto entrepreneur",
     "devis artisan conforme",
     "TVA travaux",

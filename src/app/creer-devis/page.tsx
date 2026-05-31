@@ -12,6 +12,8 @@ export const metadata = pageMetadata({
   path: "/creer-devis",
   keywords: [
     "créer devis gratuit sans compte",
+    "devis facile",
+    "comment faire un devis",
     "devis artisan en ligne",
     "facture artisan après devis",
     "logiciel devis facture BTP",

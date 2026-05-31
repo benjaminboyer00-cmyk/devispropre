@@ -7,6 +7,8 @@ import { getPublicSiteUrl } from "@/lib/seo";
 
 const MARKETING_PRIORITIES: Record<string, number> = {
   "/": 1,
+  "/devis-facile": 0.94,
+  "/guide/comment-faire-un-devis": 0.93,
   "/creer-devis": 0.92,
   "/tarifs": 0.9,
   "/conformite": 0.85,

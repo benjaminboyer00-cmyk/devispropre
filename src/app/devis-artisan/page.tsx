@@ -60,6 +60,17 @@ export default function DevisArtisanHubPage() {
           Choisissez votre métier pour découvrir comment DevisPropre s&apos;adapte à votre activité —
           devis PDF en 2 minutes, partage client et facturation conforme.
         </p>
+        <p className="text-body mt-4 text-sm leading-relaxed">
+          Nouveau sur la facturation ? Lisez{" "}
+          <Link href={ROUTES.guideCommentFaireDevis} className="link-underline font-medium">
+            comment faire un devis
+          </Link>
+          {" "}ou essayez un{" "}
+          <Link href={ROUTES.devisFacile} className="link-underline font-medium">
+            devis facile
+          </Link>
+          .
+        </p>
 
         <section className="mt-12">
           <h2 className="heading-section text-xl">Par métier</h2>

@@ -25,6 +25,16 @@ export function Footer() {
                 </Link>
               </li>
               <li>
+                <Link href={ROUTES.guideCommentFaireDevis} className="link-underline">
+                  Comment faire un devis
+                </Link>
+              </li>
+              <li>
+                <Link href={ROUTES.devisFacile} className="link-underline">
+                  Devis facile artisan
+                </Link>
+              </li>
+              <li>
                 <Link href={ROUTES.guideDevisConforme} className="link-underline">
                   Devis artisan conforme
                 </Link>
@@ -79,6 +89,11 @@ export function Footer() {
           <div>
             <p className="heading text-sm font-semibold">Produit</p>
             <ul className="text-body mt-3 space-y-2 text-sm">
+              <li>
+                <Link href={ROUTES.creerDevis} className="link-underline">
+                  Créer un devis gratuit
+                </Link>
+              </li>
               <li>
                 <Link href="/tarifs" className="link-underline">
                   Tarifs

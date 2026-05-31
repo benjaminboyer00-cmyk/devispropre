@@ -6,9 +6,11 @@ import { ROUTES } from "@/lib/routes";
 import { pageMetadata, jsonLdFaq, jsonLdSoftwareApplication, HOME_FAQ, SITE } from "@/lib/seo";
 
 export const metadata = pageMetadata({
-  title: "Devis artisans en 2 min — conforme TVA 2018",
-  description: SITE.description,
+  title: "Devis facile artisans — pro en 2 min, TVA 2018",
+  description:
+    "Logiciel de devis facile pour artisans BTP. Comment faire un devis pro depuis votre téléphone : PDF, WhatsApp, facture conforme. Essai 15 jours gratuit.",
   path: "/",
+  keywords: ["devis facile", "comment faire un devis", "devis artisan", "logiciel devis BTP"],
 });
 
 const REVIEWS = [
@@ -61,8 +63,8 @@ export default function HomePage() {
             </span>
           </h1>
           <p className="text-lead mx-auto mt-8 max-w-2xl font-light">
-            Devis en 2 minutes · WhatsApp & factures dès 19€/mois · Conforme loi anti-fraude TVA 2018.
-            Essai gratuit 15 jours · Puis 19€/mois
+            Devis facile en 2 minutes · Comment faire un devis pro depuis le chantier · WhatsApp
+            &amp; factures dès 19€/mois · Conforme loi anti-fraude TVA 2018 · Essai gratuit 15 jours
           </p>
           <div className="mt-10 flex flex-col items-center gap-5 sm:flex-row sm:justify-center">
             <TrackLink
@@ -135,6 +137,28 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
+      </section>
+
+      <section className="section-page">
+        <h2 className="heading-section">Guides pour artisans</h2>
+        <p className="text-body mt-3 max-w-2xl">
+          Vous cherchez comment faire un devis ou un outil de devis facile ? Nos guides pratiques
+          couvrent la rédaction, la TVA et l&apos;envoi WhatsApp.
+        </p>
+        <ul className="mt-6 grid gap-4 sm:grid-cols-2">
+          <li>
+            <Link href={ROUTES.guideCommentFaireDevis} className="ui-card-padded block hover:no-underline">
+              <p className="heading font-semibold">Comment faire un devis</p>
+              <p className="text-body mt-1 text-sm">Guide pas à pas pour artisans et auto-entrepreneurs</p>
+            </Link>
+          </li>
+          <li>
+            <Link href={ROUTES.devisFacile} className="ui-card-padded block hover:no-underline">
+              <p className="heading font-semibold">Devis facile en 2 minutes</p>
+              <p className="text-body mt-1 text-sm">Plus simple qu&apos;Excel — PDF pro et facture conforme</p>
+            </Link>
+          </li>
+        </ul>
       </section>
 
       <section className="section-page">

@@ -11,6 +11,15 @@ export interface GuideArticle {
 
 export const GUIDE_ARTICLES: GuideArticle[] = [
   {
+    href: ROUTES.guideCommentFaireDevis,
+    title: "Comment faire un devis — guide complet",
+    description:
+      "Étapes pour rédiger un devis professionnel : client, prestations, TVA, PDF et envoi. Méthode Word, Excel ou logiciel artisan.",
+    keywords: ["comment faire un devis", "faire un devis artisan", "modèle devis gratuit"],
+    datePublished: "2026-05-28T00:00:00.000Z",
+    dateModified: "2026-05-30T00:00:00.000Z",
+  },
+  {
     href: ROUTES.guideDevisConforme,
     title: "Comment faire un devis artisan conforme",
     description: "Mentions obligatoires, durée de validité, acceptation client et passage en facture.",

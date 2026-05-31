@@ -48,8 +48,12 @@ export default function GuideDevisConformePage() {
         </h1>
         <p className="text-lead mt-4 font-light">
           Un devis mal rédigé coûte des signatures perdues, des litiges TVA et des heures de
-          ressaisie. Ce guide résume les obligations légales et les bonnes pratiques terrain pour
-          plombiers, électriciens, peintres et tous artisans du BTP.
+          ressaisie. Si vous partez de zéro, lisez d&apos;abord{" "}
+          <Link href={ROUTES.guideCommentFaireDevis} className="link-underline font-medium">
+            comment faire un devis
+          </Link>
+          . Ce guide détaille les obligations légales pour plombiers, électriciens, peintres et
+          tous artisans du BTP.
         </p>
 
         <h2 className="heading-section mt-12 text-xl">1. Mentions obligatoires sur un devis</h2>
