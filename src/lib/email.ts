@@ -173,7 +173,7 @@ export async function sendMagicLinkEmail(opts: {
       title: "Connexion à votre compte",
       greeting: `Bonjour ${escapeHtml(opts.name)},`,
       bodyHtml: emailParagraph(
-        "Cliquez sur le bouton ci-dessous pour vous connecter sans mot de passe. Ce lien expire dans 15 minutes."
+        "Cliquez sur le bouton ci-dessous pour vous connecter sans mot de passe. Vous serez redirigé directement vers votre tableau de bord. Ce lien expire dans 15 minutes."
       ),
       cta: { label: "Se connecter", href: opts.verifyUrl },
       footerNote: "Si vous n'avez pas demandé ce lien, ignorez cet email.",

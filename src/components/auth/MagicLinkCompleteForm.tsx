@@ -1,9 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { ROUTES } from "@/lib/routes";
 
+/** Ancien format /connexion/magic-link?token= — redirige auto vers la vérification API. */
 export function MagicLinkCompleteForm({ token }: { token: string }) {
+  useEffect(() => {
+    if (!token) return;
+    window.location.replace(
+      `/api/auth/magic-link/verify?token=${encodeURIComponent(token)}`
+    );
+  }, [token]);
+
   if (!token) {
     return (
       <div className="space-y-4">
@@ -17,25 +26,10 @@ export function MagicLinkCompleteForm({ token }: { token: string }) {
     );
   }
 
-  const completeLogin = () => {
-    window.location.href = `/api/auth/magic-link/verify?token=${encodeURIComponent(token)}`;
-  };
-
   return (
-    <div className="space-y-4">
-      <p className="text-body text-sm">
-        Pour des raisons de sécurité, confirmez ci-dessous pour ouvrir votre tableau de bord.
-      </p>
-      <button
-        type="button"
-        onClick={completeLogin}
-        className="ui-btn-primary w-full py-4 text-base"
-      >
-        Accéder à mon compte
-      </button>
-      <p className="text-body text-center text-sm">
-        Le lien expire 15 minutes après l&apos;envoi de l&apos;email.
-      </p>
+    <div className="space-y-4 text-center">
+      <p className="text-body text-sm">Connexion en cours…</p>
+      <p className="text-subtle text-xs">Redirection vers votre tableau de bord.</p>
     </div>
   );
 }
