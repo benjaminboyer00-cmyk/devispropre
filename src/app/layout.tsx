@@ -1,9 +1,11 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
 import { Geist } from "next/font/google";
+import { GoogleAnalytics } from "@/components/analytics/GoogleAnalytics";
+import { GoogleAnalyticsConsentSync } from "@/components/analytics/GoogleAnalyticsConsentSync";
+import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import { ConsentAwareAnalytics } from "@/components/consent/ConsentAwareAnalytics";
 import { CookieConsentProvider } from "@/components/consent/CookieConsentContext";
-import { SiteAnalytics } from "@/components/analytics/SiteAnalytics";
 import { Footer } from "@/components/layout/Footer";
 import { Header } from "@/components/layout/Header";
 import { SiteChrome } from "@/components/layout/SiteChrome";
@@ -54,6 +56,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <link rel="dns-prefetch" href="https://plausible.io" />
         <link rel="dns-prefetch" href="https://eu.i.posthog.com" />
         <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
+        <GoogleAnalytics nonce={nonce} />
         <Script
           id="theme-init"
           strategy="beforeInteractive"
@@ -72,6 +75,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body className="min-h-full flex flex-col bg-background font-sans antialiased text-foreground">
         <CookieConsentProvider>
+          <GoogleAnalyticsConsentSync />
           <ConsentAwareAnalytics nonce={nonce} />
           <UiProviders>
             <SiteAnalytics>

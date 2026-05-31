@@ -17,6 +17,7 @@ import {
   type CookieConsentValue,
 } from "@/lib/cookie-consent";
 import { googleAnalyticsEnabled, primaryAnalyticsProvider } from "@/lib/analytics";
+import { pushGtagConsentUpdate } from "@/lib/gtag-consent";
 import { CookieConsentBanner } from "@/components/consent/CookieConsentBanner";
 
 interface CookieConsentContextValue {
@@ -42,6 +43,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
     const stored = getStoredConsent();
     setConsentState(stored);
     setShowBanner(stored === null && analyticsNeedsConsent());
+    if (stored === "all") pushGtagConsentUpdate(true);
   }, []);
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
     setStoredConsent(value);
     setConsentState(value);
     setShowBanner(false);
+    pushGtagConsentUpdate(value === "all");
   }, []);
 
   const openPreferences = useCallback(() => {

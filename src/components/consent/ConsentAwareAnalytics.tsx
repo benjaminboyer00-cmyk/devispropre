@@ -9,7 +9,7 @@ interface ConsentAwareAnalyticsProps {
   nonce?: string;
 }
 
-/** Charge GTM / GA4 / Plausible / PostHog uniquement après consentement « Accepter ». */
+/** GTM / Plausible / PostHog après consentement — GA4 direct est dans <head> (GoogleAnalytics). */
 export function ConsentAwareAnalytics({ nonce }: ConsentAwareAnalyticsProps) {
   const { analyticsAllowed } = useCookieConsent();
 
@@ -27,26 +27,6 @@ export function ConsentAwareAnalytics({ nonce }: ConsentAwareAnalyticsProps) {
       document.head.appendChild(script);
     }
 
-    if (ANALYTICS.gaMeasurementId && !document.getElementById("google-analytics-loader")) {
-      const loader = document.createElement("script");
-      loader.id = "google-analytics-loader";
-      loader.async = true;
-      loader.src = `https://www.googletagmanager.com/gtag/js?id=${ANALYTICS.gaMeasurementId}`;
-      if (nonce) loader.setAttribute("nonce", nonce);
-      document.head.appendChild(loader);
-
-      const config = document.createElement("script");
-      config.id = "google-analytics-config";
-      config.text = `
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', '${ANALYTICS.gaMeasurementId}', { anonymize_ip: true, send_page_view: true });
-      `;
-      if (nonce) config.setAttribute("nonce", nonce);
-      document.head.appendChild(config);
-    }
-
     if (
       primaryAnalyticsProvider() === "plausible" &&
       ANALYTICS.plausibleDomain &&
@@ -62,11 +42,9 @@ export function ConsentAwareAnalytics({ nonce }: ConsentAwareAnalyticsProps) {
     }
   }, [analyticsAllowed, nonce]);
 
-  if (!analyticsAllowed) return null;
-
   return (
     <>
-      {ANALYTICS.gtmId ? (
+      {analyticsAllowed && ANALYTICS.gtmId ? (
         <noscript>
           <iframe
             src={`https://www.googletagmanager.com/ns.html?id=${ANALYTICS.gtmId}`}
@@ -77,9 +55,11 @@ export function ConsentAwareAnalytics({ nonce }: ConsentAwareAnalyticsProps) {
           />
         </noscript>
       ) : null}
-      <Suspense fallback={null}>
-        <GtmPageView />
-      </Suspense>
+      {ANALYTICS.gaMeasurementId || ANALYTICS.gtmId ? (
+        <Suspense fallback={null}>
+          <GtmPageView />
+        </Suspense>
+      ) : null}
     </>
   );
 }
