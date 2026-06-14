@@ -34,7 +34,7 @@ const STATUS_LABELS: Record<string, string> = {
   FACTURE: "💰 Facturé",
 };
 
-export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDetailProps) {
+export function DevisActions({ devis, subscriptionActive = true }: DevisDetailProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState("");
@@ -49,6 +49,7 @@ export function DevisActions({ devis, plan, subscriptionActive = true }: DevisDe
   );
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture window.location au montage (SSR-safe)
     setOrigin(window.location.origin);
   }, []);
 

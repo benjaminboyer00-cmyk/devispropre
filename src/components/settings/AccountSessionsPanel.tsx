@@ -67,6 +67,7 @@ export function AccountSessionsPanel() {
     const json = await res.json().catch(() => ({} as { loggedOut?: boolean }));
     setActionLoading("");
     if (json.loggedOut) {
+      // eslint-disable-next-line react-hooks/immutability -- navigation complète après révocation de la session
       window.location.href = "/connexion";
       return;
     }

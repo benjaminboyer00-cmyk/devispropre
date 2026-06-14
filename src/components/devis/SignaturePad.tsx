@@ -16,7 +16,9 @@ export function SignaturePad({ onChange, className = "" }: SignaturePadProps) {
   const drawingRef = useRef(false);
   const hasStrokeRef = useRef(false);
   const onChangeRef = useRef(onChange);
-  onChangeRef.current = onChange;
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  });
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -65,7 +67,7 @@ export function SignaturePad({ onChange, className = "" }: SignaturePadProps) {
 
     function end() {
       drawingRef.current = false;
-      if (hasStrokeRef.current) onChange(canvas!.toDataURL("image/png"));
+      if (hasStrokeRef.current) onChangeRef.current(canvas!.toDataURL("image/png"));
     }
 
     canvas.addEventListener("mousedown", start);

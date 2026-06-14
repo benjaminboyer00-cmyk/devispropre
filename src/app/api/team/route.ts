@@ -4,7 +4,6 @@ import {
   apiError,
   assertMutationSecurity,
   getRequestMeta,
-  getTrustedClientIpOrUnknown,
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";

@@ -25,12 +25,14 @@ export function GoogleAnalytics({ nonce }: { nonce?: string }) {
 
   return (
     <>
+      {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document -- root layout <head> (App Router), chargement avant hydratation requis pour Consent Mode */}
       <Script
         id="google-analytics-loader"
         strategy="beforeInteractive"
         nonce={nonce}
         src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
       />
+      {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document -- root layout <head> (App Router), chargement avant hydratation requis pour Consent Mode */}
       <Script
         id="google-analytics-config"
         strategy="beforeInteractive"

@@ -176,7 +176,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { status, acceptanceText, signatureData, otpCode } = statusSchema.parse(
+    const { status, acceptanceText, signatureData } = statusSchema.parse(
       await request.json()
     );
 

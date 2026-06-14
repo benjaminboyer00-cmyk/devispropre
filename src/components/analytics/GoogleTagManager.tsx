@@ -7,6 +7,7 @@ export function GoogleTagManagerHead({ nonce }: { nonce?: string }) {
   if (!gtmId) return null;
 
   return (
+    // eslint-disable-next-line @next/next/no-before-interactive-script-outside-document -- root layout <head> (App Router), chargement avant hydratation
     <Script
       id="google-tag-manager"
       strategy="beforeInteractive"

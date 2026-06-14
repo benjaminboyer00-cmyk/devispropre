@@ -18,6 +18,7 @@ export function OfflineSyncBar() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture état réseau/queue locale au montage (SSR-safe)
     setOnline(isBrowserOnline());
     setPending(queuedDevisCount());
 

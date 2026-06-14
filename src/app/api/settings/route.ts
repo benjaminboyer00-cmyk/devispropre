@@ -7,7 +7,6 @@ import {
   handleServiceError,
   requireAuth,
 } from "@/lib/api-helpers";
-import { getAccountContext } from "@/lib/account-context";
 import { logAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { ForbiddenError } from "@/lib/errors";

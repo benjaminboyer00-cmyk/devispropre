@@ -13,6 +13,7 @@ export function GuestDevisPreview() {
   const [draft, setDraft] = useState<StoredGuestDraft | null>(null);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture localStorage au montage (SSR-safe)
     setDraft(loadGuestDraft());
   }, []);
 

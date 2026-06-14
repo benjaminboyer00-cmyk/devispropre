@@ -3,7 +3,6 @@ import { z } from "zod";
 import { apiError, assertMutationSecurity, getTrustedClientIpOrUnknown, handleServiceError } from "@/lib/api-helpers";
 import {
   createGuestDraftId,
-  isGuestDraftSignatureFresh,
   signGuestDraftClaim,
 } from "@/lib/guest-draft-claim";
 import { guestDevisDraftSchema } from "@/lib/schemas/forms";

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DateInput } from "@/components/ui/DateInput";
 import { useToast } from "@/components/ui/ToastProvider";
@@ -140,20 +140,24 @@ export function DevisForm({
 
   const tvaRate = effectiveTvaApplicable ? 20 : 0;
 
-  const displayLignes: Ligne[] = simpleMode
-    ? [
-        {
-          description: simpleDesc,
-          quantite: 1,
-          prixUnitaireHT: simplePriceTtc
-            ? effectiveTvaApplicable
-              ? parseFloat(simplePriceTtc) / (1 + tvaRate / 100)
-              : parseFloat(simplePriceTtc)
-            : 0,
-          tva: tvaRate,
-        },
-      ]
-    : lignes;
+  const displayLignes: Ligne[] = useMemo(
+    () =>
+      simpleMode
+        ? [
+            {
+              description: simpleDesc,
+              quantite: 1,
+              prixUnitaireHT: simplePriceTtc
+                ? effectiveTvaApplicable
+                  ? parseFloat(simplePriceTtc) / (1 + tvaRate / 100)
+                  : parseFloat(simplePriceTtc)
+                : 0,
+              tva: tvaRate,
+            },
+          ]
+        : lignes,
+    [simpleMode, simpleDesc, simplePriceTtc, effectiveTvaApplicable, tvaRate, lignes]
+  );
 
   const draftTotals = computeDraftTotals(displayLignes, effectiveTvaApplicable);
   const { totalHT, totalTVA, totalTTC } = draftTotals;
@@ -181,8 +185,8 @@ export function DevisForm({
     setLignes((ls) => ls.map((l, idx) => (idx === i ? { ...l, [field]: value } : l)));
   }
 
-  function buildDraftPayload(normalizedLignes: Ligne[], clientName: string): GuestDevisDraft {
-    return {
+  const buildDraftPayload = useCallback(
+    (normalizedLignes: Ligne[], clientName: string): GuestDevisDraft => ({
       clientNom: clientName,
       clientTelephone: clientPhone.trim() || undefined,
       clientEmail: clientEmail.trim() || undefined,
@@ -191,8 +195,9 @@ export function DevisForm({
       tvaApplicable: effectiveTvaApplicable,
       validUntil: validUntil.trim() || defaultValidUntilInputValue(),
       notes: ensureFranchiseNotes(notes.trim() || undefined, effectiveTvaApplicable),
-    };
-  }
+    }),
+    [clientPhone, clientEmail, clientAdresse, effectiveTvaApplicable, validUntil, notes]
+  );
 
   const buildAutosaveDraft = useCallback((): GuestDevisDraft | null => {
     const clientName = newClient.trim();
@@ -214,22 +219,11 @@ export function DevisForm({
       })),
       clientName || "Client"
     );
-  }, [
-    newClient,
-    simpleDesc,
-    lignes,
-    simpleMode,
-    displayLignes,
-    clientPhone,
-    clientEmail,
-    clientAdresse,
-    validUntil,
-    notes,
-    effectiveTvaApplicable,
-  ]);
+  }, [newClient, simpleDesc, lignes, simpleMode, displayLignes, buildDraftPayload]);
 
   useEffect(() => {
     if (mode !== "guest") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- active l'état hydraté au montage (SSR-safe)
       setHydrated(true);
       return;
     }

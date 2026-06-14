@@ -16,6 +16,7 @@ export function ActivateTrialCheckout() {
   const { toast } = useToast();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture localStorage au montage (SSR-safe)
     setPendingDevisId(loadPendingDevisId());
   }, []);
 
@@ -59,6 +60,7 @@ export function ActivateTrialCheckout() {
     if (params.get("checkout") !== "cancel") {
       startCheckout();
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- réagit au paramètre d'URL ?checkout=cancel au montage
       setLoading(false);
       toast("Paiement annulé — vous pouvez réessayer quand vous voulez.", "info");
     }

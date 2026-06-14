@@ -16,8 +16,6 @@ export function RegisterServiceWorker() {
       return;
     }
 
-    let regRef: ServiceWorkerRegistration | null = null;
-
     function trackWaiting(worker: ServiceWorker | null) {
       if (!worker) return;
       setWaitingWorker(worker);
@@ -27,7 +25,6 @@ export function RegisterServiceWorker() {
     navigator.serviceWorker
       .register("/sw.js")
       .then((reg) => {
-        regRef = reg;
         if (reg.waiting) trackWaiting(reg.waiting);
 
         reg.addEventListener("updatefound", () => {
@@ -53,7 +50,6 @@ export function RegisterServiceWorker() {
 
     return () => {
       navigator.serviceWorker.removeEventListener("controllerchange", onControllerChange);
-      regRef = null;
     };
   }, []);
 

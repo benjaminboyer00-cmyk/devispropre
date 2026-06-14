@@ -39,6 +39,7 @@ export function CookieConsentProvider({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture localStorage au montage (SSR-safe)
     setMounted(true);
     const stored = getStoredConsent();
     setConsentState(stored);

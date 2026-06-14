@@ -37,6 +37,7 @@ export function DateInput({
 
   useEffect(() => {
     if (defaultValue) onChange(defaultValue);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- active la valeur côté client au montage (SSR-safe)
     setReady(true);
   }, [defaultValue, onChange]);
 

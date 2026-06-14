@@ -10,13 +10,9 @@ import {
 } from "../document-hash";
 import { prisma } from "../db";
 import { ForbiddenError } from "../errors";
-import { assertFactureEditable, ImmutabilityError, isFactureLocked } from "../immutability";
+import { ImmutabilityError, isFactureLocked } from "../immutability";
 import { assertStarterFeature } from "../plan-features";
-import {
-  computeLineTotalHT,
-  computeTotals,
-  nextFactureNumeroInTransaction,
-} from "../numbers";
+import { nextFactureNumeroInTransaction } from "../numbers";
 import {
   archivePdf,
   attestationPdfKey,

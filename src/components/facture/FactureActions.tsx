@@ -38,6 +38,7 @@ export function FactureActions({ facture, plan }: FactureDetailProps) {
   const [origin, setOrigin] = useState("");
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture window.location au montage (SSR-safe)
     setOrigin(window.location.origin);
   }, []);
 

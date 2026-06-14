@@ -16,6 +16,7 @@ export function DevisStatusBanner() {
   useEffect(() => {
     const err = loadClaimError();
     if (err) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture sessionStorage au montage (SSR-safe)
       setClaimError(err);
       clearClaimError();
     }
