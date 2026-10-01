@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { DevisClientAcceptPanel } from "@/components/devis/DevisClientAcceptPanel";
+import { DevisClientAcceptPanel, type DevisAcceptPayload } from "@/components/devis/DevisClientAcceptPanel";
 import { PublicDevisDocument, type PublicDevisData } from "@/components/devis/PublicDevisDocument";
 
 export function PublicDevisView({ token }: { token: string }) {
@@ -31,10 +31,22 @@ export function PublicDevisView({ token }: { token: string }) {
       .finally(() => setLoading(false));
   }, [token]);
 
-  async function respond(
-    status: "ACCEPTE" | "REFUSE",
-    extra?: { acceptanceText?: string; signatureData?: string }
-  ) {
+  async function requestOtp(email: string | null): Promise<{ emailHint: string } | { error: string }> {
+    try {
+      const res = await fetch(`/api/public/devis/${token}/otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(email ? { email } : {}),
+      });
+      const data = await res.json();
+      if (!res.ok) return { error: data.error ?? "Envoi du code impossible." };
+      return { emailHint: data.emailHint };
+    } catch {
+      return { error: "Erreur réseau — réessayez." };
+    }
+  }
+
+  async function respond(status: "ACCEPTE" | "REFUSE", extra?: DevisAcceptPayload) {
     setActionLoading(true);
     setError("");
     try {
@@ -49,6 +61,8 @@ export function PublicDevisView({ token }: { token: string }) {
       const data = await res.json();
       if (!res.ok) {
         setError(data.error ?? "Erreur");
+        // Le code OTP a pu être consommé : la prochaine tentative est une nouvelle requête.
+        idempotencyRef.current = null;
         return;
       }
       setDevis((d) =>
@@ -59,6 +73,8 @@ export function PublicDevisView({ token }: { token: string }) {
               acceptedAt: status === "ACCEPTE" ? new Date().toISOString() : d.acceptedAt,
               clientAcceptanceText: extra?.acceptanceText ?? d.clientAcceptanceText,
               clientSignatureData: extra?.signatureData ?? d.clientSignatureData,
+              signerName: extra?.signerName ?? d.signerName,
+              hasSignedPdf: status === "ACCEPTE" ? true : d.hasSignedPdf,
             }
           : d
       );
@@ -91,9 +107,11 @@ export function PublicDevisView({ token }: { token: string }) {
         {devis.status === "ENVOYE" && devis.canAccept !== false && (
           <DevisClientAcceptPanel
             loading={actionLoading}
-            onAccept={({ acceptanceText, signatureData }) =>
-              respond("ACCEPTE", { acceptanceText, signatureData })
-            }
+            clientEmailHint={devis.clientEmailHint ?? null}
+            defaultSignerName={devis.client.nom}
+            companyName={devis.company?.raisonSociale ?? null}
+            onRequestOtp={requestOtp}
+            onAccept={(payload) => respond("ACCEPTE", payload)}
             onRefuse={() => respond("REFUSE")}
           />
         )}
@@ -105,9 +123,21 @@ export function PublicDevisView({ token }: { token: string }) {
         )}
 
         {devis.status === "ACCEPTE" && (
-          <p className="mt-6 text-center font-medium text-green-700 dark:text-green-400">
-            ✅ Devis accepté et signé — merci !
-          </p>
+          <div className="mt-6 space-y-3 text-center">
+            <p className="font-medium text-green-700 dark:text-green-400">
+              ✅ Devis accepté et signé — merci ! Une copie vous a été envoyée par e-mail.
+            </p>
+            {devis.hasSignedPdf && (
+              <a
+                href={`/api/public/devis/${token}/pdf`}
+                className="ui-btn-outline inline-flex px-5 py-2 text-sm"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                📄 Télécharger le devis signé (PDF)
+              </a>
+            )}
+          </div>
         )}
 
         {devis.status === "REFUSE" && (

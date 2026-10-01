@@ -5,6 +5,7 @@ import {
   DevisBonPourAccord,
   DevisIssuerHeader,
   DevisLegalFooter,
+  DevisRetractationInfo,
 } from "@/components/devis/DevisLegalBlocks";
 import { DevisPaperShell } from "@/components/devis/DevisPaperShell";
 
@@ -26,6 +27,9 @@ export interface PublicDevisData {
   acceptedAt: string | null;
   clientAcceptanceText: string | null;
   clientSignatureData: string | null;
+  signerName?: string | null;
+  signatureEvidenceHash?: string | null;
+  hasSignedPdf?: boolean;
   client: { nom: string; adresse?: string | null; telephone?: string | null; email?: string | null };
   company: DevisLegalCompany | null;
   lignes: {
@@ -145,10 +149,13 @@ export function PublicDevisDocument({ devis, children }: PublicDevisDocumentProp
                       acceptanceText: devis.clientAcceptanceText,
                       signatureData: devis.clientSignatureData,
                       acceptedAt: devis.acceptedAt ?? devis.createdAt,
+                      signerName: devis.signerName ?? null,
                     }
                   : null
               }
             />
+
+            <DevisRetractationInfo company={company} />
 
             <DevisLegalFooter company={company} />
           </div>

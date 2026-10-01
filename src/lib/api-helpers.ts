@@ -11,7 +11,7 @@ import { TurnstileError } from "./turnstile";
 import { ClientArchiveError } from "./client-guard";
 import { RateLimitError } from "./rate-limit";
 import { ImmutabilityError } from "./immutability";
-import { ForbiddenError } from "./errors";
+import { ForbiddenError, SignatureError } from "./errors";
 import { ObjectStorageError } from "./object-storage";
 
 const MUTATION_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
@@ -129,6 +129,7 @@ export function handleServiceError(error: unknown) {
   if (error instanceof BillingPastDueError) return apiError(error.message, 402);
   if (error instanceof PlanFeatureError) return apiError(error.message, 402);
   if (error instanceof ForbiddenError) return apiError(error.message, 403);
+  if (error instanceof SignatureError) return apiError(error.message, error.status);
   if (error instanceof ImmutabilityError) return apiError(error.message, 403);
   if (error instanceof ObjectStorageError) return apiError(error.message, 503);
   if (error instanceof TurnstileError) return apiError(error.message, 403);

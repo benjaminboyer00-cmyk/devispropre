@@ -69,7 +69,35 @@ Verrou advisory PostgreSQL : `pg_advisory_xact_lock(hashtext('facture-chain:{use
 
 API : `GET /api/devis/[id]/verify`, `GET /api/factures/[id]/verify`.
 
+## Preuve de signature électronique (`signatureEvidenceHash`)
+
+Signature électronique simple (eIDAS art. 25, C. civ. art. 1366-1367). Le signataire est identifié par un
+code à usage unique (6 chiffres, 10 min, 3 essais) envoyé à l'e-mail de la fiche client, ou à défaut à
+l'e-mail qu'il déclare (`signerEmailSource`).
+
+```
+signatureEvidenceHash = SHA256( canonicalize(signatureEvidence) )
+signedPdfHash         = SHA256( octets du PDF signé archivé )
+```
+
+| Champ de `signatureEvidence` | Notes |
+|------------------------------|-------|
+| `version`, `devisId`, `devisNumero` | Format v1 |
+| `contentHash` | Empreinte du devis figée à l'envoi — lie la signature au contenu exact |
+| `signerName`, `signerEmail`, `signerEmailSource` | Identité vérifiée par OTP e-mail |
+| `acceptanceText` | Mention « Bon pour accord » |
+| `signatureImageSha256` | SHA-256 des octets PNG de la signature manuscrite |
+| `signedAt`, `otpSentAt`, `otpVerifiedAt` | ISO 8601 UTC |
+| `retractationInfoAcknowledged`, `earlyExecutionRequested` | Information rétractation (C. conso. L221-5, L221-25) |
+| `ipAddress`, `userAgent` | Contexte technique de la signature |
+
+Stockage : `Devis.signatureEvidence` (JSON), `Devis.signatureEvidenceHash`, `Devis.signedPdfHash`.
+PDF signé (devis + page rétractation + certificat) : clé `devis/{userId}/{devisId}-signe.pdf`.
+Dossier de preuve avec vérifications recalculées : `GET /api/devis/[id]/signature-proof`.
+
 ## Tests automatisés
 
 - `src/lib/__tests__/document-hash.test.ts` — stabilité, altération, chaînage
 - `src/lib/__tests__/prisma/facture-chain.integration.test.ts` — chaîne multi-factures en base réelle
+- `src/lib/__tests__/signature-evidence.test.ts` — empreinte de preuve de signature
+- `src/lib/__tests__/prisma/devis-signature-flow.integration.test.ts` — parcours de signature complet en base réelle

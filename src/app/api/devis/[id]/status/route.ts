@@ -28,7 +28,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
     const idempotencyKey = readIdempotencyKey(request);
 
-    return withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
+    return await withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
       const devis = await transitionDevisStatus(ctx, id, status);
       return { status: 200, body: devis };
     });

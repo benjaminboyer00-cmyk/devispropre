@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     const ctx = { userId: auth.workspaceUserId, ...getRequestMeta(request) };
     const idempotencyKey = readIdempotencyKey(request);
 
-    return withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
+    return await withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
       const devis = await createDevis(ctx, {
         clientId: body.clientId,
         lignes: body.lignes,

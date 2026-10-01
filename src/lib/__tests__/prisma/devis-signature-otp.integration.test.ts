@@ -72,8 +72,8 @@ describe.skipIf(!dbReady)("Prisma — OTP signature devis (base réelle)", () =>
   });
 
   it("accepte un code valide une seule fois", async () => {
-    expect(await verifyDevisSignatureOtp(devisId, validCode)).toBe("ok");
-    expect(await verifyDevisSignatureOtp(devisId, validCode)).toBe("expired");
+    expect((await verifyDevisSignatureOtp(devisId, validCode)).status).toBe("ok");
+    expect((await verifyDevisSignatureOtp(devisId, validCode)).status).toBe("expired");
   });
 
   it("verrouille après le nombre max de tentatives", async () => {
@@ -103,9 +103,9 @@ describe.skipIf(!dbReady)("Prisma — OTP signature devis (base réelle)", () =>
     });
 
     for (let i = 0; i < OTP_MAX_VERIFY_ATTEMPTS - 1; i++) {
-      expect(await verifyDevisSignatureOtp(lockedDevis.id, "000000")).toBe("invalid");
+      expect((await verifyDevisSignatureOtp(lockedDevis.id, "000000")).status).toBe("invalid");
     }
-    expect(await verifyDevisSignatureOtp(lockedDevis.id, "000000")).toBe("locked");
+    expect((await verifyDevisSignatureOtp(lockedDevis.id, "000000")).status).toBe("locked");
 
     await prisma.devisSignatureOtp.deleteMany({ where: { devisId: lockedDevis.id } });
     await prisma.devis.delete({ where: { id: lockedDevis.id } });

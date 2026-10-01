@@ -53,6 +53,11 @@ export function devisPdfKey(userId: string, devisId: string): string {
   return `devis/${userId}/${devisId}.pdf`;
 }
 
+/** PDF du devis signé électroniquement (signature + certificat) — distinct du PDF figé à l'envoi. */
+export function signedDevisPdfKey(userId: string, devisId: string): string {
+  return `devis/${userId}/${devisId}-signe.pdf`;
+}
+
 export function facturePdfKey(userId: string, factureId: string): string {
   return `factures/${userId}/${factureId}.pdf`;
 }

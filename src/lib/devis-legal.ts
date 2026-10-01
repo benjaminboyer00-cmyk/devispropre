@@ -118,3 +118,44 @@ export function companyToLegal(company: {
     activiteBtp: company.activiteBtp ?? false,
   };
 }
+
+/**
+ * Information précontractuelle — droit de rétractation (art. L221-5, L221-18, L221-25 C. conso.).
+ * Applicable aux clients consommateurs pour un contrat conclu à distance (signature en ligne)
+ * ou hors établissement. Sans cette information, le délai est prolongé de 12 mois (L221-20).
+ */
+export const DEVIS_RETRACTATION_TITLE = "Droit de rétractation (clients particuliers)";
+
+export function devisRetractationLines(companyName?: string | null): string[] {
+  const artisan = companyName?.trim() || "l'entreprise";
+  return [
+    "Si vous êtes un consommateur et que ce devis est signé à distance (en ligne) ou hors établissement, vous disposez d'un délai de 14 jours à compter de sa signature pour exercer votre droit de rétractation, sans avoir à motiver votre décision ni à supporter d'autres coûts (art. L221-18 du Code de la consommation).",
+    `Pour l'exercer, adressez à ${artisan}, avant l'expiration du délai, le formulaire de rétractation ci-dessous ou toute autre déclaration dénuée d'ambiguïté (courrier ou e-mail aux coordonnées figurant sur le devis).`,
+    "Les travaux ne peuvent commencer avant la fin de ce délai, sauf demande expresse de votre part. Si vous avez demandé un commencement anticipé puis vous rétractez, vous devrez un montant proportionnel aux travaux déjà réalisés (art. L221-25).",
+    "Le droit de rétractation ne s'applique pas aux travaux d'entretien ou de réparation à réaliser en urgence à votre domicile et expressément sollicités par vous, dans la limite des pièces et travaux strictement nécessaires (art. L221-28, 8°).",
+  ];
+}
+
+/** Modèle de formulaire de rétractation (annexe à l'art. R221-1 C. conso.). */
+export function devisRetractationFormLines(params: {
+  companyName?: string | null;
+  companyAddress?: string | null;
+  companyEmail?: string | null;
+  devisNumero: string;
+}): string[] {
+  const dest = [params.companyName, params.companyAddress, params.companyEmail]
+    .map((v) => v?.trim())
+    .filter(Boolean)
+    .join(", ");
+  return [
+    "FORMULAIRE DE RÉTRACTATION",
+    "(Veuillez compléter et renvoyer le présent formulaire uniquement si vous souhaitez vous rétracter du contrat.)",
+    `À l'attention de : ${dest || "l'entreprise émettrice du devis"}`,
+    `Je vous notifie par la présente ma rétractation du contrat portant sur la prestation de services ci-dessous : devis n° ${params.devisNumero}`,
+    "Signé le : ____________________",
+    "Nom du consommateur : ____________________",
+    "Adresse du consommateur : ____________________",
+    "Signature du consommateur (uniquement en cas de notification sur papier) : ____________________",
+    "Date : ____________________",
+  ];
+}

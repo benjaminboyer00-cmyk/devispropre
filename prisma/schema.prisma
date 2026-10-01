@@ -223,6 +223,13 @@ model Devis {
   refusedAt      DateTime?
   clientAcceptanceText String?
   clientSignatureData  String?
+  /// Preuve de signature électronique (eIDAS SES — art. 1366-1367 C. civ.)
+  signerName           String?
+  signerEmail          String?
+  signatureEvidence    Json?
+  signatureEvidenceHash String?
+  signedPdfHash        String?
+  signedPdfArchivedAt  DateTime?
   reminderSentAt DateTime?
   pdfUrl         String?
   pdfArchivedAt  DateTime?
@@ -262,6 +269,8 @@ model DevisSignatureOtp {
   devisId   String
   devis     Devis     @relation(fields: [devisId], references: [id], onDelete: Cascade)
   codeHash  String
+  /// Adresse à laquelle le code a été envoyé (preuve de contrôle de la boîte mail).
+  email     String?
   attempts  Int       @default(0)
   expiresAt DateTime
   usedAt    DateTime?

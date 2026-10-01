@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/ToastProvider";
 import { DocumentAuditTrail } from "@/components/audit/DocumentAuditTrail";
 import { DevisSharePanel } from "@/components/devis/DevisSharePanel";
 import { formatEuro } from "@/lib/format";
+import { ROUTES } from "@/lib/routes";
 
 interface DevisDetailProps {
   devis: {
@@ -19,6 +20,9 @@ interface DevisDetailProps {
     lockedAt: string | null;
     contentHash: string | null;
     shareToken: string | null;
+    signerName?: string | null;
+    signerEmail?: string | null;
+    signedPdfArchivedAt?: string | null;
     client: { nom: string; telephone: string | null };
     lignes: { description: string; quantite: number; prixUnitaireHT: number; totalHT: number }[];
   };
@@ -272,7 +276,28 @@ export function DevisActions({ devis, subscriptionActive = true }: DevisDetailPr
             Vérifier
           </button>
         )}
+
+        {devis.signedPdfArchivedAt && (
+          <>
+            <PdfDownloadButton
+              href={ROUTES.apiArchiveDevisSigned(devis.id)}
+              filename={`devis-${devis.numero}-signe.pdf`}
+              className="ui-btn-outline text-sm"
+              label="PDF signé"
+            />
+            <a href={ROUTES.apiDevisSignatureProof(devis.id)} className="ui-btn-outline text-sm" download>
+              Dossier de preuve
+            </a>
+          </>
+        )}
       </div>
+
+      {devis.signerName && devis.signerEmail && (
+        <p className="text-body text-sm">
+          ✍️ Signé électroniquement par <strong>{devis.signerName}</strong> ({devis.signerEmail}) — identité
+          vérifiée par code e-mail.
+        </p>
+      )}
 
       {verifyResult !== null && (
         <p className={`text-sm ${verifyResult ? "text-green-700" : "text-red-700"}`}>

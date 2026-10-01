@@ -44,6 +44,8 @@ export const ROUTES = {
   apiDevisPdf: (id: string) => `/api/devis/${id}/pdf`,
   apiFacturePdf: (id: string) => `/api/factures/${id}/pdf`,
   apiArchiveDevis: (id: string) => `/api/archives/devis/${id}`,
+  apiArchiveDevisSigned: (id: string) => `/api/archives/devis/${id}/signe`,
+  apiDevisSignatureProof: (id: string) => `/api/devis/${id}/signature-proof`,
   apiArchiveFacture: (id: string) => `/api/archives/factures/${id}`,
   apiArchiveAttestation: (factureId: string) => `/api/archives/factures/${factureId}/attestation`,
 } as const;

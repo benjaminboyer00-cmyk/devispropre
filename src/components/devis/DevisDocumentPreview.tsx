@@ -23,6 +23,7 @@ function toPublicDevisData(devis: DevisWithRelations, company: Company | null): 
     acceptedAt: devis.acceptedAt?.toISOString() ?? null,
     clientAcceptanceText: devis.clientAcceptanceText,
     clientSignatureData: devis.clientSignatureData,
+    signerName: devis.signerName,
     client: {
       nom: devis.client.nom,
       adresse: devis.client.adresse,

@@ -1,5 +1,7 @@
 import {
   companyIssuerLines,
+  DEVIS_RETRACTATION_TITLE,
+  devisRetractationLines,
   devisLegalFooterLines,
   formatAssuranceDecennale,
   shouldShowAssuranceDecennale,
@@ -71,6 +73,7 @@ interface DevisBonPourAccordProps {
     acceptanceText: string;
     signatureData: string;
     acceptedAt: string;
+    signerName?: string | null;
   } | null;
 }
 
@@ -95,6 +98,11 @@ export function DevisBonPourAccord({ signed }: DevisBonPourAccordProps) {
           <p className="mt-4 text-center text-sm font-semibold text-gray-900">
             {signed.acceptanceText}
           </p>
+          {signed.signerName && (
+            <p className="mt-1 text-center text-xs text-gray-600">
+              Signé électroniquement par {signed.signerName}
+            </p>
+          )}
         </div>
       </div>
     );
@@ -119,6 +127,22 @@ export function DevisBonPourAccord({ signed }: DevisBonPourAccordProps) {
           aria-hidden
         />
       </div>
+    </div>
+  );
+}
+
+/** Information précontractuelle droit de rétractation (art. L221-5 C. conso.). */
+export function DevisRetractationInfo({ company }: { company: DevisLegalCompany | null }) {
+  return (
+    <div className="rounded-lg border border-gray-200 px-4 py-3 text-xs leading-relaxed text-gray-700">
+      <p className="mb-1 text-[10px] font-semibold uppercase tracking-wide text-gray-500">
+        {DEVIS_RETRACTATION_TITLE}
+      </p>
+      {devisRetractationLines(company?.raisonSociale).map((line, i) => (
+        <p key={i} className="mt-1">
+          {line}
+        </p>
+      ))}
     </div>
   );
 }

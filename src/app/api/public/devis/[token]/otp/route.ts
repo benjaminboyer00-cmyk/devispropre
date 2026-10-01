@@ -1,7 +1,8 @@
 import { NextRequest } from "next/server";
 import { assertMutationSecurity, getTrustedClientIpOrUnknown, handleServiceError } from "@/lib/api-helpers";
 import { prisma } from "@/lib/db";
-import { clientCanSignOnline, requestDevisSignatureOtp } from "@/lib/devis-signature-otp";
+import { z } from "zod";
+import { requestDevisSignatureOtp, resolveSignerEmail } from "@/lib/devis-signature-otp";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { PUBLIC_DEVIS_LIMITS } from "@/lib/public-api-limits";
 import { publicJsonResponse } from "@/lib/public-api-response";
@@ -10,7 +11,12 @@ import { isValidPublicShareRef, publicShareLookupWhere } from "@/lib/share-slug"
 
 type RouteParams = { params: Promise<{ token: string }> };
 
-/** Demande un code OTP envoyé à l'email client enregistré sur le devis. */
+const otpRequestSchema = z.object({ email: z.string().max(254).optional() });
+
+/**
+ * Demande un code OTP — envoyé à l'e-mail de la fiche client, ou à défaut
+ * à l'e-mail déclaré par le signataire (qui recevra aussi la copie signée).
+ */
 export async function POST(request: NextRequest, { params }: RouteParams) {
   try {
     assertMutationSecurity(request);
@@ -44,10 +50,11 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       return publicJsonResponse({ error: "Ce lien de signature a expiré." }, { status: 410 });
     }
 
-    const clientEmail = devis.client.email?.trim();
-    if (!clientCanSignOnline(clientEmail)) {
+    const body = otpRequestSchema.safeParse(await request.json().catch(() => ({})));
+    const signer = resolveSignerEmail(devis.client.email, body.success ? body.data.email : null);
+    if (!signer) {
       return publicJsonResponse(
-        { error: "Aucun email client enregistré — signature impossible en ligne." },
+        { error: "Indiquez une adresse e-mail valide pour recevoir votre code de signature." },
         { status: 400 }
       );
     }
@@ -57,7 +64,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     const result = await requestDevisSignatureOtp({
       devisId: devis.id,
       shareToken: token,
-      clientEmail: clientEmail!,
+      clientEmail: signer.email,
       clientNom: devis.client.nom,
       devisNumero: devis.numero,
       companyName: devis.user.company?.raisonSociale ?? "Votre artisan",
@@ -65,7 +72,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       validUntil: devis.validUntil,
     });
 
-    return publicJsonResponse({ ok: true, emailHint: result.emailHint });
+    return publicJsonResponse({ ok: true, emailHint: result.emailHint, emailSource: signer.source });
   } catch (e) {
     return handleServiceError(e);
   }

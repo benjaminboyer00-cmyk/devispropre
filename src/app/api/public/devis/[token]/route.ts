@@ -13,10 +13,12 @@ import {
   isShareLinkExpired,
 } from "@/lib/share-token";
 import {
-  clientCanSignOnline,
   clientRequiresSignatureOtp,
   maskClientEmail,
+  normalizeSignerEmail,
+  verifyDevisSignatureOtp,
 } from "@/lib/devis-signature-otp";
+import { SignatureError } from "@/lib/errors";
 import { isValidPublicShareRef, publicShareLookupWhere } from "@/lib/share-slug";
 import { validateClientSignatureDataUri } from "@/lib/signature-payload";
 
@@ -26,6 +28,9 @@ const statusSchema = z
     acceptanceText: z.string().min(1).max(200).optional(),
     signatureData: z.string().max(102_400).optional(),
     otpCode: z.string().max(12).optional(),
+    signerName: z.string().max(120).optional(),
+    retractationInfoAcknowledged: z.boolean().optional(),
+    earlyExecutionRequested: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     if (data.status !== "ACCEPTE") return;
@@ -43,9 +48,65 @@ const statusSchema = z
         path: ["signatureData"],
       });
     }
+    if (!data.signerName || data.signerName.trim().length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Nom et prénom du signataire requis.",
+        path: ["signerName"],
+      });
+    }
+    if (!data.otpCode?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Code de vérification reçu par e-mail requis.",
+        path: ["otpCode"],
+      });
+    }
+    if (data.retractationInfoAcknowledged !== true) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Confirmez avoir pris connaissance des informations sur le droit de rétractation.",
+        path: ["retractationInfoAcknowledged"],
+      });
+    }
   });
 
+const OTP_ERRORS: Record<"invalid" | "locked" | "expired", string> = {
+  invalid: "Code de vérification incorrect.",
+  locked: "Trop de tentatives — demandez un nouveau code.",
+  expired: "Code expiré ou déjà utilisé — demandez un nouveau code.",
+};
+
 type RouteParams = { params: Promise<{ token: string }> };
+
+/** Vérifie le code OTP (identification du signataire) et construit les données de preuve. */
+async function verifySigner(
+  devis: { id: string; client: { email: string | null } },
+  body: z.infer<typeof statusSchema>
+): Promise<Parameters<typeof transitionDevisStatusFromPublic>[4]> {
+  if (body.status !== "ACCEPTE") return undefined;
+
+  await checkRateLimit(`public-devis-otp-verify:${devis.id}`, PUBLIC_DEVIS_LIMITS.otpVerifyPerDevis);
+  const otp = await verifyDevisSignatureOtp(devis.id, body.otpCode!);
+  if (otp.status !== "ok" || !otp.email || !otp.sentAt) {
+    const key = otp.status === "ok" ? "expired" : otp.status;
+    throw new SignatureError(OTP_ERRORS[key], key === "locked" ? 429 : 400);
+  }
+
+  const recordedEmail = normalizeSignerEmail(devis.client.email);
+  return {
+    acceptanceText: body.acceptanceText!.trim(),
+    signatureData: body.signatureData!,
+    signerName: body.signerName!.trim().replace(/\s+/g, " "),
+    signerEmail: otp.email,
+    signerEmailSource: recordedEmail === otp.email ? "client_record" : "declared_by_signer",
+    otpSentAt: otp.sentAt,
+    otpVerifiedAt: new Date(),
+    retractationInfoAcknowledged: true,
+    earlyExecutionRequested: body.earlyExecutionRequested === true,
+  };
+}
+
 
 export async function GET(request: NextRequest, { params }: RouteParams) {
   const { token } = await params;
@@ -85,7 +146,8 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   });
   const canAccept = devis.status === "ENVOYE" && !linkExpired;
   const signatureOtpRequired = clientRequiresSignatureOtp(devis.client.email);
-  const clientEmailHint = devis.client.email ? maskClientEmail(devis.client.email) : null;
+  const recordedEmail = normalizeSignerEmail(devis.client.email);
+  const clientEmailHint = recordedEmail ? maskClientEmail(recordedEmail) : null;
 
   return publicJsonResponse({
     numero: devis.numero,
@@ -131,6 +193,9 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     acceptedAt: devis.acceptedAt?.toISOString() ?? null,
     clientAcceptanceText: devis.clientAcceptanceText,
     clientSignatureData: devis.clientSignatureData,
+    signerName: devis.signerName,
+    signatureEvidenceHash: devis.signatureEvidenceHash,
+    hasSignedPdf: Boolean(devis.signedPdfArchivedAt),
     lignes: devis.lignes.map((l) => ({
       description: l.description,
       quantite: l.quantite,
@@ -176,18 +241,8 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
       );
     }
 
-    const { status, acceptanceText, signatureData } = statusSchema.parse(
-      await request.json()
-    );
-
-    if (status === "ACCEPTE") {
-      if (!clientCanSignOnline(devis.client.email)) {
-        return publicJsonResponse(
-          { error: "Signature en ligne impossible pour ce devis." },
-          { status: 400 }
-        );
-      }
-    }
+    const body = statusSchema.parse(await request.json());
+    const { status } = body;
 
     const ctx = {
       userId: devis.userId,
@@ -195,20 +250,21 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
     };
     const idempotencyKey = readIdempotencyKey(request);
 
-    return withIdempotency(devis.userId, idempotencyKey, async () => {
+    return await withIdempotency(devis.userId, idempotencyKey, async () => {
+      // Dans le handler idempotent : un rejeu du même clic renvoie la réponse en cache
+      // au lieu d'échouer sur un code OTP déjà consommé.
+      const acceptance = await verifySigner(devis, body);
       const updated = await transitionDevisStatusFromPublic(
         ctx,
         devis.id,
         token,
         status,
-        status === "ACCEPTE"
-          ? { acceptanceText: acceptanceText!.trim(), signatureData: signatureData! }
-          : undefined
+        acceptance
       );
       return { status: 200, body: { ok: true, status: updated.status } };
     });
   } catch (e) {
-    if (e instanceof z.ZodError) return apiError(e.message);
+    if (e instanceof z.ZodError) return apiError(e.issues[0]?.message ?? "Requête invalide");
     return handleServiceError(e);
   }
 }

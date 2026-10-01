@@ -25,7 +25,7 @@ export async function POST(request: NextRequest, { params }: RouteParams) {
 
     const idempotencyKey = readIdempotencyKey(request);
 
-    return withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
+    return await withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
       const result = await sendDevis(ctx, id);
       const { shareTokenRaw, shareSlug, ...devis } = result;
       const shareRef = shareSlug ?? shareTokenRaw;

@@ -1,4 +1,4 @@
-import { Plan, type DevisStatus } from "@/generated/prisma/client";
+import { Plan, Prisma, type DevisStatus } from "@/generated/prisma/client";
 import { logAudit, type AuditContext } from "../audit";
 import {
   buildDevisPayload,
@@ -8,7 +8,7 @@ import {
 } from "../document-hash";
 import { prisma } from "../db";
 import { assertDevisEditable, ImmutabilityError } from "../immutability";
-import { ForbiddenError } from "../errors";
+import { ForbiddenError, SignatureError } from "../errors";
 import {
   assertCanCreateDevis,
   enforceFreeDevisQuotaInTransaction,
@@ -22,7 +22,17 @@ import {
   deleteArchivedPdf,
   devisPdfKey,
   ObjectStorageError,
+  signedDevisPdfKey,
 } from "../object-storage";
+import { sendDevisSignedToArtisan, sendDevisSignedToClient } from "../email";
+import { env } from "../env";
+import {
+  computeSignatureEvidenceHash,
+  sha256Buffer,
+  SIGNATURE_EVIDENCE_VERSION,
+  signatureImageSha256,
+  type SignatureEvidence,
+} from "../signature-evidence";
 import { generateDevisPdf } from "../pdf-document";
 import { assertBillingNotPastDue } from "../billing-status";
 import { defaultValidUntilDate, parseValidUntilInput } from "../devis-defaults";
@@ -373,17 +383,34 @@ export async function sendDevis(ctx: AuditContext, devisId: string) {
   }
 }
 
+export interface PublicSignatureInput {
+  acceptanceText: string;
+  signatureData: string;
+  signerName: string;
+  signerEmail: string;
+  signerEmailSource: SignatureEvidence["signerEmailSource"];
+  otpSentAt: Date;
+  otpVerifiedAt: Date;
+  retractationInfoAcknowledged: boolean;
+  earlyExecutionRequested: boolean;
+}
+
 /** Transition publique via shareToken — ownership explicite anti-IDOR. */
 export async function transitionDevisStatusFromPublic(
   ctx: AuditContext,
   devisId: string,
   shareTokenRaw: string,
   status: Extract<DevisStatus, "ACCEPTE" | "REFUSE">,
-  acceptance?: { acceptanceText: string; signatureData: string }
+  acceptance?: PublicSignatureInput
 ) {
   const tokenWhere = shareTokenLookupWhere(shareTokenRaw);
   const devis = await prisma.devis.findFirst({
     where: { id: devisId, userId: ctx.userId, deletedAt: null, status: "ENVOYE", ...tokenWhere },
+    include: {
+      lignes: { orderBy: { ordre: "asc" } },
+      client: true,
+      user: { select: { email: true, name: true, company: true } },
+    },
   });
 
   if (!devis) {
@@ -399,40 +426,186 @@ export async function transitionDevisStatusFromPublic(
     throw new Error("Ce lien de signature a expiré.");
   }
 
+  if (status === "REFUSE") {
+    const result = await prisma.devis.updateMany({
+      where: { id: devisId, userId: ctx.userId, status: "ENVOYE", deletedAt: null, ...tokenWhere },
+      data: { status, refusedAt: new Date() },
+    });
+    if (result.count === 0) {
+      throw new Error("Ce devis a déjà été traité ou n'est plus disponible.");
+    }
+    await logAudit(ctx, {
+      action: "REFUSE",
+      entityType: "devis",
+      entityId: devisId,
+      devisId,
+      contentHash: devis.contentHash,
+      metadata: { via: "public_share_token" },
+    });
+    return prisma.devis.findFirstOrThrow({
+      where: { id: devisId },
+      include: { lignes: true, client: true },
+    });
+  }
+
+  if (!acceptance) throw new SignatureError("Signature requise.");
+  if (!devis.contentHash) {
+    throw new SignatureError("Ce devis n'a pas d'empreinte — signature impossible. Contactez votre artisan.");
+  }
+
   const now = new Date();
+  const evidence: SignatureEvidence = {
+    version: SIGNATURE_EVIDENCE_VERSION,
+    devisId,
+    devisNumero: devis.numero,
+    contentHash: devis.contentHash,
+    signerName: acceptance.signerName,
+    signerEmail: acceptance.signerEmail,
+    signerEmailSource: acceptance.signerEmailSource,
+    acceptanceText: acceptance.acceptanceText,
+    signatureImageSha256: signatureImageSha256(acceptance.signatureData),
+    signedAt: now.toISOString(),
+    otpSentAt: acceptance.otpSentAt.toISOString(),
+    otpVerifiedAt: acceptance.otpVerifiedAt.toISOString(),
+    retractationInfoAcknowledged: acceptance.retractationInfoAcknowledged,
+    earlyExecutionRequested: acceptance.earlyExecutionRequested,
+    ipAddress: ctx.ipAddress ?? null,
+    userAgent: ctx.userAgent?.slice(0, 300) ?? null,
+  };
+  const evidenceHash = computeSignatureEvidenceHash(evidence);
+
+  const issuer = resolveIssuerCompany(devis.issuerSnapshot, devis.user.company);
+  const signedFields = {
+    status: "ACCEPTE" as const,
+    acceptedAt: now,
+    clientAcceptanceText: acceptance.acceptanceText,
+    clientSignatureData: acceptance.signatureData,
+    signerName: acceptance.signerName,
+    signerEmail: acceptance.signerEmail,
+  };
+
+  const pdfKey = signedDevisPdfKey(ctx.userId, devisId);
+  let signedPdf: Buffer;
+  try {
+    signedPdf = await generateDevisPdf({ ...devis, ...signedFields }, issuer, {
+      signature: { evidence, evidenceHash, signatureData: acceptance.signatureData },
+    });
+    await archivePdf(pdfKey, signedPdf, ROUTES.apiArchiveDevisSigned(devisId));
+  } catch (err) {
+    if (err instanceof ObjectStorageError) throw err;
+    throw new ObjectStorageError("Impossible d'archiver le devis signé. Réessayez.");
+  }
+  const signedPdfHash = sha256Buffer(signedPdf);
+
   const result = await prisma.devis.updateMany({
     where: { id: devisId, userId: ctx.userId, status: "ENVOYE", deletedAt: null, ...tokenWhere },
     data: {
-      status,
-      ...(status === "ACCEPTE"
-        ? {
-            acceptedAt: now,
-            clientAcceptanceText: acceptance?.acceptanceText,
-            clientSignatureData: acceptance?.signatureData,
-          }
-        : { refusedAt: now }),
+      ...signedFields,
+      signatureEvidence: evidence as unknown as Prisma.InputJsonValue,
+      signatureEvidenceHash: evidenceHash,
+      signedPdfHash,
+      signedPdfArchivedAt: now,
     },
   });
 
   if (result.count === 0) {
+    await deleteArchivedPdf(pdfKey);
     throw new Error("Ce devis a déjà été traité ou n'est plus disponible.");
   }
 
-  const updated = await prisma.devis.findFirst({
-    where: { id: devisId },
-    include: { lignes: true, client: true },
-  });
-
   await logAudit(ctx, {
-    action: status === "ACCEPTE" ? "ACCEPT" : "REFUSE",
+    action: "ACCEPT",
     entityType: "devis",
     entityId: devisId,
     devisId,
     contentHash: devis.contentHash,
-    metadata: { via: "public_share_token", acceptanceText: acceptance?.acceptanceText },
+    metadata: {
+      via: "public_share_token",
+      method: "otp_email",
+      acceptanceText: acceptance.acceptanceText,
+      signerName: acceptance.signerName,
+      signerEmail: acceptance.signerEmail,
+      signerEmailSource: acceptance.signerEmailSource,
+      signatureEvidenceHash: evidenceHash,
+      signedPdfHash,
+      earlyExecutionRequested: acceptance.earlyExecutionRequested,
+    },
   });
 
-  return updated!;
+  // Hors du chemin critique : la signature est acquise et archivée, l'envoi des e-mails
+  // ne doit ni la bloquer ni dépasser le délai de la transaction d'idempotence.
+  void notifyDevisSigned({
+    devisId,
+    devisNumero: devis.numero,
+    clientNom: devis.client.nom,
+    artisan: devis.user,
+    issuer,
+    evidence,
+    evidenceHash,
+    signedPdf,
+  }).catch((err) => {
+    logCriticalAlert("Échec notification devis signé", { devisId, error: String(err) });
+  });
+
+  return prisma.devis.findFirstOrThrow({
+    where: { id: devisId },
+    include: { lignes: true, client: true },
+  });
+}
+
+/** Copie signée au client (support durable L221-13) + notification artisan — non bloquant. */
+async function notifyDevisSigned(params: {
+  devisId: string;
+  devisNumero: string;
+  clientNom: string;
+  artisan: { email: string; name: string };
+  issuer: { raisonSociale: string; adresse: string; codePostal: string; ville: string; email: string | null } | null;
+  evidence: SignatureEvidence;
+  evidenceHash: string;
+  signedPdf: Buffer;
+}) {
+  const signedAt = new Date(params.evidence.signedAt);
+  const companyName = params.issuer?.raisonSociale ?? params.artisan.name;
+
+  const [clientMail, artisanMail] = await Promise.allSettled([
+    sendDevisSignedToClient({
+      to: params.evidence.signerEmail,
+      signerName: params.evidence.signerName,
+      devisNumero: params.devisNumero,
+      companyName,
+      companyAddress: params.issuer
+        ? `${params.issuer.adresse}, ${params.issuer.codePostal} ${params.issuer.ville}`
+        : null,
+      companyEmail: params.issuer?.email ?? params.artisan.email,
+      signedAt,
+      evidenceHash: params.evidenceHash,
+      signedPdf: params.signedPdf,
+    }),
+    sendDevisSignedToArtisan({
+      to: params.artisan.email,
+      artisanName: params.artisan.name,
+      devisNumero: params.devisNumero,
+      clientNom: params.clientNom,
+      signerName: params.evidence.signerName,
+      signerEmail: params.evidence.signerEmail,
+      signedAt,
+      earlyExecutionRequested: params.evidence.earlyExecutionRequested,
+      devisUrl: `${env.appUrl}${ROUTES.dashboardDevis(params.devisId)}`,
+      signedPdf: params.signedPdf,
+    }),
+  ]);
+
+  const clientOk = clientMail.status === "fulfilled" && clientMail.value.sent;
+  if (!clientOk) {
+    logCriticalAlert("Copie du devis signé non envoyée au client (L221-13)", {
+      devisId: params.devisId,
+      reason:
+        clientMail.status === "rejected" ? String(clientMail.reason) : (clientMail.value.reason ?? "inconnu"),
+    });
+  }
+  if (artisanMail.status === "rejected" || !artisanMail.value.sent) {
+    console.warn("[devis-signed] notification artisan non envoyée", params.devisId);
+  }
 }
 
 /** Transition atomique — évite la double acceptation (race condition). */

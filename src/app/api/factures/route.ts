@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     const idempotencyKey = readIdempotencyKey(request);
-    return withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
+    return await withIdempotency(auth.workspaceUserId, idempotencyKey, async () => {
       const facture = await createFactureFromDevis(ctx, body.devisId);
       return { status: 201, body: facture };
     });

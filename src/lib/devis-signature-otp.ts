@@ -4,6 +4,7 @@ import { prisma } from "./db";
 import { sendDevisSignatureOtpEmail } from "./email";
 import { AUTH_RESPONSE_MIN_MS, ensureMinimumElapsed } from "./timing-safe";
 import { isShareLinkExpired } from "./share-token";
+import { SignatureError } from "./errors";
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const OTP_RESEND_COOLDOWN_MS = 60 * 1000;
@@ -23,13 +24,43 @@ export function maskClientEmail(email: string): string {
   return `${visible}***@${domain}`;
 }
 
-export function clientRequiresSignatureOtp(_clientEmail: string | null | undefined): boolean {
-  return false;
+/**
+ * OTP e-mail obligatoire pour toute signature en ligne : c'est lui qui permet d'identifier
+ * le signataire (C. civ. art. 1367). Sans OTP, n'importe quel détenteur du lien pourrait signer.
+ */
+export function clientRequiresSignatureOtp(_clientEmail?: string | null): boolean {
+  return true;
 }
 
-/** Signature en ligne — email client optionnel (pas de OTP email). */
-export function clientCanSignOnline(_clientEmail: string | null | undefined): boolean {
+/**
+ * Signature en ligne toujours possible : si l'artisan n'a pas renseigné d'e-mail client,
+ * le signataire déclare le sien (il recevra le code puis la copie du devis signé).
+ */
+export function clientCanSignOnline(_clientEmail?: string | null): boolean {
   return true;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+export function normalizeSignerEmail(email: string | null | undefined): string | null {
+  const normalized = email?.trim().toLowerCase() ?? "";
+  if (!normalized || normalized.length > 254 || !EMAIL_RE.test(normalized)) return null;
+  return normalized;
+}
+
+/**
+ * E-mail de destination du code : celui de la fiche client en priorité (non modifiable
+ * par le signataire), sinon celui déclaré sur la page de signature.
+ */
+export function resolveSignerEmail(
+  clientEmail: string | null | undefined,
+  declaredEmail: string | null | undefined
+): { email: string; source: "client_record" | "declared_by_signer" } | null {
+  const recorded = normalizeSignerEmail(clientEmail);
+  if (recorded) return { email: recorded, source: "client_record" };
+  const declared = normalizeSignerEmail(declaredEmail);
+  if (declared) return { email: declared, source: "declared_by_signer" };
+  return null;
 }
 
 function generateOtpCode(): string {
@@ -87,12 +118,13 @@ export async function requestDevisSignatureOtp(params: {
     data: {
       devisId: params.devisId,
       codeHash,
+      email: params.clientEmail.trim().toLowerCase(),
       expiresAt,
       attempts: 0,
     },
   });
 
-  await sendDevisSignatureOtpEmail({
+  const delivery = await sendDevisSignatureOtpEmail({
     to: params.clientEmail.trim(),
     clientNom: params.clientNom,
     devisNumero: params.devisNumero,
@@ -101,35 +133,55 @@ export async function requestDevisSignatureOtp(params: {
     expiresMinutes: OTP_TTL_MS / 60_000,
   });
 
+  if (!delivery.sent) {
+    if (process.env.NODE_ENV !== "production") {
+      console.info(`[dev] Code de signature devis ${params.devisNumero} → ${params.clientEmail} : ${rawCode}`);
+    } else {
+      await prisma.devisSignatureOtp.deleteMany({ where: { devisId: params.devisId, usedAt: null } });
+      console.error("[signature-otp] envoi impossible", delivery.reason);
+      throw new SignatureError(
+        "Impossible d'envoyer le code de signature pour le moment. Réessayez dans quelques minutes.",
+        503
+      );
+    }
+  }
+
   await ensureMinimumElapsed(start, AUTH_RESPONSE_MIN_MS);
   return { sent: true, emailHint };
+}
+
+export interface OtpVerifyOutcome {
+  status: OtpVerifyResult;
+  /** E-mail auquel le code validé avait été envoyé (preuve de contrôle de la boîte). */
+  email: string | null;
+  sentAt: Date | null;
 }
 
 /** Vérifie et consomme le OTP — compteur attempts, verrouillage après 3 échecs. */
 export async function verifyDevisSignatureOtp(
   devisId: string,
   rawCode: string
-): Promise<OtpVerifyResult> {
+): Promise<OtpVerifyOutcome> {
   const normalized = rawCode.trim().replace(/\s/g, "");
-  if (!/^\d{6}$/.test(normalized)) return "invalid";
+  if (!/^\d{6}$/.test(normalized)) return { status: "invalid", email: null, sentAt: null };
 
   const codeHash = sha256(normalized);
   const now = new Date();
 
-  return prisma.$transaction(async (tx) => {
+  return prisma.$transaction(async (tx): Promise<OtpVerifyOutcome> => {
     const active = await tx.devisSignatureOtp.findFirst({
       where: { devisId, usedAt: null, expiresAt: { gt: now } },
       orderBy: { createdAt: "desc" },
     });
 
-    if (!active) return "expired";
+    if (!active) return { status: "expired", email: null, sentAt: null };
 
     if (active.attempts >= OTP_MAX_VERIFY_ATTEMPTS) {
       await tx.devisSignatureOtp.update({
         where: { id: active.id },
         data: { usedAt: now },
       });
-      return "locked";
+      return { status: "locked", email: null, sentAt: null };
     }
 
     if (active.codeHash !== codeHash) {
@@ -141,18 +193,17 @@ export async function verifyDevisSignatureOtp(
           ...(attempts >= OTP_MAX_VERIFY_ATTEMPTS ? { usedAt: now } : {}),
         },
       });
-      return attempts >= OTP_MAX_VERIFY_ATTEMPTS ? "locked" : "invalid";
+      return {
+        status: attempts >= OTP_MAX_VERIFY_ATTEMPTS ? "locked" : "invalid",
+        email: null,
+        sentAt: null,
+      };
     }
 
     await tx.devisSignatureOtp.update({
       where: { id: active.id },
       data: { usedAt: now },
     });
-    return "ok";
+    return { status: "ok", email: active.email, sentAt: active.createdAt };
   });
-}
-
-/** @deprecated Utiliser verifyDevisSignatureOtp */
-export async function consumeDevisSignatureOtp(devisId: string, rawCode: string): Promise<boolean> {
-  return (await verifyDevisSignatureOtp(devisId, rawCode)) === "ok";
 }
