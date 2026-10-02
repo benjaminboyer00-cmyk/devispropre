@@ -50,3 +50,23 @@ describe("devis-signature-otp helpers", () => {
     expect(OTP_MAX_VERIFY_ATTEMPTS).toBe(3);
   });
 });
+
+describe("empreinte des codes OTP", () => {
+  it("HMAC lié au devis, non égal au SHA-256 nu", async () => {
+    const { hashOtpCode, otpCodeMatches } = await import("../devis-signature-otp");
+    const { sha256 } = await import("../crypto");
+    const stored = hashOtpCode("devis_a", "123456");
+    expect(stored.startsWith("h1:")).toBe(true);
+    expect(stored).not.toContain(sha256("123456"));
+    expect(otpCodeMatches(stored, "devis_a", "123456")).toBe(true);
+    expect(otpCodeMatches(stored, "devis_a", "654321")).toBe(false);
+    expect(otpCodeMatches(stored, "devis_b", "123456")).toBe(false);
+  });
+
+  it("accepte encore un code legacy SHA-256 émis avant la migration", async () => {
+    const { otpCodeMatches } = await import("../devis-signature-otp");
+    const { sha256 } = await import("../crypto");
+    expect(otpCodeMatches(sha256("111111"), "devis_a", "111111")).toBe(true);
+    expect(otpCodeMatches(sha256("111111"), "devis_a", "222222")).toBe(false);
+  });
+});

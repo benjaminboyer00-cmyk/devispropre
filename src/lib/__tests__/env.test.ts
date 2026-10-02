@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 function stubCompleteProdEnv(overrides: Record<string, string> = {}) {
   vi.stubEnv("NODE_ENV", "production");
   vi.stubEnv("JWT_SECRET", "a".repeat(32));
+  vi.stubEnv("DATA_ENCRYPTION_KEY", "0f".repeat(32));
   vi.stubEnv("DATABASE_URL", "postgresql://user:pass@localhost:5432/db");
   vi.stubEnv("NEXT_PUBLIC_APP_URL", "https://devispropre.fr");
   vi.stubEnv("ALLOWED_ORIGINS", "https://devispropre.fr");
@@ -83,5 +84,14 @@ describe("validateEnv", () => {
     stubCompleteProdEnv({ ALLOWED_ORIGINS: "*" });
     const { validateEnv } = await import("../env");
     expect(() => validateEnv()).toThrow(/wildcard/i);
+  });
+
+  it("exige une DATA_ENCRYPTION_KEY valide et distincte de JWT_SECRET", async () => {
+    stubCompleteProdEnv({ DATA_ENCRYPTION_KEY: "" });
+    const { validateEnv } = await import("../env");
+    expect(() => validateEnv()).toThrow(/DATA_ENCRYPTION_KEY/);
+
+    stubCompleteProdEnv({ DATA_ENCRYPTION_KEY: "trop-courte" });
+    expect(() => validateEnv()).toThrow(/32 octets/);
   });
 });

@@ -22,6 +22,7 @@ Ce document liste **ce que vous devez faire vous-même** après le déploiement.
 | Variable | Action requise |
 |----------|----------------|
 | `JWT_SECRET` | Secret unique, jamais réutilisé ailleurs |
+| `DATA_ENCRYPTION_KEY` | `openssl rand -hex 32` — distincte de `JWT_SECRET`, sauvegardée hors du serveur (gestionnaire de mots de passe) |
 | `NEXT_PUBLIC_APP_URL` | `https://devispropre.fr` |
 | `ALLOWED_ORIGINS` | `https://devispropre.fr` (ou liste séparée par virgules) |
 | `CRON_SECRET` | Secret pour `/api/cron/reminders` |

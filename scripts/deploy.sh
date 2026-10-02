@@ -13,6 +13,14 @@ if [ ! -f ".env.production" ]; then
   exit 1
 fi
 
+# Vérifié AVANT le build : sans cette clé, l'app refuse de démarrer (validateEnv) → coupure.
+if ! grep -qE '^DATA_ENCRYPTION_KEY="?[0-9a-fA-F]{64}"?$' .env.production; then
+  echo "✗ DATA_ENCRYPTION_KEY absente ou invalide dans .env.production." >&2
+  echo "  Ajoutez : echo \"DATA_ENCRYPTION_KEY=\$(openssl rand -hex 32)\" >> .env.production" >&2
+  echo "  (à sauvegarder hors du serveur : sans elle, les liens de partage chiffrés sont illisibles)" >&2
+  exit 1
+fi
+
 if [ -f "src/app/icon.tsx" ]; then
   echo "✗ Supprimez src/app/icon.tsx — il écrase icon.png et casse la favicon." >&2
   exit 1

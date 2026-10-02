@@ -1,5 +1,7 @@
-import { randomInt } from "crypto";
+import { createHmac, randomInt } from "crypto";
 import { sha256 } from "./crypto";
+import { deriveServerSubkey } from "./keys";
+import { timingSafeEqualStrings } from "./timing-safe";
 import { prisma } from "./db";
 import { sendDevisSignatureOtpEmail } from "./email";
 import { AUTH_RESPONSE_MIN_MS, ensureMinimumElapsed } from "./timing-safe";
@@ -63,6 +65,25 @@ export function resolveSignerEmail(
   return null;
 }
 
+const OTP_HMAC_PREFIX = "h1:";
+
+/**
+ * Empreinte du code : HMAC avec une sous-clé serveur, liée au devis. Un SHA-256 nu d'un code
+ * à 6 chiffres se renverse en 10^6 essais si la base fuit ; sans la clé, c'est impossible.
+ */
+export function hashOtpCode(devisId: string, code: string): string {
+  const mac = createHmac("sha256", deriveServerSubkey("devis-signature-otp/v1"))
+    .update(`${devisId}:${code}`)
+    .digest("hex");
+  return `${OTP_HMAC_PREFIX}${mac}`;
+}
+
+/** Compare en temps constant ; accepte encore l'ancien format SHA-256 (codes émis avant migration, TTL 10 min). */
+export function otpCodeMatches(stored: string, devisId: string, code: string): boolean {
+  const expected = stored.startsWith(OTP_HMAC_PREFIX) ? hashOtpCode(devisId, code) : sha256(code);
+  return timingSafeEqualStrings(expected, stored);
+}
+
 function generateOtpCode(): string {
   return String(randomInt(0, 1_000_000)).padStart(6, "0");
 }
@@ -107,7 +128,7 @@ export async function requestDevisSignatureOtp(params: {
   }
 
   const rawCode = generateOtpCode();
-  const codeHash = sha256(rawCode);
+  const codeHash = hashOtpCode(params.devisId, rawCode);
   const expiresAt = new Date(Date.now() + OTP_TTL_MS);
 
   await prisma.devisSignatureOtp.deleteMany({
@@ -165,7 +186,6 @@ export async function verifyDevisSignatureOtp(
   const normalized = rawCode.trim().replace(/\s/g, "");
   if (!/^\d{6}$/.test(normalized)) return { status: "invalid", email: null, sentAt: null };
 
-  const codeHash = sha256(normalized);
   const now = new Date();
 
   return prisma.$transaction(async (tx): Promise<OtpVerifyOutcome> => {
@@ -184,7 +204,7 @@ export async function verifyDevisSignatureOtp(
       return { status: "locked", email: null, sentAt: null };
     }
 
-    if (active.codeHash !== codeHash) {
+    if (!otpCodeMatches(active.codeHash, devisId, normalized)) {
       const attempts = active.attempts + 1;
       await tx.devisSignatureOtp.update({
         where: { id: active.id },

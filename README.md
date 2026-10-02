@@ -113,6 +113,7 @@ Voir **[docs/CHECKLIST-VPS.md](docs/CHECKLIST-VPS.md)** — configuration Stripe
 | Variable | Obligatoire | Description |
 |----------|-------------|-------------|
 | `JWT_SECRET` | ✅ | Min 32 caractères, unique |
+| `DATA_ENCRYPTION_KEY` | ✅ | 32 octets hex (`openssl rand -hex 32`), distincte de `JWT_SECRET` — chiffre les liens de partage. **À sauvegarder hors du serveur.** |
 | `DATABASE_URL` | ✅ | PostgreSQL uniquement |
 | `NEXT_PUBLIC_APP_URL` | ✅ | URL publique HTTPS |
 | `ALLOWED_ORIGINS` | ✅ | Origines CSRF (souvent = APP_URL) |
@@ -130,6 +131,10 @@ Voir **[docs/CHECKLIST-VPS.md](docs/CHECKLIST-VPS.md)** — configuration Stripe
 - Dashboard : `noindex`
 
 ## Mise à jour
+
+Automatique à chaque push sur `main` une fois la CI configurée : voir **[docs/DEPLOY-CI.md](docs/DEPLOY-CI.md)**.
+
+Manuellement :
 
 ```bash
 cd /opt/devispropre

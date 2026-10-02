@@ -22,6 +22,14 @@ export function validateEnv(): void {
     throw new Error("JWT_SECRET invalide en production (min 32 caractères, unique).");
   }
 
+  const dataKey = requireEnv("DATA_ENCRYPTION_KEY");
+  if (!/^[0-9a-fA-F]{64}$/.test(dataKey) && Buffer.from(dataKey, "base64").length !== 32) {
+    throw new Error("DATA_ENCRYPTION_KEY invalide : 32 octets attendus (openssl rand -hex 32).");
+  }
+  if (dataKey === jwt) {
+    throw new Error("DATA_ENCRYPTION_KEY doit être distincte de JWT_SECRET.");
+  }
+
   requireEnv("DATABASE_URL");
   requireEnv("NEXT_PUBLIC_APP_URL");
   const allowedOrigins = requireEnv("ALLOWED_ORIGINS");
