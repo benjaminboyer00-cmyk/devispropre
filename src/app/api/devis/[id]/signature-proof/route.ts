@@ -1,8 +1,10 @@
 import { NextRequest } from "next/server";
-import { requireAuth } from "@/lib/api-helpers";
+import { getRequestMeta, requireAuth } from "@/lib/api-helpers";
+import { logAudit, verifyWorkspaceAuditChain } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { buildDevisPayload, verifyDocumentIntegrity } from "@/lib/document-hash";
 import { readArchivedPdf, signedDevisPdfKey } from "@/lib/object-storage";
+import { contentDisposition } from "@/lib/pdf-response";
 import {
   isSignatureEvidence,
   sha256Buffer,
@@ -16,7 +18,7 @@ type RouteParams = { params: Promise<{ id: string }> };
  * Dossier de preuve de la signature électronique (JSON téléchargeable) :
  * données de preuve, empreintes recalculées et journal d'audit du devis.
  */
-export async function GET(_request: NextRequest, { params }: RouteParams) {
+export async function GET(request: NextRequest, { params }: RouteParams) {
   const auth = await requireAuth();
   if (auth.error) return auth.error;
 
@@ -38,6 +40,7 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
   const company = await prisma.company.findUnique({ where: { userId: auth.workspaceUserId } });
   const payload = buildDevisPayload(devis, company);
   const signedPdf = await readArchivedPdf(signedDevisPdfKey(auth.workspaceUserId, devis.id));
+  const auditChain = await verifyWorkspaceAuditChain(auth.workspaceUserId);
 
   const checks = {
     evidenceHashValid: verifySignatureEvidence(evidence, devis.signatureEvidenceHash),
@@ -49,6 +52,8 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       Boolean(devis.clientSignatureData) &&
       signatureImageSha256(devis.clientSignatureData!) === evidence.signatureImageSha256,
     signedPdfUnchanged: signedPdf ? sha256Buffer(signedPdf) === devis.signedPdfHash : null,
+    /** Chaîne d'audit de l'espace complète (les entrées du devis en font partie). */
+    auditChainValid: auditChain.valid,
   };
 
   const dossier = {
@@ -79,13 +84,28 @@ export async function GET(_request: NextRequest, { params }: RouteParams) {
       userAgent: log.userAgent,
       contentHash: log.contentHash,
       metadata: safeParse(log.metadata),
+      seq: log.seq,
+      prevHash: log.prevHash,
+      entryHash: log.entryHash,
     })),
+    auditChain,
   };
+
+  await logAudit(
+    { userId: auth.workspaceUserId, actorUserId: auth.user.id, ...getRequestMeta(request) },
+    {
+      action: "EXPORT_PROOF",
+      entityType: "Devis",
+      entityId: devis.id,
+      devisId: devis.id,
+      metadata: { artifact: "signature_proof" },
+    }
+  );
 
   return new Response(JSON.stringify(dossier, null, 2), {
     headers: {
       "Content-Type": "application/json; charset=utf-8",
-      "Content-Disposition": `attachment; filename="preuve-signature-${devis.numero}.json"`,
+      "Content-Disposition": contentDisposition("attachment", `preuve-signature-${devis.numero}.json`),
       "Cache-Control": "private, no-store",
     },
   });

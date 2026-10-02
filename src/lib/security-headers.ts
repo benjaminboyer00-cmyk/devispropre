@@ -6,6 +6,8 @@ const STATIC_HEADERS: Record<string, string> = {
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
   "X-DNS-Prefetch-Control": "on",
+  // Isole la fenêtre de tout opener cross-origin (allow-popups : liens de partage window.open).
+  "Cross-Origin-Opener-Policy": "same-origin-allow-popups",
   "Strict-Transport-Security": "max-age=63072000; includeSubDomains; preload",
 };
 

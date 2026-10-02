@@ -17,6 +17,7 @@ const ACTION_LABELS: Record<string, string> = {
   ISSUE: "Émission facture",
   PAY: "Paiement",
   CANCEL: "Annulation",
+  EXPORT_PROOF: "Export de preuve",
 };
 
 export async function getWorkspaceAuditJournal(

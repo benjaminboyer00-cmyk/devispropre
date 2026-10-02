@@ -61,6 +61,10 @@ export async function createIntegrationUser(prisma: PrismaClient) {
 }
 
 export async function deleteIntegrationUser(prisma: PrismaClient, userId: string) {
-  await prisma.auditLog.deleteMany({ where: { userId } });
+  // AuditLog est en ajout seul (déclencheur DB) : levée explicite pour le nettoyage de test.
+  await prisma.$transaction([
+    prisma.$executeRaw`SET LOCAL app.audit_maintenance = 'on'`,
+    prisma.auditLog.deleteMany({ where: { userId } }),
+  ]);
   await prisma.user.delete({ where: { id: userId } });
 }

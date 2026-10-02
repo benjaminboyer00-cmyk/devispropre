@@ -42,6 +42,7 @@ enum AuditAction {
   ISSUE
   PAY
   CANCEL
+  EXPORT_PROOF
 }
 
 model User {
@@ -348,8 +349,13 @@ model AuditLog {
   ipAddress   String?
   userAgent   String?
   contentHash String?
+  /// Chaînage d'intégrité par espace de travail (cf. src/lib/audit.ts) — null = entrée antérieure au chaînage.
+  seq         Int?
+  prevHash    String?
+  entryHash   String?
   createdAt   DateTime    @default(now())
 
+  @@unique([userId, seq])
   @@index([userId, entityType, entityId])
   @@index([createdAt])
 }

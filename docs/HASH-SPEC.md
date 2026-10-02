@@ -101,3 +101,23 @@ Dossier de preuve avec vérifications recalculées : `GET /api/devis/[id]/signat
 - `src/lib/__tests__/prisma/facture-chain.integration.test.ts` — chaîne multi-factures en base réelle
 - `src/lib/__tests__/signature-evidence.test.ts` — empreinte de preuve de signature
 - `src/lib/__tests__/prisma/devis-signature-flow.integration.test.ts` — parcours de signature complet en base réelle
+
+## Journal d'audit chaîné (`AuditLog.entryHash`)
+
+Chaque entrée du journal d'un espace de travail porte un numéro `seq` (1, 2, 3…, unique par `userId`)
+et l'empreinte de l'entrée précédente :
+
+```
+entryHash = SHA256( canonicalize({ v: 1, seq, prevHash, userId, action, entityType, entityId,
+                                   metadata, contentHash, ipAddress, userAgent, createdAt }) )
+```
+
+- `prevHash` = `entryHash` de l'entrée `seq - 1` (`null` pour `seq = 1`) ; `createdAt` en ISO 8601.
+- `devisId` / `factureId` sont exclus (clés étrangères pouvant être remises à `null`).
+- Les ajouts sont sérialisés par un verrou consultatif PostgreSQL par espace de travail.
+- Un déclencheur PostgreSQL interdit toute suppression et toute modification des champs hachés.
+- Les entrées antérieures au chaînage ont `seq = null` et ne sont pas vérifiées.
+
+Vérification : `verifyAuditChain` dans `src/lib/audit.ts`. Le dossier de preuve de signature
+(`GET /api/devis/[id]/signature-proof`) inclut le résultat (`auditChain`). Chaque téléchargement
+d'un élément de preuve (PDF signé, dossier JSON) ajoute une entrée `EXPORT_PROOF`.
